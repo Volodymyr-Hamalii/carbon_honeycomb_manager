@@ -3,7 +3,7 @@ from tkinter import messagebox
 import customtkinter as ctk
 
 from src.interface.gui.components.dropdown_list import DropdownList
-from src.utils import Constants, FileReader, PathBuilder
+from src.utils import Constants, FileReader
 
 from .components import *
 from .viewmodels import *
