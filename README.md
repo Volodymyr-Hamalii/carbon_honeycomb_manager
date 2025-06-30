@@ -1,4 +1,4 @@
-# Carbon honeycomb modelling
+# Carbon honeycomb manager
 
 To build honeycomb models from .dat or .pdb files. Allows intercalation with other structures.
 
