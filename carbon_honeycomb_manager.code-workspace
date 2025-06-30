@@ -10,7 +10,7 @@
     "editor.formatOnPaste": true,
     "editor.formatOnSave": true,
     "editor.formatOnType": true,
-    "python.defaultInterpreterPath": "venv_carbone_honeycomb_modelling/bin/python3.12",
+    "python.defaultInterpreterPath": "venv/bin/python3.12",
     "python.terminal.activateEnvironment": true,
     "python.analysis.autoFormatStrings": true,
     "python.analysis.inlayHints.functionReturnTypes": true,
@@ -21,7 +21,7 @@
     },
     "autopep8.args": ["--max-line-length", "120", "--experimental"],
     "code-runner.executorMap": {
-      "python": "venv_carbone_honeycomb_modelling/bin/python3.12 -u"
+      "python": "venv/bin/python3.12 -u"
     }
   }
 }
