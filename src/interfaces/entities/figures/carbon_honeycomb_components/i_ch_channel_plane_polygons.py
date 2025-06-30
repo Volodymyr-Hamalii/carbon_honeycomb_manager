@@ -11,14 +11,20 @@ __all__: list[str] = [
 
 
 class ICHChannelPlanePolygon(IFlatFigure):
+    """Interface for carbon honeycomb channel plane polygon."""
+
     @abstractmethod
     def get_direction_to_center(self, channel_center: np.ndarray) -> bool:
         ...
 
 
 class ICHChannelPlaneHexagon(ICHChannelPlanePolygon):
+    """Interface for carbon honeycomb channel plane hexagon."""
+
     pass
 
 
 class ICHChannelPlanePentagon(ICHChannelPlanePolygon):
+    """Interface for carbon honeycomb channel plane pentagon."""
+
     pass

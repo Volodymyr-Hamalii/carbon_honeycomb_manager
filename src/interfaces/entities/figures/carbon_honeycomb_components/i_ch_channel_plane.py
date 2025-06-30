@@ -5,6 +5,8 @@ from src.interfaces.entities.figures.i_flat_figure import IFlatFigure
 
 
 class ICHChannelPlane(IFlatFigure):
+    """Interface for carbon honeycomb channel plane."""
+
     @abstractmethod
     def pentagons(self) -> list[IFlatFigure]:
         ...

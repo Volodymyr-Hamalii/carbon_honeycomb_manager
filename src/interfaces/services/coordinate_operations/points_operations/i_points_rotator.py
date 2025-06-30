@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 import numpy as np
 from numpy.typing import NDArray
 
-from src.interfaces import IPoints
+from src.interfaces.entities.figures.i_points import IPoints
 
 
 class IPointsRotator(ABC):

@@ -8,6 +8,8 @@ from src.interfaces.entities.figures.i_points import IPoints
 
 
 class ICHChannel(IPoints):
+    """Interface for carbon honeycomb channel."""
+
     @abstractmethod
     def planes(self) -> list[IFlatFigure]:
         ...
