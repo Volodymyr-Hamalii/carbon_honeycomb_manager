@@ -3,7 +3,7 @@ RasMol
 
 .env
 .DS_Store
-venv_carbone_honeycomb_modelling
+venv
 __pycache__
 
 # Test data
