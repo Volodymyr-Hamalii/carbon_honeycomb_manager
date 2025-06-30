@@ -472,7 +472,15 @@ class VMIntercalationAndSorption(VMParamsSetter):
             title=structure_dir,
         )
 
-        file_name_xlsx: str = self._get_path_to_file_to_save(Constants.file_names.ALL_CHANNELS_COORDINATES_XLSX_FILE)
+        if " " in self.file_name:
+            parts: list[str] = self.file_name.split(" ")
+            parts.pop(0)
+            parts[-1] = parts[-1].split(".")[0]
+            output_dir_name: str = " ".join(parts)
+        else:
+            output_dir_name: str = "all_channels"
+
+        file_name_xlsx: str = self._get_path_to_file_to_save(f"{output_dir_name}/{Constants.file_names.ALL_CHANNELS_COORDINATES_XLSX_FILE}")
         path_to_inter_atoms_xlsx_file: Path | None = PathBuilder.build_path_to_result_data_file(
             project_dir, subproject_dir, structure_dir, file_name=file_name_xlsx)
 
@@ -485,7 +493,7 @@ class VMIntercalationAndSorption(VMParamsSetter):
         if path_to_inter_atoms_xlsx_file is None:
             raise IOError(f"Failed to write {file_name_xlsx} file")
 
-        file_name_dat: str = self._get_path_to_file_to_save(f"{atom_params.ATOM_SYMBOL}.dat")
+        file_name_dat: str = self._get_path_to_file_to_save(f"{output_dir_name}/{atom_params.ATOM_SYMBOL}.dat")
         path_to_inter_atoms_dat_file: Path | None = PathBuilder.build_path_to_result_data_file(
             project_dir, subproject_dir, structure_dir, file_name=file_name_dat)
         path_to_inter_atoms_dat_file = FileWriter.write_dat_file(
@@ -496,7 +504,7 @@ class VMIntercalationAndSorption(VMParamsSetter):
         if path_to_inter_atoms_dat_file is None:
             raise IOError(f"Failed to write {file_name_dat} file")
 
-        file_name_c_dat: str = self._get_path_to_file_to_save(Constants.file_names.C_ALL_CHANNELS_COORDINATES_DAT_FILE)
+        file_name_c_dat: str = self._get_path_to_file_to_save(f"{output_dir_name}/{Constants.file_names.C_ALL_CHANNELS_COORDINATES_DAT_FILE}")
         path_to_c_dat_file: Path | None = PathBuilder.build_path_to_result_data_file(
             project_dir, subproject_dir, structure_dir, file_name=file_name_c_dat)
         path_to_c_dat_file = FileWriter.write_dat_file(
