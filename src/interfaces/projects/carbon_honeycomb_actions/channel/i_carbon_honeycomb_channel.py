@@ -4,24 +4,28 @@ import numpy as np
 from numpy.typing import NDArray
 
 from src.interfaces.entities.figures.i_points import IPoints
-from src.interfaces.entities.figures.carbon_honeycomb_components.i_ch_channel_plane import ICHChannelPlane
+from .planes import ICarbonHoneycombPlane
 
 
 class ICarbonHoneycombChannel(IPoints):
     """Interface for carbon honeycomb channel."""
 
+    @property
     @abstractmethod
-    def planes(self) -> list[ICHChannelPlane]:
+    def planes(self) -> list[ICarbonHoneycombPlane]:
         ...
 
+    @property
     @abstractmethod
     def channel_center(self) -> NDArray[np.float64]:
         ...
 
+    @property
     @abstractmethod
     def ave_dist_between_closest_atoms(self) -> np.floating:
         ...
 
+    @property
     @abstractmethod
     def ave_dist_between_closest_hexagon_centers(self) -> np.floating:
         ...

@@ -5,19 +5,21 @@ from numpy.typing import NDArray
 
 from src.interfaces.entities.figures.i_flat_figure import IFlatFigure
 
-from .i_carbon_honeycomb_plane_actions import ICarbonHoneycombPlaneActions
 from .plane_polygons import ICarbonHoneycombPentagon, ICarbonHoneycombHexagon
 
 
 class ICarbonHoneycombPlane(IFlatFigure):
+    @property
     @abstractmethod
     def pentagons(self) -> list[ICarbonHoneycombPentagon]:
         ...
 
+    @property
     @abstractmethod
     def hexagons(self) -> list[ICarbonHoneycombHexagon]:
         ...
 
+    @property
     @abstractmethod
     def edge_holes(self) -> NDArray[np.float64]:
         ...

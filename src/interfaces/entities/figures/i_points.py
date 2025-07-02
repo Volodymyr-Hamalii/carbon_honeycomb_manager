@@ -16,20 +16,24 @@ class IPoints(ABC):
 
     points: NDArray[np.float64]
 
+    @property
     @abstractmethod
     def __len__(self) -> int:
         ...
 
+    @property
     @abstractmethod
     def coordinate_limits(self) -> PCoordinateLimits:
         ...
 
+    @property
     @abstractmethod
-    def sorted_points(self) -> np.ndarray:
+    def sorted_points(self) -> NDArray[np.float64]:
         ...
 
+    @property
     @abstractmethod
-    def center(self) -> np.ndarray:
+    def center(self) -> NDArray[np.float64]:
         ...
 
     @abstractmethod

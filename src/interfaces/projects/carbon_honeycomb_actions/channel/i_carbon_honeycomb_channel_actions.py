@@ -4,7 +4,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 from src.interfaces.entities.figures.i_points import IPoints
-from src.interfaces.entities.figures.carbon_honeycomb_components.i_ch_channel_plane import ICHChannelPlane
+from .planes import ICarbonHoneycombPlane
 
 
 class ICarbonHoneycombChannelActions(ABC):
@@ -15,7 +15,7 @@ class ICarbonHoneycombChannelActions(ABC):
     def build_planes(
             cls,
             points: NDArray[np.float64],
-    ) -> list[ICHChannelPlane]:
+    ) -> list[ICarbonHoneycombPlane]:
         ...
 
     @staticmethod
@@ -44,6 +44,6 @@ class ICarbonHoneycombChannelActions(ABC):
     @staticmethod
     @abstractmethod
     def calculate_ave_dist_between_closest_hexagon_centers(
-            planes: list[ICHChannelPlane],
+            planes: list[ICarbonHoneycombPlane],
     ) -> np.floating:
         ...
