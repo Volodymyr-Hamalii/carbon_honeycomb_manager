@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 from numpy import ndarray
@@ -14,6 +15,14 @@ logger = Logger("FileWriter")
 
 
 class FileWriter:
+    @staticmethod
+    def write_json_file(
+            data: dict,
+            path_to_file: Path,
+    ) -> None:
+        with Path(path_to_file).open("w") as json_file:
+            json.dump(data, json_file, indent=4)
+
     @classmethod
     def write_dat_file(
             cls,

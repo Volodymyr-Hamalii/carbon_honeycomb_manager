@@ -39,6 +39,7 @@ class _ConstantsFilenames:
     # Dir names
     DATA_DIR: str = "data"
     CONFIGS_DIR: str = "configs"
+    MVP_PARAMS_DIR: str = "mvp_params"
     CONSTANTS_DIR: str = "constants"
     PROJECTS_DIR: str = "projects"
 
@@ -48,6 +49,8 @@ class _ConstantsFilenames:
     # File names
     INIT_DAT_FILE: str = "ljout.dat"
     PHYS_CONSTANTS_JSON_FILE: str = "phys_constants.json"
+    DEFAULT_MVP_PARAMS_JSON_FILE: str = "_default_mvp_params.json"
+    DEFAULT_CONFIGS_JSON_FILE: str = "_default_configs.json"
 
     # Intercalation and sorption paths
     PLANE_COORDINATES_XLSX_FILE: str = "sorbed-plane-coordinates.xlsx"
@@ -80,6 +83,10 @@ class _ConstantsPath:
     CONFIGS_DATA_PATH: Path = DATA_DIR_PATH / _ConstantsFilenames.CONFIGS_DIR
     CONSTANTS_DATA_PATH: Path = DATA_DIR_PATH / _ConstantsFilenames.CONSTANTS_DIR
     PROJECTS_DATA_PATH: Path = DATA_DIR_PATH / _ConstantsFilenames.PROJECTS_DIR
+
+    DEFAULT_CONFIGS_JSON_FILE: Path = CONFIGS_DATA_PATH / _ConstantsFilenames.DEFAULT_CONFIGS_JSON_FILE
+    MVP_PARAMS_DATA_PATH: Path = CONFIGS_DATA_PATH / _ConstantsFilenames.MVP_PARAMS_DIR
+    DEFAULT_MVP_PARAMS_JSON_FILE: Path = MVP_PARAMS_DATA_PATH / _ConstantsFilenames.DEFAULT_MVP_PARAMS_JSON_FILE
 
 
 class _ConstantsLogger:

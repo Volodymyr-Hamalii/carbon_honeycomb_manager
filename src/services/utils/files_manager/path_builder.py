@@ -13,7 +13,7 @@ class PathBuilder:
             structure_dir: str,
             init_data_dir: str = Constants.file_names.INIT_DATA_DIR,
     ) -> Path:
-        return Constants.path.PROJECT_DATA_PATH / project_dir / subproject_dir / init_data_dir / structure_dir
+        return Constants.path.PROJECTS_DATA_PATH / project_dir / subproject_dir / init_data_dir / structure_dir
 
     @classmethod
     def build_path_to_init_data_file(
@@ -42,7 +42,7 @@ class PathBuilder:
             result_dir: str = Constants.file_names.RESULT_DATA_DIR,
     ) -> Path:
 
-        return Constants.path.PROJECT_DATA_PATH / project_dir / subproject_dir / result_dir / structure_dir
+        return Constants.path.PROJECTS_DATA_PATH / project_dir / subproject_dir / result_dir / structure_dir
 
     @classmethod
     def build_path_to_result_data_file(
