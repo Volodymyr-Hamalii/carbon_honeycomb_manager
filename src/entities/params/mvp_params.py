@@ -5,7 +5,7 @@ from src.interfaces import PMvpParams
 from .coordinate_limits import CoordinateLimits
 
 
-@dataclass(frozen=True)
+@dataclass
 class MvpParams(PMvpParams):
     """Class for MVP parameters with default values."""
     to_build_bonds: bool = True
