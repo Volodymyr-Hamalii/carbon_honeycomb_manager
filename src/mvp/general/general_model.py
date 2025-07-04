@@ -9,7 +9,7 @@ logger: Logger = Logger("GeneralModel")
 
 
 class GeneralModel(IGeneralModel):
-    """ General model. """
+    """ General model with default logic. """
     mvp_name: str
 
     @classmethod
