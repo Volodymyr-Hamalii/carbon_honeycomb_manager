@@ -2,7 +2,8 @@ from functools import cached_property
 from dataclasses import dataclass
 import numpy as np
 
-from src.services import PlanesBuilder, LinesOperations
+from src.services.coordinate_operations.planes_operations import PlanesBuilder
+from src.services.coordinate_operations.lines_operations import LinesOperations
 from .points import Points
 
 

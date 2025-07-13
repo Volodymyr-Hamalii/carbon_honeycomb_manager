@@ -7,13 +7,13 @@ class IGeneralModel(ABC):
 
     mvp_name: str
 
-    @abstractmethod
     @classmethod
+    @abstractmethod
     def get_mvp_params(cls) -> PMvpParams:
         ...
 
-    @abstractmethod
     @classmethod
+    @abstractmethod
     def set_mvp_params(
             cls,
             params: PMvpParams,
@@ -21,17 +21,17 @@ class IGeneralModel(ABC):
     ) -> None:
         ...
 
-    @abstractmethod
     @classmethod
+    @abstractmethod
     def _get_mvp_params_file_name(cls) -> str:
         ...
 
-    @abstractmethod
     @classmethod
+    @abstractmethod
     def _parse_mvp_params(cls, mvp_params_dict: dict) -> PMvpParams:
         ...
 
-    @abstractmethod
     @classmethod
+    @abstractmethod
     def _get_default_mvp_params(cls) -> PMvpParams:
         ...

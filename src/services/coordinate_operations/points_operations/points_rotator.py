@@ -1,6 +1,6 @@
 import numpy as np
 
-from src_1.base_structure_classes import Points
+from src.entities import Points
 
 
 class PointsRotator:

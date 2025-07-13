@@ -1,7 +1,7 @@
 import numpy as np
 
-from src_1.base_structure_classes import Points
-from ..distance_measurer import DistanceMeasure
+from src.entities import Points
+from ..distance_measurer import DistanceMeasurer
 
 
 class PointsFilter:
@@ -18,7 +18,7 @@ class PointsFilter:
         Ax + By + Cz + D = 0 plane equation.
         """
 
-        signed_distances: float = DistanceMeasure.calculate_signed_distance_from_plane(
+        signed_distances: float = DistanceMeasurer.calculate_signed_distance_from_plane(
             points.points, A, B, C, D)
 
         if direction:

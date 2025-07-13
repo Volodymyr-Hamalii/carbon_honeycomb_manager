@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from src.interfaces import PMvpParams
@@ -33,7 +33,7 @@ class MvpParams(PMvpParams):
     data_dir: Path = Path()  # Default to an empty Path
     file_name: str | None = None
     file_format: str | None = None  # "xlsx", "dat", "pdb"
-    available_formats: list[str] = ["xlsx", "dat", "pdb"]
+    available_formats: list[str] = field(default_factory=lambda: ["xlsx", "dat", "pdb"])
     excel_file_name: str | None = None
     dat_file_name: str | None = None
     pdb_file_name: str | None = None

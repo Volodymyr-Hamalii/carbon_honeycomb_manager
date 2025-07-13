@@ -5,7 +5,7 @@ import numpy as np
 from numpy.typing import NDArray
 import pandas as pd
 
-from src.interfaces.entities.params.p_coordinate_limits import PCoordinateLimits
+from ..params.p_coordinate_limits import PCoordinateLimits
 
 
 T = TypeVar("T", bound="IPoints")

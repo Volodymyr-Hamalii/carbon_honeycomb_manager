@@ -5,8 +5,8 @@ from typing import TypeVar
 import numpy as np
 import pandas as pd
 
-from .coordinate_limits import CoordinateLimits
-from src.interfaces.entities.figures.i_points import IPoints
+from src.entities.params import CoordinateLimits
+from src.interfaces import IPoints, PCoordinateLimits
 
 
 T = TypeVar("T", bound="Points")
@@ -21,7 +21,7 @@ class Points(IPoints):
         return len(self.points)
 
     @cached_property
-    def coordinate_limits(self) -> CoordinateLimits:
+    def coordinate_limits(self) -> PCoordinateLimits:
         """ Returns CoordinateLimits of self.points. """
 
         if len(self.points) == 0:

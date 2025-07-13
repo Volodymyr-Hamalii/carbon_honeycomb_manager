@@ -1,0 +1,1 @@
+from .window_general_template import WindowGeneralTemplate

@@ -7,10 +7,8 @@ from matplotlib.axes import Axes
 from matplotlib.backend_bases import FigureManagerBase
 from matplotlib.collections import PathCollection
 
-# from src.coordinate_operations import DistanceMeasure
 from src.interfaces import IVisualizationParams, PCoordinateLimits, IStructureVisualizer
 from .lines_builder import LinesBuilder
-from .visualization_params import VisualizationParams, StructureVisualParams
 from ..utils import Logger
 
 

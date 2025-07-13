@@ -72,6 +72,7 @@ class GeneralModel(IGeneralModel):
                 mvp_params_dict["data_dir"] = Path(mvp_params_dict["data_dir"])
 
             return MvpParams(**mvp_params_dict)
+
         except Exception:
             # Return default params if parsing fails
             logger.error(f"Failed to parse MVP parameters for {cls.mvp_name}.")
