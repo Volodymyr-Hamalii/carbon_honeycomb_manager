@@ -58,3 +58,9 @@ class InputFieldCoordLimits(ctk.CTkFrame):
 
     def set_max_value(self, value: str | int | float) -> None:
         self.max_entry.insert(0, value)
+
+    def get_min_value(self) -> str | int | float:
+        return self.min_entry.get()
+
+    def get_max_value(self) -> str | int | float:
+        return self.max_entry.get()

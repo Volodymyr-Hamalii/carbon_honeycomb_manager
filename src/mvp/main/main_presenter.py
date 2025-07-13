@@ -137,7 +137,32 @@ class MainPresenter(IMainPresenter):
         """Open data converter window."""
         try:
             self.view.show_status_message("Opening data converter...")
-            # TODO: Implement data converter window opening
+            
+            # Get current selection for window context
+            current_selection = self.model.get_current_selection()
+            project_dir = current_selection.get("project_dir", "")
+            subproject_dir = current_selection.get("subproject_dir", "")
+            structure_dir = current_selection.get("structure_dir", "")
+            
+            if not all([project_dir, subproject_dir, structure_dir]):
+                self.view.show_error_message("Please select project, subproject, and structure first")
+                return
+            
+            # Import and create MVP triad
+            from src.mvp.data_converter import DataConverterModel, DataConverterPresenter, DataConverterView
+            
+            # Create MVP instances
+            model = DataConverterModel()
+            view = DataConverterView()
+            presenter = DataConverterPresenter(model, view)
+            
+            # Set up the view with current context
+            view.set_context(project_dir, subproject_dir, structure_dir)
+            view.set_ui()
+            
+            # Show the window
+            view.mainloop()
+            
             logger.info("Data converter window opened")
         except Exception as e:
             error_message = f"Failed to open data converter: {str(e)}"
@@ -148,7 +173,32 @@ class MainPresenter(IMainPresenter):
         """Open intercalation and sorption window."""
         try:
             self.view.show_status_message("Opening intercalation and sorption...")
-            # TODO: Implement intercalation and sorption window opening
+            
+            # Get current selection for window context
+            current_selection = self.model.get_current_selection()
+            project_dir = current_selection.get("project_dir", "")
+            subproject_dir = current_selection.get("subproject_dir", "")
+            structure_dir = current_selection.get("structure_dir", "")
+            
+            if not all([project_dir, subproject_dir, structure_dir]):
+                self.view.show_error_message("Please select project, subproject, and structure first")
+                return
+            
+            # Import and create MVP triad
+            from src.mvp.intercalation_and_sorption import IntercalationAndSorptionModel, IntercalationAndSorptionPresenter, IntercalationAndSorptionView
+            
+            # Create MVP instances
+            model = IntercalationAndSorptionModel()
+            view = IntercalationAndSorptionView()
+            presenter = IntercalationAndSorptionPresenter(model, view)
+            
+            # Set up the view with current context
+            view.set_context(project_dir, subproject_dir, structure_dir)
+            view.set_ui()
+            
+            # Show the window
+            view.mainloop()
+            
             logger.info("Intercalation and sorption window opened")
         except Exception as e:
             error_message = f"Failed to open intercalation and sorption: {str(e)}"
@@ -159,7 +209,32 @@ class MainPresenter(IMainPresenter):
         """Open show init data window."""
         try:
             self.view.show_status_message("Opening show init data...")
-            # TODO: Implement show init data window opening
+            
+            # Get current selection for window context
+            current_selection = self.model.get_current_selection()
+            project_dir = current_selection.get("project_dir", "")
+            subproject_dir = current_selection.get("subproject_dir", "")
+            structure_dir = current_selection.get("structure_dir", "")
+            
+            if not all([project_dir, subproject_dir, structure_dir]):
+                self.view.show_error_message("Please select project, subproject, and structure first")
+                return
+            
+            # Import and create MVP triad
+            from src.mvp.init_data import InitDataModel, InitDataPresenter, InitDataView
+            
+            # Create MVP instances
+            model = InitDataModel()
+            view = InitDataView()
+            presenter = InitDataPresenter(model, view)
+            
+            # Set up the view with current context
+            view.set_context(project_dir, subproject_dir, structure_dir)
+            view.set_ui()
+            
+            # Show the window
+            view.mainloop()
+            
             logger.info("Show init data window opened")
         except Exception as e:
             error_message = f"Failed to open show init data: {str(e)}"
@@ -182,26 +257,36 @@ class MainPresenter(IMainPresenter):
     def restore_application_state(self) -> None:
         """Restore saved application state."""
         try:
-            session_state = self.model.get_session_state()
-            if session_state and "selection" in session_state:
-                selection = session_state["selection"]
-
-                # Restore project selection
-                project_dir = selection.get("project_dir", "")
+            # First try to restore from current_selection (persistent state)
+            current_selection = self.model.get_current_selection()
+            if current_selection:
+                project_dir = current_selection.get("project_dir", "")
+                subproject_dir = current_selection.get("subproject_dir", "")
+                structure_dir = current_selection.get("structure_dir", "")
+                
+                # Restore project selection and update UI
                 if project_dir:
-                    self.set_project_selection(project_dir)
-
+                    # Set project selection in UI
+                    self.view.set_selected_project(project_dir)
+                    # Load subprojects for this project
+                    subprojects = self.model.get_subprojects(project_dir)
+                    self.view.set_subprojects(subprojects)
+                    
                     # Restore subproject selection
-                    subproject_dir = selection.get("subproject_dir", "")
-                    if subproject_dir:
-                        self.set_subproject_selection(subproject_dir)
-
+                    if subproject_dir and subproject_dir in subprojects:
+                        self.view.set_selected_subproject(subproject_dir)
+                        # Load structures for this subproject
+                        structures = self.model.get_structures(project_dir, subproject_dir)
+                        self.view.set_structures(structures)
+                        
                         # Restore structure selection
-                        structure_dir = selection.get("structure_dir", "")
-                        if structure_dir:
-                            self.set_structure_selection(structure_dir)
-
-                logger.info("Application state restored")
+                        if structure_dir and structure_dir in structures:
+                            self.view.set_selected_structure(structure_dir)
+                            
+                logger.info(f"Application state restored: {project_dir}/{subproject_dir}/{structure_dir}")
+            else:
+                logger.info("No previous application state to restore")
+                
         except Exception as e:
             logger.warning(f"Failed to restore application state: {e}")
 

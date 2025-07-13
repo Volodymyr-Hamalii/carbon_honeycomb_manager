@@ -5,7 +5,7 @@ from tkinter import messagebox
 from src.interfaces import IMainView
 # from src.ui.components.dropdown_list import DropdownList
 # from old_gui_logic.windows.windows_template import WindowsTemplate
-from src.services import Constants, Logger
+from src.services import Logger
 
 logger = Logger("MainView")
 
@@ -18,16 +18,16 @@ class MainView(ctk.CTk, IMainView):
         self.title("Carbon Honeycomb Manager")
         self.pack_propagate(True)
         self.grid_propagate(True)
-        
+
         # Initialize UI components
         self._projects_dropdown = None
         self._subprojects_dropdown = None
         self._structures_dropdown = None
-        
+
         # Callbacks
         self._selection_callbacks = {}
         self._action_callbacks = {}
-        
+
         self._setup_ui()
 
     def _setup_ui(self) -> None:
@@ -40,7 +40,7 @@ class MainView(ctk.CTk, IMainView):
             command=self._on_project_selected,
         )
         self._projects_dropdown.pack(pady=5)
-        
+
         # Subproject selection
         ctk.CTkLabel(self, text="Select subproject:").pack(pady=5)
         self._subprojects_dropdown = ctk.CTkOptionMenu(
@@ -49,7 +49,7 @@ class MainView(ctk.CTk, IMainView):
             command=self._on_subproject_selected,
         )
         self._subprojects_dropdown.pack(pady=5)
-        
+
         # Structure selection
         ctk.CTkLabel(self, text="Select structure:").pack(pady=5)
         self._structures_dropdown = ctk.CTkOptionMenu(
@@ -58,10 +58,10 @@ class MainView(ctk.CTk, IMainView):
             command=self._on_structure_selected,
         )
         self._structures_dropdown.pack(pady=5)
-        
+
         # Action buttons
         self._create_action_buttons()
-        
+
         # Status bar
         self._status_label = ctk.CTkLabel(self, text="Ready")
         self._status_label.pack(side="bottom", fill="x", padx=10, pady=5)
@@ -71,7 +71,7 @@ class MainView(ctk.CTk, IMainView):
         # Button frame
         button_frame = ctk.CTkFrame(self)
         button_frame.pack(fill="x", padx=10, pady=10)
-        
+
         # Data converter button
         self._data_converter_btn = ctk.CTkButton(
             button_frame,
@@ -80,7 +80,7 @@ class MainView(ctk.CTk, IMainView):
             state="disabled"
         )
         self._data_converter_btn.pack(side="left", padx=5)
-        
+
         # Intercalation and sorption button
         self._intercalation_btn = ctk.CTkButton(
             button_frame,
@@ -89,7 +89,7 @@ class MainView(ctk.CTk, IMainView):
             state="disabled"
         )
         self._intercalation_btn.pack(side="left", padx=5)
-        
+
         # Show init data button
         self._show_init_data_btn = ctk.CTkButton(
             button_frame,
@@ -141,6 +141,21 @@ class MainView(ctk.CTk, IMainView):
             return self._structures_dropdown.get()
         return ""
 
+    def set_selected_project(self, project: str) -> None:
+        """Set selected project in the UI."""
+        if self._projects_dropdown and project:
+            self._projects_dropdown.set(project)
+
+    def set_selected_subproject(self, subproject: str) -> None:
+        """Set selected subproject in the UI."""
+        if self._subprojects_dropdown and subproject:
+            self._subprojects_dropdown.set(subproject)
+
+    def set_selected_structure(self, structure: str) -> None:
+        """Set selected structure in the UI."""
+        if self._structures_dropdown and structure:
+            self._structures_dropdown.set(structure)
+
     def set_selection_callbacks(self, callbacks: dict[str, Callable]) -> None:
         """Set callbacks for selection changes."""
         self._selection_callbacks = callbacks
@@ -161,7 +176,7 @@ class MainView(ctk.CTk, IMainView):
     def enable_actions(self, enabled: bool) -> None:
         """Enable or disable action buttons."""
         state = "normal" if enabled else "disabled"
-        
+
         if hasattr(self, '_data_converter_btn'):
             self._data_converter_btn.configure(state=state)
         if hasattr(self, '_intercalation_btn'):

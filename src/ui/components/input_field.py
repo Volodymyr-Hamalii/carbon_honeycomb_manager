@@ -41,3 +41,9 @@ class InputField(ctk.CTkFrame):
     def set_command(self, command: Callable) -> None:
         """Add listener to the input field."""
         self.apply_button.configure(command=command)
+
+    def set_value(self, value: str | int | float) -> None:
+        self.entry.insert(0, value)
+
+    def get_value(self) -> str | int | float:
+        return self.entry.get()

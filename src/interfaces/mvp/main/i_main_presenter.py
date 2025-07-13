@@ -1,8 +1,10 @@
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from typing import Any
 
+from src.interfaces.mvp.general import IGeneralPresenter
 
-class IMainPresenter(ABC):
+
+class IMainPresenter(IGeneralPresenter):
     """Interface for main presenter."""
 
     @abstractmethod

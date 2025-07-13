@@ -1,23 +1,14 @@
 from typing import Any, Protocol
-from src.interfaces import IGeneralPresenter
+from src.interfaces import IGeneralPresenter, IGeneralView, IGeneralModel
 from src.services import Logger
-
-
-class GeneralPresenterProtocol(Protocol):
-    """Protocol for general presenter dependencies."""
-    
-    def get_mvp_params(self) -> Any: ...
-    def set_mvp_params(self, params: Any) -> None: ...
-    def show_status_message(self, message: str) -> None: ...
-    def show_error_message(self, message: str) -> None: ...
 
 
 class GeneralPresenter(IGeneralPresenter):
     """General presenter with default logic."""
     
-    def __init__(self, model: GeneralPresenterProtocol, view: GeneralPresenterProtocol) -> None:
-        self.model: GeneralPresenterProtocol = model
-        self.view: GeneralPresenterProtocol = view
+    def __init__(self, model: IGeneralModel, view: IGeneralView) -> None:
+        self.model: IGeneralModel = model
+        self.view: IGeneralView = view
         self.logger = Logger(self.__class__.__name__)
     
     def handle_error(self, operation: str, error: Exception) -> None:

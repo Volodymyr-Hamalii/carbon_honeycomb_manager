@@ -1,10 +1,12 @@
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from pathlib import Path
 from typing import Any
 import pandas as pd
 
+from src.interfaces.mvp.general import IGeneralPresenter
 
-class IIntercalationAndSorptionPresenter(ABC):
+
+class IIntercalationAndSorptionPresenter(IGeneralPresenter):
     """Interface for intercalation and sorption presenter."""
 
     @abstractmethod

@@ -2,11 +2,10 @@
 from pathlib import Path
 from typing import Any
 
-from src.interfaces import IShowInitDataModel
+from src.interfaces import IShowInitDataModel, PMvpParams
 from src.mvp.general import GeneralModel
-from src.entities import MvpParams
-from src.services import Constants, Logger, FileReader, PathBuilder
-from src.projects import CarbonHoneycombModeller
+from src.services import Logger, FileReader, PathBuilder
+from src.projects.carbon_honeycomb_actions import CarbonHoneycombModeller
 
 
 logger = Logger("InitDataModel")
@@ -21,7 +20,7 @@ class InitDataModel(GeneralModel, IShowInitDataModel):
 
     def get_visualization_settings(self) -> dict[str, Any]:
         """Get visualization settings."""
-        params = self.get_mvp_params()
+        params: PMvpParams = self.get_mvp_params()
         return {
             "to_build_bonds": params.to_build_bonds,
             "to_show_coordinates": params.to_show_coordinates,
@@ -32,7 +31,7 @@ class InitDataModel(GeneralModel, IShowInitDataModel):
 
     def set_visualization_settings(self, settings: dict[str, Any]) -> None:
         """Set visualization settings."""
-        params = self.get_mvp_params()
+        params: PMvpParams = self.get_mvp_params()
         for key, value in settings.items():
             if hasattr(params, key):
                 setattr(params, key, value)
@@ -40,7 +39,7 @@ class InitDataModel(GeneralModel, IShowInitDataModel):
 
     def get_coordinate_limits(self) -> dict[str, float]:
         """Get coordinate limits."""
-        params = self.get_mvp_params()
+        params: PMvpParams = self.get_mvp_params()
         return {
             "x_min": params.x_min,
             "x_max": params.x_max,
@@ -52,7 +51,7 @@ class InitDataModel(GeneralModel, IShowInitDataModel):
 
     def set_coordinate_limits(self, limits: dict[str, float]) -> None:
         """Set coordinate limits."""
-        params = self.get_mvp_params()
+        params: PMvpParams = self.get_mvp_params()
         for key, value in limits.items():
             if hasattr(params, key):
                 setattr(params, key, value)
@@ -60,7 +59,7 @@ class InitDataModel(GeneralModel, IShowInitDataModel):
 
     def get_channel_display_settings(self) -> dict[str, Any]:
         """Get channel display settings."""
-        params = self.get_mvp_params()
+        params: PMvpParams = self.get_mvp_params()
         return {
             "to_show_dists_to_plane": params.to_show_dists_to_plane,
             "to_show_channel_angles": params.to_show_channel_angles,
@@ -70,7 +69,7 @@ class InitDataModel(GeneralModel, IShowInitDataModel):
 
     def set_channel_display_settings(self, settings: dict[str, Any]) -> None:
         """Set channel display settings."""
-        params = self.get_mvp_params()
+        params: PMvpParams = self.get_mvp_params()
         for key, value in settings.items():
             if hasattr(params, key):
                 setattr(params, key, value)
@@ -78,7 +77,7 @@ class InitDataModel(GeneralModel, IShowInitDataModel):
 
     def save_view_state(self, state: dict[str, Any]) -> None:
         """Save current view state."""
-        params = self.get_mvp_params()
+        params: PMvpParams = self.get_mvp_params()
         params.session_history.append({"type": "init_data_view", **state})
         # Keep only last 50 states
         if len(params.session_history) > 50:
@@ -87,16 +86,16 @@ class InitDataModel(GeneralModel, IShowInitDataModel):
 
     def get_view_state(self) -> dict[str, Any]:
         """Get saved view state."""
-        params = self.get_mvp_params()
+        params: PMvpParams = self.get_mvp_params()
         init_data_states = [
-            item for item in params.session_history 
+            item for item in params.session_history
             if item.get("type") == "init_data_view"
         ]
         return init_data_states[-1] if init_data_states else {}
 
     def get_channel_parameters(self, structure_info: dict[str, str]) -> Any:
         """Get channel parameters for the structure."""
-        params = self.get_mvp_params()
+        params: PMvpParams = self.get_mvp_params()
         return CarbonHoneycombModeller.get_channel_params(
             project_dir=structure_info["project_dir"],
             subproject_dir=structure_info["subproject_dir"],
@@ -121,7 +120,7 @@ class InitDataModel(GeneralModel, IShowInitDataModel):
 
     def show_init_structure(self, project_dir: str, subproject_dir: str, structure_dir: str) -> None:
         """Show 3D model of initial structure."""
-        params = self.get_mvp_params()
+        params: PMvpParams = self.get_mvp_params()
         CarbonHoneycombModeller.show_init_structure(
             project_dir=project_dir,
             subproject_dir=subproject_dir,
@@ -131,7 +130,7 @@ class InitDataModel(GeneralModel, IShowInitDataModel):
 
     def show_one_channel_structure(self, project_dir: str, subproject_dir: str, structure_dir: str) -> None:
         """Show one channel structure."""
-        params = self.get_mvp_params()
+        params: PMvpParams = self.get_mvp_params()
         CarbonHoneycombModeller.show_one_channel_structure(
             project_dir=project_dir,
             subproject_dir=subproject_dir,
@@ -141,7 +140,7 @@ class InitDataModel(GeneralModel, IShowInitDataModel):
 
     def show_2d_channel_scheme(self, project_dir: str, subproject_dir: str, structure_dir: str) -> None:
         """Show 2D channel scheme."""
-        params = self.get_mvp_params()
+        params: PMvpParams = self.get_mvp_params()
         CarbonHoneycombModeller.show_2d_channel_scheme(
             project_dir=project_dir,
             subproject_dir=subproject_dir,

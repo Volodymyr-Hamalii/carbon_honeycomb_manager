@@ -1,9 +1,11 @@
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from typing import Any
 import pandas as pd
 
+from src.interfaces.mvp.general import IGeneralModel
 
-class IShowInitDataModel(ABC):
+
+class IShowInitDataModel(IGeneralModel):
     """Interface for show init data model."""
 
     @abstractmethod
@@ -49,4 +51,24 @@ class IShowInitDataModel(ABC):
     @abstractmethod
     def get_channel_parameters(self, structure_info: dict[str, str]) -> pd.DataFrame:
         """Get channel parameters for the structure."""
+        ...
+
+    @abstractmethod
+    def get_available_files(self, project_dir: str, subproject_dir: str, structure_dir: str) -> list[str]:
+        """Get list of available files in init_data directory."""
+        ...
+
+    @abstractmethod
+    def show_init_structure(self, project_dir: str, subproject_dir: str, structure_dir: str) -> None:
+        """Show 3D model of initial structure."""
+        ...
+
+    @abstractmethod
+    def show_one_channel_structure(self, project_dir: str, subproject_dir: str, structure_dir: str) -> None:
+        """Show one channel structure."""
+        ...
+
+    @abstractmethod
+    def show_2d_channel_scheme(self, project_dir: str, subproject_dir: str, structure_dir: str) -> None:
+        """Show 2D channel scheme."""
         ...

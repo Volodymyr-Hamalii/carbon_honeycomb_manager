@@ -1,8 +1,10 @@
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from typing import Any
 
+from src.interfaces.mvp.general import IGeneralModel
 
-class IMainModel(ABC):
+
+class IMainModel(IGeneralModel):
     """Interface for main model."""
 
     @abstractmethod

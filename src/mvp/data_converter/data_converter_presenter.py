@@ -129,7 +129,7 @@ class DataConverterPresenter(IDataConverterPresenter):
                 project_dir=params["project_dir"],
                 subproject_dir=params["subproject_dir"],
                 structure_dir=params["structure_dir"],
-                file_name=params["file_name"],
+                file_name=params["source_file"],
                 target_format=params["target_format"],
             )
         except Exception as e:

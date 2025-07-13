@@ -5,3 +5,4 @@ from .build_intercalated_structure import (
     InterAtomsTranslator,
     FullChannelBuilder,
 )
+from .intercalation_and_sorption import IntercalationAndSorption

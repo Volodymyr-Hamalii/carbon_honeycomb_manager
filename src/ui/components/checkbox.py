@@ -17,3 +17,9 @@ class CheckBox(ctk.CTkCheckBox):
     def set_command(self, command: Callable) -> None:
         """Add listener to the checkbox."""
         self.configure(command=command)
+
+    def set_value(self, value: bool) -> None:
+        self.var.set(value)
+
+    def get_value(self) -> bool:
+        return self.var.get()

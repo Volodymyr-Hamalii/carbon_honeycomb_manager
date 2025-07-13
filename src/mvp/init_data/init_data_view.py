@@ -26,6 +26,11 @@ class InitDataView(GeneralView, IShowInitDataView):
         self.title("Carbon Honeycomb Init Data Viewer")
         self.geometry("600x800")
         
+        # Context variables
+        self.project_dir = ""
+        self.subproject_dir = ""
+        self.structure_dir = ""
+        
         # UI components
         self.file_names_dropdown: DropdownList | None = None
         self.to_build_bonds_checkbox: CheckBox | None = None
@@ -45,6 +50,13 @@ class InitDataView(GeneralView, IShowInitDataView):
         
         # Callbacks
         self.callbacks: dict[str, Callable] = {}
+
+    def set_context(self, project_dir: str, subproject_dir: str, structure_dir: str) -> None:
+        """Set the context for this view."""
+        self.project_dir = project_dir
+        self.subproject_dir = subproject_dir
+        self.structure_dir = structure_dir
+        self.title(f"Init Data Viewer - {project_dir}/{subproject_dir}/{structure_dir}")
 
     def set_ui(self) -> None:
         """Set up the UI components."""
@@ -132,19 +144,19 @@ class InitDataView(GeneralView, IShowInitDataView):
     def set_visualization_settings(self, settings: dict[str, Any]) -> None:
         """Set visualization settings in the UI."""
         if self.to_build_bonds_checkbox and "to_build_bonds" in settings:
-            self.to_build_bonds_checkbox.set(settings["to_build_bonds"])
+            self.to_build_bonds_checkbox.set_value(settings["to_build_bonds"])
         
         if self.to_show_coordinates_checkbox and "to_show_coordinates" in settings:
-            self.to_show_coordinates_checkbox.set(settings["to_show_coordinates"])
+            self.to_show_coordinates_checkbox.set_value(settings["to_show_coordinates"])
         
         if self.to_show_c_indexes_checkbox and "to_show_c_indexes" in settings:
-            self.to_show_c_indexes_checkbox.set(settings["to_show_c_indexes"])
+            self.to_show_c_indexes_checkbox.set_value(settings["to_show_c_indexes"])
         
         if self.bonds_num_of_min_distances_input and "bonds_num_of_min_distances" in settings:
-            self.bonds_num_of_min_distances_input.set(str(settings["bonds_num_of_min_distances"]))
+            self.bonds_num_of_min_distances_input.set_value(str(settings["bonds_num_of_min_distances"]))
         
         if self.bonds_skip_first_distances_input and "bonds_skip_first_distances" in settings:
-            self.bonds_skip_first_distances_input.set(str(settings["bonds_skip_first_distances"]))
+            self.bonds_skip_first_distances_input.set_value(str(settings["bonds_skip_first_distances"]))
 
     def get_visualization_settings(self) -> dict[str, Any]:
         """Get visualization settings from the UI."""
@@ -162,7 +174,7 @@ class InitDataView(GeneralView, IShowInitDataView):
         if self.bonds_num_of_min_distances_input:
             try:
                 settings["bonds_num_of_min_distances"] = int(
-                    self.bonds_num_of_min_distances_input.get()
+                    self.bonds_num_of_min_distances_input.get_value()
                 )
             except ValueError:
                 settings["bonds_num_of_min_distances"] = 5
@@ -170,7 +182,7 @@ class InitDataView(GeneralView, IShowInitDataView):
         if self.bonds_skip_first_distances_input:
             try:
                 settings["bonds_skip_first_distances"] = int(
-                    self.bonds_skip_first_distances_input.get()
+                    self.bonds_skip_first_distances_input.get_value()
                 )
             except ValueError:
                 settings["bonds_skip_first_distances"] = 0
@@ -180,16 +192,16 @@ class InitDataView(GeneralView, IShowInitDataView):
     def set_coordinate_limits(self, limits: dict[str, float]) -> None:
         """Set coordinate limits in the UI."""
         if self.coord_x_limits_input:
-            self.coord_x_limits_input.set_min(str(limits.get("x_min", 0.0)))
-            self.coord_x_limits_input.set_max(str(limits.get("x_max", 100.0)))
+            self.coord_x_limits_input.set_min_value(str(limits.get("x_min", 0.0)))
+            self.coord_x_limits_input.set_max_value(str(limits.get("x_max", 100.0)))
         
         if self.coord_y_limits_input:
-            self.coord_y_limits_input.set_min(str(limits.get("y_min", 0.0)))
-            self.coord_y_limits_input.set_max(str(limits.get("y_max", 100.0)))
+            self.coord_y_limits_input.set_min_value(str(limits.get("y_min", 0.0)))
+            self.coord_y_limits_input.set_max_value(str(limits.get("y_max", 100.0)))
         
         if self.coord_z_limits_input:
-            self.coord_z_limits_input.set_min(str(limits.get("z_min", 0.0)))
-            self.coord_z_limits_input.set_max(str(limits.get("z_max", 100.0)))
+            self.coord_z_limits_input.set_min_value(str(limits.get("z_min", 0.0)))
+            self.coord_z_limits_input.set_max_value(str(limits.get("z_max", 100.0)))
 
     def get_coordinate_limits(self) -> dict[str, float]:
         """Get coordinate limits from the UI."""
@@ -197,24 +209,24 @@ class InitDataView(GeneralView, IShowInitDataView):
         
         if self.coord_x_limits_input:
             try:
-                limits["x_min"] = float(self.coord_x_limits_input.get_min())
-                limits["x_max"] = float(self.coord_x_limits_input.get_max())
+                limits["x_min"] = float(self.coord_x_limits_input.get_min_value())
+                limits["x_max"] = float(self.coord_x_limits_input.get_max_value())
             except ValueError:
                 limits["x_min"] = 0.0
                 limits["x_max"] = 100.0
         
         if self.coord_y_limits_input:
             try:
-                limits["y_min"] = float(self.coord_y_limits_input.get_min())
-                limits["y_max"] = float(self.coord_y_limits_input.get_max())
+                limits["y_min"] = float(self.coord_y_limits_input.get_min_value())
+                limits["y_max"] = float(self.coord_y_limits_input.get_max_value())
             except ValueError:
                 limits["y_min"] = 0.0
                 limits["y_max"] = 100.0
         
         if self.coord_z_limits_input:
             try:
-                limits["z_min"] = float(self.coord_z_limits_input.get_min())
-                limits["z_max"] = float(self.coord_z_limits_input.get_max())
+                limits["z_min"] = float(self.coord_z_limits_input.get_min_value())
+                limits["z_max"] = float(self.coord_z_limits_input.get_max_value())
             except ValueError:
                 limits["z_min"] = 0.0
                 limits["z_max"] = 100.0
@@ -279,19 +291,19 @@ class InitDataView(GeneralView, IShowInitDataView):
     def reset_form(self) -> None:
         """Reset the form to default values."""
         if self.to_build_bonds_checkbox:
-            self.to_build_bonds_checkbox.set(True)
+            self.to_build_bonds_checkbox.set_value(True)
         
         if self.to_show_coordinates_checkbox:
-            self.to_show_coordinates_checkbox.set(False)
+            self.to_show_coordinates_checkbox.set_value(False)
         
         if self.to_show_c_indexes_checkbox:
-            self.to_show_c_indexes_checkbox.set(False)
+            self.to_show_c_indexes_checkbox.set_value(False)
         
         if self.bonds_num_of_min_distances_input:
-            self.bonds_num_of_min_distances_input.set("5")
+            self.bonds_num_of_min_distances_input.set_value("5")
         
         if self.bonds_skip_first_distances_input:
-            self.bonds_skip_first_distances_input.set("0")
+            self.bonds_skip_first_distances_input.set_value("0")
 
     def _on_show_init_structure(self) -> None:
         """Handle show init structure button click."""

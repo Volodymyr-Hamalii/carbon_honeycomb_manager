@@ -1,9 +1,11 @@
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from pathlib import Path
 from typing import Callable
 
+from src.interfaces.mvp.general import IGeneralView
 
-class IDataConverterView(ABC):
+
+class IDataConverterView(IGeneralView):
     """Interface for data converter view."""
 
     @abstractmethod

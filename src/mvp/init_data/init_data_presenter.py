@@ -2,16 +2,21 @@
 from typing import Any
 import pandas as pd
 
-from src.interfaces import IShowInitDataPresenter
+from src.interfaces import IShowInitDataPresenter, IShowInitDataModel, IShowInitDataView
 from src.mvp.general import GeneralPresenter
 from src.services import Logger
-
+from src.projects.carbon_honeycomb_actions import CarbonHoneycombModeller
 
 logger = Logger("InitDataPresenter")
 
 
 class InitDataPresenter(GeneralPresenter, IShowInitDataPresenter):
     """Presenter for init data functionality."""
+
+    def __init__(self, model: IShowInitDataModel, view: IShowInitDataView) -> None:
+        self.model: IShowInitDataModel = model
+        self.view: IShowInitDataView = view
+        self.logger = Logger(self.__class__.__name__)
 
     def show_init_structure(
         self,
@@ -21,7 +26,12 @@ class InitDataPresenter(GeneralPresenter, IShowInitDataPresenter):
     ) -> None:
         """Show initial structure visualization."""
         try:
-            self.model.show_init_structure(project_dir, subproject_dir, structure_dir)
+            CarbonHoneycombModeller.show_init_structure(
+                project_dir=project_dir,
+                subproject_dir=subproject_dir,
+                structure_dir=structure_dir,
+                params=self.model.get_mvp_params(),
+            )
             self.on_visualization_completed("init_structure")
         except Exception as e:
             self.on_visualization_failed("init_structure", e)
@@ -34,7 +44,12 @@ class InitDataPresenter(GeneralPresenter, IShowInitDataPresenter):
     ) -> None:
         """Show one channel structure visualization."""
         try:
-            self.model.show_one_channel_structure(project_dir, subproject_dir, structure_dir)
+            CarbonHoneycombModeller.show_one_channel_structure(
+                project_dir=project_dir,
+                subproject_dir=subproject_dir,
+                structure_dir=structure_dir,
+                params=self.model.get_mvp_params(),
+            )
             self.on_visualization_completed("one_channel_structure")
         except Exception as e:
             self.on_visualization_failed("one_channel_structure", e)
@@ -47,7 +62,12 @@ class InitDataPresenter(GeneralPresenter, IShowInitDataPresenter):
     ) -> None:
         """Show 2D channel scheme."""
         try:
-            self.model.show_2d_channel_scheme(project_dir, subproject_dir, structure_dir)
+            CarbonHoneycombModeller.show_2d_channel_scheme(
+                project_dir=project_dir,
+                subproject_dir=subproject_dir,
+                structure_dir=structure_dir,
+                params=self.model.get_mvp_params(),
+            )
             self.on_visualization_completed("2d_channel_scheme")
         except Exception as e:
             self.on_visualization_failed("2d_channel_scheme", e)
@@ -98,7 +118,7 @@ class InitDataPresenter(GeneralPresenter, IShowInitDataPresenter):
         """Handle visualization completion."""
         message = f"{visualization_type.replace('_', ' ').title()} visualization completed"
         self.handle_success("show visualization", message)
-        
+
         # Save view state
         state = {
             "visualization_type": visualization_type,

@@ -1,8 +1,10 @@
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from pathlib import Path
 
+from src.interfaces.mvp.general import IGeneralPresenter
 
-class IDataConverterPresenter(ABC):
+
+class IDataConverterPresenter(IGeneralPresenter):
     """Interface for data converter presenter."""
 
     @abstractmethod

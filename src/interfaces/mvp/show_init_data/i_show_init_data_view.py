@@ -1,9 +1,11 @@
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from typing import Any, Callable
 import pandas as pd
 
+from src.interfaces.mvp.general import IGeneralView
 
-class IShowInitDataView(ABC):
+
+class IShowInitDataView(IGeneralView):
     """Interface for show init data view."""
 
     @abstractmethod

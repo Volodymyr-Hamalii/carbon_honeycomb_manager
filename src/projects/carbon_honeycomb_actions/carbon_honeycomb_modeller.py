@@ -17,6 +17,7 @@ from src.interfaces import (
     ICarbonHoneycombChannel,
     ICarbonHoneycombPlane,
     ICarbonHoneycombHexagon,
+    PMvpParams,
 )
 from src.entities import Points, CoordinateLimits, MvpParams
 
@@ -34,7 +35,7 @@ class CarbonHoneycombModeller:
         project_dir: str,
         subproject_dir: str,
         structure_dir: str,
-        params: MvpParams,
+        params: PMvpParams,
     ) -> None:
         """
         Show 3D model of init_data/{structure_dir}/file_name.
@@ -83,7 +84,7 @@ class CarbonHoneycombModeller:
         project_dir: str,
         subproject_dir: str,
         structure_dir: str,
-        params: MvpParams,
+        params: PMvpParams,
     ) -> None:
         """
         Build one channel model from init_data/{structure_dir}/file_name atoms
@@ -138,7 +139,7 @@ class CarbonHoneycombModeller:
         project_dir: str,
         subproject_dir: str,
         structure_dir: str,
-        params: MvpParams,
+        params: PMvpParams,
     ) -> None:
         """
         Get details of the channel from structure settings:
@@ -358,7 +359,7 @@ class CarbonHoneycombModeller:
         project_dir: str,
         subproject_dir: str,
         structure_dir: str,
-        params: MvpParams,
+        params: PMvpParams,
     ) -> pd.DataFrame:
         """
         Get parameters of the channel from structure settings:

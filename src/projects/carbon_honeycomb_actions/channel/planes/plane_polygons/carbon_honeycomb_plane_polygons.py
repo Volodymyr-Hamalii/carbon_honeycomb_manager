@@ -1,21 +1,19 @@
 import numpy as np
 from dataclasses import dataclass
 
-from src_1.base_structure_classes import FlatFigure
-
-from .carbon_honeycomb_plane_polygon_actions import CarbonHoneycombPolygonActions
+from src.interfaces import IFlatFigure, ICarbonHoneycombHexagon, ICarbonHoneycombPentagon
 
 
 @dataclass(frozen=True)
-class CarbonHoneycombPolygon(FlatFigure):
+class CarbonHoneycombPolygon(IFlatFigure):
     pass
 
 
 @dataclass(frozen=True)
-class CarbonHoneycombHexagon(CarbonHoneycombPolygon):
+class CarbonHoneycombHexagon(ICarbonHoneycombHexagon, CarbonHoneycombPolygon):
     pass
 
 
 @dataclass(frozen=True)
-class CarbonHoneycombPentagon(CarbonHoneycombPolygon):
+class CarbonHoneycombPentagon(ICarbonHoneycombPentagon, CarbonHoneycombPolygon):
     pass

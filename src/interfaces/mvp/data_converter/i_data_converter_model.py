@@ -1,9 +1,10 @@
-from abc import ABC, abstractmethod
-from pathlib import Path
+from abc import abstractmethod
 from typing import Any
 
+from src.interfaces.mvp.general import IGeneralModel
 
-class IDataConverterModel(ABC):
+
+class IDataConverterModel(IGeneralModel):
     """Interface for data converter model."""
 
     @abstractmethod

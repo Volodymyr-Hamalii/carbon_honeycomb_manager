@@ -1,8 +1,10 @@
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from typing import Any, Callable
 
+from src.interfaces.mvp.general import IGeneralView
 
-class IMainView(ABC):
+
+class IMainView(IGeneralView):
     """Interface for main view."""
 
     @abstractmethod
@@ -33,6 +35,21 @@ class IMainView(ABC):
     @abstractmethod
     def get_selected_structure(self) -> str:
         """Get selected structure from the UI."""
+        ...
+
+    @abstractmethod
+    def set_selected_project(self, project: str) -> None:
+        """Set selected project in the UI."""
+        ...
+
+    @abstractmethod
+    def set_selected_subproject(self, subproject: str) -> None:
+        """Set selected subproject in the UI."""
+        ...
+
+    @abstractmethod
+    def set_selected_structure(self, structure: str) -> None:
+        """Set selected structure in the UI."""
         ...
 
     @abstractmethod
