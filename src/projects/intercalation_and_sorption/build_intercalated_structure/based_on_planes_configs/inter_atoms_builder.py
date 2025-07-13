@@ -3,10 +3,14 @@ import numpy as np
 from scipy.spatial.distance import cdist
 from scipy.optimize import minimize_scalar, OptimizeResult
 
-from src.interfaces import ICarbonHoneycombPlane
-from src.entities import Points, FlatFigure
-from src.services.utils import ConstantsAtomParams, Logger, execution_time_logger
-from src.projects.carbon_honeycomb_actions import CarbonHoneycombChannel
+from src.interfaces import (
+    ICarbonHoneycombChannel,
+    ICarbonHoneycombPlane,
+    IPoints,
+    IFlatFigure,
+)
+from src.entities import Points
+from src.services.utils import ConstantsAtomParams, Logger
 
 
 logger = Logger("AtomsBuilder")
@@ -16,10 +20,10 @@ class InterAtomsBuilder:
     @classmethod
     def build_inter_atoms_near_planes(
             cls,
-            carbon_channel: CarbonHoneycombChannel,
+            carbon_channel: ICarbonHoneycombChannel,
             atom_params: ConstantsAtomParams,
             planes_limit: int | None = None,
-    ) -> Points:
+    ) -> IPoints:
         """
         Build intercalated atoms near the carbon honeycomb planes (opposite polygons and holes on the planes).
         There is no any atoms filtering or cheching the distance between intercalated atoms
@@ -66,7 +70,7 @@ class InterAtomsBuilder:
     @classmethod
     def _build_inter_atoms_near_polygons(
             cls,
-            polygons: list[FlatFigure],
+            polygons: list[IFlatFigure],
             carbon_channel_center: np.ndarray,
             distance_from_carbon_atoms: float,
     ) -> list[np.ndarray]:
@@ -79,7 +83,7 @@ class InterAtomsBuilder:
 
     @staticmethod
     def _build_inter_atom_near_polygon(
-        polygon: FlatFigure,
+        polygon: IFlatFigure,
         carbon_channel_center: np.ndarray,
         distance_from_carbon_atoms: float,
     ) -> np.ndarray:

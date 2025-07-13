@@ -1,11 +1,11 @@
 import numpy as np
 
-from src.entities import Points
+from src.interfaces import IPoints
 
 
 class IntercalatedCoordinatesUtils:
     @staticmethod
-    def align_inner_points_along_channel_oz(intercaleted_points: Points, channel_points: Points) -> None:
+    def align_inner_points_along_channel_oz(intercaleted_points: IPoints, channel_points: IPoints) -> None:
         """ Align the points in the middle relative to the Oz channel. """
 
         min_channel, max_channel = np.min(channel_points.points[:, 2]), np.max(channel_points.points[:, 2])
@@ -19,7 +19,7 @@ class IntercalatedCoordinatesUtils:
 
     @staticmethod
     def intercaleted_points_are_inside_channel(
-        intercaleted_points: Points, channel_points: Points
+        intercaleted_points: IPoints, channel_points: IPoints
     ) -> bool:
         """ Check if the intercaleted_points coordinates between max and min channel_points coordinates. """
 

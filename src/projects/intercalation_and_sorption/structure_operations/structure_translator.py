@@ -1,7 +1,7 @@
 import numpy as np
 from numpy import ndarray
 
-from src.interfaces import PCoordinateLimits
+from src.interfaces import IPoints, PCoordinateLimits
 from src.services.utils import Logger
 from src.entities import Points
 
@@ -13,12 +13,12 @@ class StructureTranslator:
     @classmethod
     def translate_cell(
             cls,
-            cell_coordinates: Points,
+            cell_coordinates: IPoints,
             translation_limits: PCoordinateLimits,
             translation_step_x: float = 0,
             translation_step_y: float = 0,
             translation_step_z: float = 0,
-    ) -> Points:
+    ) -> IPoints:
         """
         Translate (copy) elemental cell along x, y and z axis.
         If translation_steps are not provided -- they will be calculated

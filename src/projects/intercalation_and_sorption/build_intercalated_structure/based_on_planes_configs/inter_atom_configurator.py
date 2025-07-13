@@ -2,6 +2,7 @@ from dataclasses import asdict, dataclass
 from typing import Any, Generator
 import numpy as np
 
+from src.interfaces import IPoints, ICarbonHoneycombChannel
 from src.entities import Points
 from src.services.utils import Logger, execution_time_logger, ConstantsAtomParams
 from src.services import DistanceMeasurer
@@ -50,10 +51,10 @@ class InterAtomConfigurator:
     @execution_time_logger
     def reorganize_inter_atoms(
         cls,
-        inter_points: Points,
-        carbon_channel: CarbonHoneycombChannel,
+        inter_points: IPoints,
+        carbon_channel: ICarbonHoneycombChannel,
         atom_params: ConstantsAtomParams,
-    ) -> Points:
+    ) -> IPoints:
         """
         Move intercalated atoms to have the correct minimal distance between them
         (or remove them if we can't achive optimal configuration just by moving).
@@ -93,7 +94,7 @@ class InterAtomConfigurator:
         # Bool to rotate between increasing min_dist and decreasing max_neighbours
         # to_change_step: bool = False
 
-        best_result: Points = Points(points=np.array([]))
+        best_result: IPoints = Points(points=np.array([]))
         min_distances: np.ndarray = np.array([])
 
         for config_params in cls._iterate_params_for_reorganizing_inter_atoms():
@@ -150,13 +151,13 @@ class InterAtomConfigurator:
     # @execution_time_logger
     def space_inter_atoms_equidistantly(
         cls,
-        inter_points: Points,
-        carbon_channel: CarbonHoneycombChannel,
+        inter_points: IPoints,
+        carbon_channel: ICarbonHoneycombChannel,
         min_dist: float,
         max_neighbours: int,
         config_params: _ConfigParams,
         atom_params: ConstantsAtomParams,
-    ) -> tuple[Points, int]:
+    ) -> tuple[IPoints, int]:
         """ 
         To space intercalated atoms equally apart from each other
         to keep the minimal distance between atoms equals dist_between_inter_atoms.
@@ -188,14 +189,14 @@ class InterAtomConfigurator:
         moved_point_indexes: set[np.intp] = set()
 
         counter = 0
-        max_counter: int = len(inter_points) * 15
+        max_counter: int = len(inter_points.points) * 15
 
         logger.info(f"Min dist: {min_dist}; max neighbours: {max_neighbours}")
 
-        result: tuple[Points, int] = InterAtomsFilter.remove_some_close_atoms(
+        result: tuple[IPoints, int] = InterAtomsFilter.remove_some_close_atoms(
             inter_points, min_dist, max_neighbours, num_of_points_to_skip=num_of_points_to_skip_to_remove, percent_to_remove=percent_to_remove)
 
-        inter_points_upd: Points = result[0]
+        inter_points_upd: IPoints = result[0]
         max_neighbours = result[1]
         logger.info(f"Number of atoms after filtering to reorganize: {len(inter_points_upd.points)}")
 
@@ -206,7 +207,7 @@ class InterAtomConfigurator:
         # if len(inter_points_upd) <= 30:
         #     pass
         max_points_to_move_before_reset: int = round(
-            len(inter_points_upd) * max_points_to_move_before_reset_coef)
+            len(inter_points_upd.points) * max_points_to_move_before_reset_coef)
 
         while True:
             dist_matrix: np.ndarray = DistanceMeasurer.calculate_dist_matrix(inter_atoms)
@@ -281,11 +282,11 @@ class InterAtomConfigurator:
 
         logger.info(f"Number of iterations in space_inter_atoms_equidistantly: {counter}/{max_counter}")
 
-        inter_points_processed: Points = InterAtomsFilter.remove_too_close_atoms(
+        inter_points_processed: IPoints = InterAtomsFilter.remove_too_close_atoms(
             Points(points=inter_atoms), atom_params=atom_params)
 
         # Try to add some allowed points
-        final_result: Points = cls._add_allowed_init_inter_atoms(
+        final_result: IPoints = cls._add_allowed_init_inter_atoms(
             inter_points_init=inter_points,
             inter_points_processed=inter_points_processed,
             allowed_min_dist=min_dist_between_inter_atoms,
@@ -442,11 +443,11 @@ class InterAtomConfigurator:
 
     @staticmethod
     def _add_allowed_init_inter_atoms(
-        inter_points_init: Points,
-        inter_points_processed: Points,
+        inter_points_init: IPoints,
+        inter_points_processed: IPoints,
         allowed_min_dist: float,
         atom_params: ConstantsAtomParams,
-    ) -> Points:
+    ) -> IPoints:
         """
         Add allowed atoms from inter_points_init to inter_points_processed.
         'Allowed' means that added only atoms from inter_points_init, that are no closer
@@ -464,7 +465,7 @@ class InterAtomConfigurator:
         allowed_atoms: np.ndarray = inter_points_init.points[allowed_atom_indexes]
 
         # Combine allowed atoms with already processed atoms
-        combined_points: Points = Points(
+        combined_points: IPoints = Points(
             points=np.vstack([inter_points_processed.points, allowed_atoms])
         )
 

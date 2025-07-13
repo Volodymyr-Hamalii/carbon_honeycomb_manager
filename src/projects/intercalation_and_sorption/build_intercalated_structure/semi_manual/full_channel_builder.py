@@ -2,12 +2,10 @@ import numpy as np
 from scipy.optimize import minimize
 from scipy.spatial.distance import cdist
 
+from src.interfaces import ICarbonHoneycombChannel, IPoints
 from src.services.utils import ConstantsAtomParams, Logger
 from src.entities import Points
 from src.services import PointsMover, DistanceMeasurer
-from src.projects import (
-    CarbonHoneycombChannel,
-)
 from ..by_variance import (
     InterAtomsFilter,
 )
@@ -19,11 +17,11 @@ class FullChannelBuilder:
     @classmethod
     def build_full_channel(
             cls,
-            carbon_channel: CarbonHoneycombChannel,
-            channel_planes_coordinates: Points,
-            inter_atoms_bulk: Points,
+            carbon_channel: ICarbonHoneycombChannel,
+            channel_planes_coordinates: IPoints,
+            inter_atoms_bulk: IPoints,
             atom_params: ConstantsAtomParams,
-    ) -> Points:
+    ) -> IPoints:
 
         inter_atoms_bulk = InterAtomsFilter.filter_atoms_related_clannel_planes(
             inter_points=inter_atoms_bulk,
@@ -51,10 +49,10 @@ class FullChannelBuilder:
 
     @staticmethod
     def _filter_related_plane_inter_atoms(
-        inter_atoms_bulk: Points,
-        channel_planes_coordinates: Points,
+        inter_atoms_bulk: IPoints,
+        channel_planes_coordinates: IPoints,
         atom_params: ConstantsAtomParams,
-    ) -> Points:
+    ) -> IPoints:
         # Find the minimum distance for each atom in coordinates_al to any atom in coordinates_carbon
         min_distances: np.ndarray = DistanceMeasurer.calculate_min_distances(
             inter_atoms_bulk.points, channel_planes_coordinates.points
@@ -69,10 +67,10 @@ class FullChannelBuilder:
     @classmethod
     def _find_optimal_positions_for_inter_atoms(
         cls,
-        inter_atoms_bulk: Points,
-        channel_planes_coordinates: Points,
+        inter_atoms_bulk: IPoints,
+        channel_planes_coordinates: IPoints,
         atom_params: ConstantsAtomParams,
-    ) -> Points:
+    ) -> IPoints:
         init_vector: np.ndarray = np.array([0.0, 0.0])
 
         result = minimize(
@@ -105,15 +103,15 @@ class FullChannelBuilder:
     def _objective_function(
         cls,
         vector_to_move: np.ndarray,
-        inter_atoms_bulk: Points,
-        channel_planes_coordinates: Points,
+        inter_atoms_bulk: IPoints,
+        channel_planes_coordinates: IPoints,
         atom_params: ConstantsAtomParams,
     ) -> float | np.floating:
 
         if len(vector_to_move) == 2:
             vector_to_move = np.append(vector_to_move, 0.0)
 
-        moved_inter_atoms: Points = PointsMover.move_on_vector(
+        moved_inter_atoms: IPoints = PointsMover.move_on_vector(
             points=inter_atoms_bulk,
             vector=vector_to_move,
         )
@@ -124,14 +122,14 @@ class FullChannelBuilder:
         #     atom_params=atom_params,
         # )
 
-        if len(moved_inter_atoms) == 0:
+        if len(moved_inter_atoms.points) == 0:
             return np.inf
 
         # Calculate the maximum possible number of atoms (before filtering)
-        max_possible_atoms: int = len(inter_atoms_bulk)
+        max_possible_atoms: int = len(inter_atoms_bulk.points)
 
         # Calculate atom count penalty (increases as we lose more atoms)
-        atoms_penalty: float = ((max_possible_atoms - len(moved_inter_atoms)) / max_possible_atoms) ** 2
+        atoms_penalty: float = ((max_possible_atoms - len(moved_inter_atoms.points)) / max_possible_atoms) ** 2
 
         # Calculate distance variance as before
         min_dists_var: np.floating = cls._calculate_min_dists_var(
@@ -145,8 +143,8 @@ class FullChannelBuilder:
 
     @staticmethod
     def _calculate_min_dists_var(
-        points_1: Points,
-        points_2: Points,
+        points_1: IPoints,
+        points_2: IPoints,
     ) -> np.floating:
         min_distances: np.ndarray = DistanceMeasurer.calculate_min_distances(
             points_1.points, points_2.points)
@@ -155,10 +153,10 @@ class FullChannelBuilder:
 
     @staticmethod
     def _adjust_the_closest_inter_atoms(
-        inter_atoms_bulk: Points,
-        channel_planes_coordinates: Points,
+        inter_atoms_bulk: IPoints,
+        channel_planes_coordinates: IPoints,
         atom_params: ConstantsAtomParams,
-    ) -> Points:
+    ) -> IPoints:
         """
         Check distances between atoms in inter_atoms_bulk and channel_planes_coordinates.
         If the distance is less than Constants.phys.al.DIST_BETWEEN_ATOMS,

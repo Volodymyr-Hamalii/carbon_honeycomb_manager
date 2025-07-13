@@ -1,13 +1,13 @@
 import math
 from typing import Callable
+
 import numpy as np
 from numpy import ndarray, floating
 from scipy.optimize import minimize
-# from scipy.spatial.distance import cdist
 
+from src.interfaces import IPoints
 from src.services.utils import Logger, execution_time_logger
 from src.services import PointsRotator
-from src.entities import Points
 from src.projects.carbon_honeycomb_actions import CarbonHoneycombChannel
 
 from ..build_intercalated_structure.by_variance.variance_calculator import VarianceCalculator
@@ -23,11 +23,11 @@ class InterAtomsOptimizer:
     @classmethod
     def rotate_to_find_min_variance_by_minimize(
         cls,
-        inner_points: Points,
+        inner_points: IPoints,
         variance_function: Callable,
         variance_function_args: tuple | None = None,
         minimize_method: str = "BFGS",  # TODO: check the method
-    ) -> Points:
+    ) -> IPoints:
         """
         Rotate the points inside the channel (from inner_points set) to find equilibrium positions,
         i.e., maximally equidistant from the channel atoms.
@@ -58,27 +58,27 @@ class InterAtomsOptimizer:
     def rotate_to_find_min_variance_by_iterations(
             cls,
             carbon_channel: CarbonHoneycombChannel,
-            inner_points: Points,
-    ) -> Points:
+            inner_points: IPoints,
+    ) -> IPoints:
         """
         Rotate the points inside the channel (from inner_points set) to find equilibrium positions,
         i.e., maximally equidistant from the channel atoms.
         """
 
         min_variance: float | floating = np.inf  # To track the minimal variance found
-        best_inner_points: Points = inner_points.copy()
+        best_inner_points: IPoints = inner_points.copy()
 
         # Define angle ranges to rotate over
         angle_range_to_rotate: ndarray = np.arange(- math.pi / 16, math.pi / 16, math.pi / 64)
 
         for angle_x in angle_range_to_rotate:
             # Rotate inner points around the x-axis
-            x_rotated_points: Points = PointsRotator.rotate_on_angle_related_center(
+            x_rotated_points: IPoints = PointsRotator.rotate_on_angle_related_center(
                 inner_points, angle_x=angle_x)
 
             for angle_y in angle_range_to_rotate:
                 # Rotate inner points around the y-axis after the x-axis rotation
-                xy_rotated_points: Points = PointsRotator.rotate_on_angle_related_center(
+                xy_rotated_points: IPoints = PointsRotator.rotate_on_angle_related_center(
                     x_rotated_points, angle_y=angle_y)
 
                 IntercalatedCoordinatesUtils.align_inner_points_along_channel_oz(

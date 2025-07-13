@@ -1,5 +1,6 @@
 import numpy as np
 
+from src.interfaces import IPoints
 from src.entities import Points
 
 
@@ -7,11 +8,11 @@ class PointsRotator:
     @classmethod
     def rotate_on_angle_related_center(
             cls,
-            points: Points,
+            points: IPoints,
             angle_x: float = 0,
             angle_y: float = 0,
             angle_z: float = 0,
-    ) -> Points:
+    ) -> IPoints:
         if angle_x == 0 and angle_y == 0 and angle_z == 0:
             return points
 
@@ -66,10 +67,10 @@ class PointsRotator:
     @classmethod
     def rotate_around_z_parallel_line(
             cls,
-            points: Points,
+            points: IPoints,
             line_point: np.ndarray,
             angle: float
-    ) -> Points:
+    ) -> IPoints:
         """
         Rotate points around a line that is parallel to the Z axis and passes through the specified point.
 

@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 from scipy.spatial.distance import cdist
 
+from src.interfaces import IPoints, ICarbonHoneycombChannel
 from src.services.utils import (
     Constants,
     ConstantsAtomParams,
@@ -12,9 +13,6 @@ from src.services.utils import (
     PathBuilder,
 )
 from src.entities import Points
-from src.projects import (
-    CarbonHoneycombChannel,
-)
 from .inter_atoms_parser import InterAtomsParser
 
 
@@ -29,13 +27,13 @@ class CoordinatesTableManager:
             subproject_dir: str,
             structure_dir: str,
             file_name: str,
-            carbon_channel: CarbonHoneycombChannel,
+            carbon_channel: ICarbonHoneycombChannel,
             number_of_planes: int,
             atom_params: ConstantsAtomParams,
             to_replace_nearby_atoms: bool,
             to_remove_too_close_atoms: bool,
     ) -> Path:
-        inter_atoms_plane: Points = InterAtomsParser.get_inter_atoms_plane_coordinates(
+        inter_atoms_plane: IPoints = InterAtomsParser.get_inter_atoms_plane_coordinates(
             project_dir=project_dir,
             subproject_dir=subproject_dir,
             structure_dir=structure_dir,
@@ -103,7 +101,7 @@ class CoordinatesTableManager:
         return path_to_file
 
     @staticmethod
-    def _build_updated_df(inter_atoms: Points) -> pd.DataFrame:
+    def _build_updated_df(inter_atoms: IPoints) -> pd.DataFrame:
         """
         Build pd.DataFrame based on the points with the colums
         i, x_inter, y_inter, z_inter, min_dist_to_inter, inter_1, inter_2, inter_3 ...

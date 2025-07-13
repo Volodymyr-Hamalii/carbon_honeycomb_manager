@@ -1,5 +1,6 @@
 from .carbon_honeycomb_actions import *
 from .channel import *
+from .carbon_honeycomb_modeller import CarbonHoneycombModeller
 
 __all__: list[str] = [
     "CarbonHoneycombActions",
@@ -8,4 +9,5 @@ __all__: list[str] = [
     "CarbonHoneycombPlane",
     "CarbonHoneycombHexagon",
     "CarbonHoneycombPentagon",
+    "CarbonHoneycombModeller",
 ]

@@ -2,7 +2,7 @@ import numpy as np
 from numpy import floating
 from scipy.spatial.distance import cdist
 
-from src.entities import Points
+from src.interfaces import IPoints
 from src.services import DistanceMeasurer
 
 
@@ -11,8 +11,8 @@ class VarianceCalculator:
     def _calculate_distance_variance(
             cls,
             translation_vector: np.ndarray,
-            channel_points: Points,
-            inner_points: Points,
+            channel_points: IPoints,
+            inner_points: IPoints,
     ) -> floating | float:
         """
         Calculate the variance of the minimum distances between inner points
@@ -20,7 +20,7 @@ class VarianceCalculator:
         """
 
         # Apply translation to inner points
-        translated_inner_points: Points = inner_points.copy()
+        translated_inner_points: IPoints = inner_points.copy()
         translated_inner_points.points[:, 0] += translation_vector[0]  # Along Ox
         translated_inner_points.points[:, 1] += translation_vector[1]  # Along Oy
 
@@ -37,7 +37,8 @@ class VarianceCalculator:
 
     @staticmethod
     def calculate_variance_related_channel(
-        inner_points: Points, channel_points: Points
+            inner_points: IPoints,
+            channel_points: IPoints,
     ) -> floating:
         """ Calculate variance of the minimum distances after translation and rotation. """
 
@@ -47,6 +48,6 @@ class VarianceCalculator:
         return variance
 
     @staticmethod
-    def calculate_xy_variance(points: Points) -> floating:
+    def calculate_xy_variance(points: IPoints) -> floating:
         """ Calculate variance of the x and y coordinates. """
         return np.var(points.points[:, 0]) + np.var(points.points[:, 1])

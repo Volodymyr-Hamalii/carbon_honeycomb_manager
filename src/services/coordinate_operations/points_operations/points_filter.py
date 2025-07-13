@@ -1,5 +1,6 @@
 import numpy as np
 
+from src.interfaces import IPoints
 from src.entities import Points
 from ..distance_measurer import DistanceMeasurer
 
@@ -8,11 +9,11 @@ class PointsFilter:
     @classmethod
     def filter_coordinates_related_to_plane(
             cls,
-            points: Points,
+            points: IPoints,
             A: float, B: float, C: float, D: float,
             direction: bool,
             min_distance: float = 0,
-    ) -> Points:
+    ) -> IPoints:
         """
         A, B, C, D are the parameters from the
         Ax + By + Cz + D = 0 plane equation.
@@ -32,14 +33,14 @@ class PointsFilter:
 
     @staticmethod
     def filter_by_min_max_z(
-            points_to_filter: Points,
+            points_to_filter: IPoints,
             z_min: float,
             z_max: float,
             move_align_z: bool = False,
-    ) -> Points:
+    ) -> IPoints:
         """Filter points_to_filter by min and max z coordinate of points_with_min_max_z."""
 
-        if len(points_to_filter) == 0:
+        if len(points_to_filter.points) == 0:
             return points_to_filter
 
         filtered_points: np.ndarray = points_to_filter.points[points_to_filter.points[:, 2] >= z_min]

@@ -17,29 +17,6 @@ logger = Logger("IntercalatedChannelBuilder")
 
 
 class IntercalatedChannelBuilder:
-    @staticmethod
-    def build_carbon_coordinates(
-            project_dir: str,
-            subproject_dir: str,
-            structure_dir: str,
-            file_name: str | None = None,
-    ) -> Points:
-        if file_name is None:
-            file_name = Constants.file_names.INIT_DAT_FILE
-
-        carbon_points: np.ndarray = FileReader.read_init_data_file(
-            project_dir=project_dir,
-            subproject_dir=subproject_dir,
-            structure_dir=structure_dir,
-            file_name=file_name,
-        )
-
-        if len(carbon_points) == 0:
-            raise ValueError(f"No carbon atoms found in {file_name} file.")
-
-        carbon_points = np.round(carbon_points, 3)
-
-        return Points(points=carbon_points)
 
     # @staticmethod
     # def build_inter_coordinates_for_cell(

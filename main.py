@@ -16,7 +16,7 @@ def main() -> None:
         presenter.initialize_application()
         
         # Set up closing event
-        def on_closing():
+        def on_closing() -> None:
             presenter.on_application_closing()
             view.quit()
         view.protocol("WM_DELETE_WINDOW", on_closing)

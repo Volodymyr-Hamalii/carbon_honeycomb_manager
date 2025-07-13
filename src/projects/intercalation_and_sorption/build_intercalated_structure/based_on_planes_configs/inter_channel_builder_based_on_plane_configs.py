@@ -1,9 +1,8 @@
 import numpy as np
 
-from src.entities import Points
+from src.interfaces import ICarbonHoneycombChannel, IPoints
 from src.services.utils import Logger, ConstantsAtomParams
 from src.services import DistanceMeasurer
-from src.projects.carbon_honeycomb_actions import CarbonHoneycombChannel
 
 from .inter_atoms_builder import InterAtomsBuilder
 from .inter_atoms_filter import InterAtomsFilter
@@ -16,13 +15,13 @@ class InterChannelBuilderBasedOnPlaneConfigs:
     @classmethod
     def build_inter_in_carbon(
             cls,
-            carbon_channel: CarbonHoneycombChannel,
+            carbon_channel: ICarbonHoneycombChannel,
             atom_params: ConstantsAtomParams,
             equidistant_inter_points: bool = True,
-    ) -> Points:
+    ) -> IPoints:
         """ Returns atoms_inter """
 
-        atoms_inter: Points = InterAtomsBuilder.build_inter_atoms_near_planes(
+        atoms_inter: IPoints = InterAtomsBuilder.build_inter_atoms_near_planes(
             carbon_channel, atom_params, equidistant_inter_points)
         atoms_inter = InterAtomsFilter.replace_nearby_atoms_with_one_atom(atoms_inter, atom_params)
         atoms_inter = InterAtomsFilter.remove_too_close_atoms(atoms_inter, atom_params)
@@ -37,8 +36,8 @@ class InterChannelBuilderBasedOnPlaneConfigs:
 
     @staticmethod
     def _print_statistics(
-        atoms_inter: Points,
-        carbon_channel: CarbonHoneycombChannel,
+        atoms_inter: IPoints,
+        carbon_channel: ICarbonHoneycombChannel,
     ) -> None:
 
         inter: np.ndarray = atoms_inter.points

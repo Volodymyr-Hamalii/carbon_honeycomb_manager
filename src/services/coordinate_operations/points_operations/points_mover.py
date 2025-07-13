@@ -1,21 +1,22 @@
 import numpy as np
 
+from src.interfaces import IPoints
 from src.entities import Points
 
 
 class PointsMover:
     @staticmethod
     def move_on_vector(
-            points: Points,
+            points: IPoints,
             vector: np.ndarray,
             axis: list[str] = ["x", "y", "z"],
-    ) -> Points:
+    ) -> IPoints:
         """
         Moves points on vector along provided axis.
         Returnes moved points.
         """
 
-        translated_inner_points: Points = points.copy()
+        translated_inner_points: IPoints = points.copy()
 
         if "x" in axis:
             translated_inner_points.points[:, 0] += vector[0]
@@ -27,7 +28,7 @@ class PointsMover:
         return translated_inner_points
 
     @staticmethod
-    def reflect_through_vertical_axis(points: Points) -> Points:
+    def reflect_through_vertical_axis(points: IPoints) -> IPoints:
         """Reflects points through a vertical (Z) axis passing through the centroid.
 
         Returns:

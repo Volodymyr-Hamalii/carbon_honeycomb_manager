@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.optimize import minimize
 
-from src.interfaces import ICarbonHoneycombPlane
+from src.interfaces import IPoints, ICarbonHoneycombChannel, ICarbonHoneycombPlane
 from src.services.utils import Logger, ConstantsAtomParams
 from src.entities import Points
 from src.services.coordinate_operations import (
@@ -10,14 +10,11 @@ from src.services.coordinate_operations import (
     PointsMover,
     DistanceMeasurer,
 )
-from src.projects import (
-    CarbonHoneycombChannel,
-    CarbonHoneycombPlane,
-    CarbonHoneycombUtils,
-)
 # from src.structure_visualizer import StructureVisualizer
 
+from src.projects.carbon_honeycomb_actions import CarbonHoneycombUtils
 from ..based_on_planes_configs import InterAtomsFilter
+
 
 
 logger = Logger("AlAtomsTranslator")
@@ -27,10 +24,10 @@ class InterAtomsTranslator:
     @classmethod
     def translate_for_all_channels(
         cls,
-        coordinates_carbon: Points,
-        carbon_channels: list[CarbonHoneycombChannel],
-        inter_atoms_channel_coordinates: Points,
-    ) -> Points:
+        coordinates_carbon: IPoints,
+        carbon_channels: list[ICarbonHoneycombChannel],
+        inter_atoms_channel_coordinates: IPoints,
+    ) -> IPoints:
 
         inter_atoms: np.ndarray = inter_atoms_channel_coordinates.points
         inter_atoms_fininter_atoms: np.ndarray = inter_atoms.copy()
@@ -68,12 +65,12 @@ class InterAtomsTranslator:
     @classmethod
     def translate_for_all_planes(
         cls,
-        carbon_channel: CarbonHoneycombChannel,
-        inter_atoms_plane_coordinates: Points,
+        carbon_channel: ICarbonHoneycombChannel,
+        inter_atoms_plane_coordinates: IPoints,
         number_of_planes: int,
         to_try_to_reflect_inter_atoms: bool,
         atom_params: ConstantsAtomParams,
-    ) -> Points:
+    ) -> IPoints:
 
         planes: list[ICarbonHoneycombPlane] = carbon_channel.planes[:number_of_planes]
 
@@ -81,17 +78,17 @@ class InterAtomsTranslator:
         plane_group_map: dict[int, np.ndarray] = cls._match_plane_with_group(
             inter_atoms_plane_coordinates, planes)
 
-        all_inter_atoms_points: Points = cls._copy_inter_atoms_points_to_rest_planes(
+        all_inter_atoms_points: IPoints = cls._copy_inter_atoms_points_to_rest_planes(
             plane_group_map, carbon_channel, to_try_to_reflect_inter_atoms, atom_params)
 
-        inter_atoms_points_upd: Points = InterAtomsFilter.replace_nearby_atoms_with_one_atom(
+        inter_atoms_points_upd: IPoints = InterAtomsFilter.replace_nearby_atoms_with_one_atom(
             all_inter_atoms_points, atom_params)
 
         return inter_atoms_points_upd
 
     @staticmethod
     def _match_plane_with_group(
-        inter_atoms_plane_coordinates: Points,
+        inter_atoms_plane_coordinates: IPoints,
         planes: list[ICarbonHoneycombPlane],
     ) -> dict[int, np.ndarray]:
         """ Returns the dict with the plane index and corresponding intercalated atomspoints. """
@@ -136,10 +133,10 @@ class InterAtomsTranslator:
     def _copy_inter_atoms_points_to_rest_planes(
             cls,
             plane_group_map: dict[int, np.ndarray],
-            carbon_channel: CarbonHoneycombChannel,
+            carbon_channel: ICarbonHoneycombChannel,
             to_try_to_reflect_inter_atoms: bool,
             atom_params: ConstantsAtomParams,
-    ) -> Points:
+    ) -> IPoints:
         planes: list[ICarbonHoneycombPlane] = carbon_channel.planes
         # channel_center: np.ndarray = carbon_channel.center
         all_inter_atoms_points: list[np.ndarray] = []
@@ -172,7 +169,7 @@ class InterAtomsTranslator:
                 continue
 
             inter_atoms_points = Points(plane_group_map[group_i])
-            # inter_atoms_points_moved: Points = cls._move_inter_atoms_to_other_plane(
+            # inter_atoms_points_moved: IPoints = cls._move_inter_atoms_to_other_plane(
             #     inter_atoms_points, channel_center,
             #     inter_atoms_points_plane=planes[group_i],
             #     target_plane=plane,
@@ -184,7 +181,7 @@ class InterAtomsTranslator:
             angle: float = (group_i - plane_i) * np.pi / 3
             # logger.info(f"Angle: {angle / np.pi * 180} degrees")
 
-            inter_atoms_points_rotated: Points = PointsRotator.rotate_around_z_parallel_line(
+            inter_atoms_points_rotated: IPoints = PointsRotator.rotate_around_z_parallel_line(
                 inter_atoms_points, line_point=carbon_channel.center, angle=angle)
 
             # StructureVisualizer.show_two_structures(
@@ -197,11 +194,11 @@ class InterAtomsTranslator:
             # all_inter_atoms_points.append(inter_atoms_points_rotated.points)
             # continue
 
-            # inter_atoms_adjusted: Points = cls._adjust_inter_atoms(inter_atoms_rotated, plane)
+            # inter_atoms_adjusted: IPoints = cls._adjust_inter_atoms(inter_atoms_rotated, plane)
 
             if to_try_to_reflect_inter_atoms:
                 # Check if we need to reflect points
-                inter_atoms_points_reflected: Points = PointsMover.reflect_through_vertical_axis(
+                inter_atoms_points_reflected: IPoints = PointsMover.reflect_through_vertical_axis(
                     inter_atoms_points_rotated)
 
                 reflected_min_dists: np.ndarray = DistanceMeasurer.calculate_min_distances(
@@ -223,11 +220,11 @@ class InterAtomsTranslator:
 
     @staticmethod
     def _move_inter_atoms_to_other_plane(
-        inter_atoms_points: Points,
+        inter_atoms_points: IPoints,
         channel_center: np.ndarray,
-        inter_atoms_points_plane: CarbonHoneycombPlane,
-        target_plane: CarbonHoneycombPlane,
-    ) -> Points:
+        inter_atoms_points_plane: ICarbonHoneycombPlane,
+        target_plane: ICarbonHoneycombPlane,
+    ) -> IPoints:
         """
         It does 3 steps:
         1) move inter_atoms from inter_atoms center to the center of the inter_atoms_plane,
@@ -262,9 +259,9 @@ class InterAtomsTranslator:
     @classmethod
     def _adjust_inter_atoms(
         cls,
-        inter_atoms_points: Points,
-        plane: CarbonHoneycombPlane,
-    ) -> Points:
+        inter_atoms_points: IPoints,
+        plane: ICarbonHoneycombPlane,
+    ) -> IPoints:
         """
         Rotate a bit to find the min distance variation 
         between inter_atoms points and the plane. 
@@ -281,7 +278,7 @@ class InterAtomsTranslator:
 
         result_angle: float = result.x.item()
 
-        rotated_points: Points = PointsRotator.rotate_on_angle_related_center(
+        rotated_points: IPoints = PointsRotator.rotate_on_angle_related_center(
             inter_atoms_points, angle_z=result_angle)
 
         return rotated_points
@@ -289,10 +286,10 @@ class InterAtomsTranslator:
     @staticmethod
     def _func_to_minimize(
         angle_z: np.ndarray,
-        inter_atoms_points: Points,
-        plane: CarbonHoneycombPlane,
+        inter_atoms_points: IPoints,
+        plane: ICarbonHoneycombPlane,
     ) -> np.floating:
-        rotated_points: Points = PointsRotator.rotate_on_angle_related_center(
+        rotated_points: IPoints = PointsRotator.rotate_on_angle_related_center(
             inter_atoms_points, angle_z=angle_z[0])
 
         min_dists: np.ndarray = DistanceMeasurer.calculate_min_distances(
@@ -308,7 +305,7 @@ class InterAtomsTranslator:
 
     @staticmethod
     def _get_centers_of_edge_carbon_channels(
-        coordinates_carbon: Points,
+        coordinates_carbon: IPoints,
     ) -> list[np.ndarray]:
         """ 
         Takes the lines with the pointns with the same Y coordinate, 

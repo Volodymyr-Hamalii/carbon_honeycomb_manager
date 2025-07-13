@@ -1,5 +1,6 @@
 import numpy as np
 
+from src.interfaces import IPoints
 from src.entities import Points
 from src.services.utils import Logger, execution_time_logger, ConstantsAtomParams
 from src.services import DistanceMeasurer
@@ -13,9 +14,9 @@ class InterAtomsFilter:
     # @execution_time_logger
     def replace_nearby_atoms_with_one_atom(
             cls,
-            inter_atoms: Points,
+            inter_atoms: IPoints,
             atom_params: ConstantsAtomParams,
-    ) -> Points:
+    ) -> IPoints:
         """
         If there are 2 or more atoms have the distance between them less than dist_between_atoms / 3
         replace these atoms with one that places on the center between the replaced group.
@@ -64,9 +65,9 @@ class InterAtomsFilter:
     @staticmethod
     @execution_time_logger
     def remove_too_close_atoms(
-            inter_atoms: Points,
+            inter_atoms: IPoints,
             atom_params: ConstantsAtomParams,
-    ) -> Points:
+    ) -> IPoints:
         """
         If there are 2 or more atoms have the distance between them less allowed
         keep only one atom and remove the rest.
@@ -104,7 +105,7 @@ class InterAtomsFilter:
     # @execution_time_logger
     def remove_some_close_atoms(
             cls,
-            inter_atoms: Points,
+            inter_atoms: IPoints,
             min_dist: float,
             max_neighbours: int = -1,
             num_of_points_to_skip: int = 0,
@@ -113,7 +114,7 @@ class InterAtomsFilter:
             percent_to_remove: float = 1,
             init_amount: int = 0,
             removed_amount: int = 0,
-    ) -> tuple[Points, int]:
+    ) -> tuple[IPoints, int]:
         """
         Works recursively:
         1. Sort atoms by the biggest num of close neighbours and the min ave dist (if there are no such atoms - return the initial inter_atoms)
@@ -128,7 +129,7 @@ class InterAtomsFilter:
         """
 
         if percent_to_remove < 1 and init_amount == 0:
-            init_amount = len(inter_atoms)
+            init_amount = len(inter_atoms.points)
 
         dist_matrix: np.ndarray = DistanceMeasurer.calculate_dist_matrix(inter_atoms.points)
 

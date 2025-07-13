@@ -2,17 +2,16 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from src.interfaces import ICarbonHoneycombChannel
-from src.services.utils import Constants, ConstantsAtomParams, Logger, FileReader, PathBuilder
+from src.interfaces import ICarbonHoneycombChannel, IPoints
 from src.entities import Points
-from src.projects import (
-    CarbonHoneycombChannel,
-    CarbonHoneycombActions,
+from src.services.utils import (
+    Constants,
+    ConstantsAtomParams,
+    Logger,
+    FileReader,
+    PathBuilder,
 )
 
-from ..intercalated_channel_builder import (
-    IntercalatedChannelBuilder,
-)
 from ..based_on_planes_configs import (
     InterAtomsBuilder,
     InterAtomsFilter,
@@ -30,13 +29,13 @@ class InterAtomsParser:
             project_dir: str,
             subproject_dir: str,
             structure_dir: str,
-            carbon_channel: CarbonHoneycombChannel,
+            carbon_channel: ICarbonHoneycombChannel,
             number_of_planes: int,
             to_try_to_reflect_inter_atoms: bool,
             to_replace_nearby_atoms: bool,
             to_remove_too_close_atoms: bool,
             atom_params: ConstantsAtomParams,
-    ) -> Points:
+    ) -> IPoints:
         """ Read intercalated atoms coordinates from the Excel file or build them if there is no Excel file. """
 
         # Try to read the full channel coordinates
@@ -78,12 +77,12 @@ class InterAtomsParser:
         inter_atoms_plane_coordinates_df: pd.DataFrame | None = FileReader.read_excel_file(path_to_file)
         if inter_atoms_plane_coordinates_df is not None:
             logger.info(f"Read {file_name} file.")
-            inter_atoms_plane_coordinates: Points = cls.parse_inter_atoms_coordinates_df(
+            inter_atoms_plane_coordinates: IPoints = cls.parse_inter_atoms_coordinates_df(
                 inter_atoms_plane_coordinates_df)
         else:
             # Build atoms
             logger.info(f"Building inter_atoms for {structure_dir} structure...")
-            inter_atoms_plane_coordinates: Points = cls.build_inter_atoms_plane_coordinates(
+            inter_atoms_plane_coordinates: IPoints = cls.build_inter_atoms_plane_coordinates(
                 carbon_channel,
                 num_of_planes=number_of_planes,
                 atom_params=atom_params,
@@ -92,12 +91,12 @@ class InterAtomsParser:
             )
 
         try:
-            inter_atoms_coordinates: Points = InterAtomsTranslator.translate_for_all_planes(
+            inter_atoms_coordinates: IPoints = InterAtomsTranslator.translate_for_all_planes(
                 carbon_channel, inter_atoms_plane_coordinates, number_of_planes, to_try_to_reflect_inter_atoms, atom_params)
         except Exception as e:
             logger.error(f"Error translating inter_atoms: {e}", exc_info=False)
             logger.warning(f"Structure for {structure_dir} is not translated. Using the original structure.")
-            inter_atoms_coordinates: Points = inter_atoms_plane_coordinates
+            inter_atoms_coordinates: IPoints = inter_atoms_plane_coordinates
 
         return inter_atoms_coordinates
 
@@ -107,13 +106,13 @@ class InterAtomsParser:
             project_dir: str,
             subproject_dir: str,
             structure_dir: str,
-            carbon_channel: CarbonHoneycombChannel,
+            carbon_channel: ICarbonHoneycombChannel,
             number_of_planes: int,
             atom_params: ConstantsAtomParams,
             to_replace_nearby_atoms: bool,
             to_remove_too_close_atoms: bool,
             file_name: str | None = None,
-    ) -> Points:
+    ) -> IPoints:
         """ Read intercalated atoms coordinates from the file or build them if there is no Excel file. """
 
         if file_name and file_name != "None":
@@ -133,7 +132,7 @@ class InterAtomsParser:
 
         # Build atoms
         # carbon_channel: CarbonHoneycombChannel = cls.build_carbon_channel(structure_dir)
-        coordinates_inter_atoms: Points = cls.build_inter_atoms_plane_coordinates(
+        coordinates_inter_atoms: IPoints = cls.build_inter_atoms_plane_coordinates(
             carbon_channel,
             num_of_planes=number_of_planes,
             atom_params=atom_params,
@@ -144,33 +143,15 @@ class InterAtomsParser:
         return coordinates_inter_atoms
 
     @staticmethod
-    def build_carbon_channel(
-            project_dir: str,
-            subproject_dir: str,
-            structure_dir: str,
-            file_name: str | None = None,
-    ) -> ICarbonHoneycombChannel:
-        coordinates_carbon: Points = IntercalatedChannelBuilder.build_carbon_coordinates(
-            project_dir=project_dir,
-            subproject_dir=subproject_dir,
-            structure_dir=structure_dir,
-            file_name=file_name,
-        )
-
-        carbon_channels: list[ICarbonHoneycombChannel] = CarbonHoneycombActions.split_init_structure_into_separate_channels(
-            coordinates_carbon=coordinates_carbon)
-        return carbon_channels[0]
-
-    @staticmethod
     def build_inter_atoms_plane_coordinates(
-            carbon_channel: CarbonHoneycombChannel,
+            carbon_channel: ICarbonHoneycombChannel,
             num_of_planes: int,
             atom_params: ConstantsAtomParams,
             to_replace_nearby_atoms: bool,
             to_remove_too_close_atoms: bool,
-    ) -> Points:
+    ) -> IPoints:
         """ Build intercalated atoms for one plane """
-        coordinates_inter_atoms: Points = InterAtomsBuilder.build_inter_atoms_near_planes(
+        coordinates_inter_atoms: IPoints = InterAtomsBuilder.build_inter_atoms_near_planes(
             carbon_channel, planes_limit=num_of_planes, atom_params=atom_params)
 
         if to_replace_nearby_atoms:

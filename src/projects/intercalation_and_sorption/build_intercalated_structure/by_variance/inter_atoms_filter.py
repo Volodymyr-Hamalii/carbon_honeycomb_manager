@@ -2,7 +2,11 @@ import math
 import numpy as np
 from numpy import ndarray, floating
 
-from src.interfaces import PCoordinateLimits
+from src.interfaces import (
+    IPoints,
+    PCoordinateLimits,
+    ICarbonHoneycombChannel,
+)
 from src.entities import Points
 from src.services.utils import Logger
 from src.services.coordinate_operations import (
@@ -21,28 +25,28 @@ class InterAtomsFilter:
     @classmethod
     def get_filtered_atoms_atoms(
             cls,
-            carbon_channel: CarbonHoneycombChannel,
-            coordinates_atoms: Points,
-            coordinates_atoms_prev: Points,
+            carbon_channel: ICarbonHoneycombChannel,
+            coordinates_atoms: IPoints,
+            coordinates_atoms_prev: IPoints,
             max_atoms: int,
             min_dist_between_atoms_sum_prev: float,
             dist_and_rotation_variance_prev: float | floating,
-    ) -> tuple[Points, float, float | floating, int]:
+    ) -> tuple[IPoints, float, float | floating, int]:
 
         # Prev values by default
-        coordinates_atoms_result: Points = coordinates_atoms_prev
+        coordinates_atoms_result: IPoints = coordinates_atoms_prev
         min_dist_between_atoms_sum_result: float = min_dist_between_atoms_sum_prev
         dist_and_rotation_variance_result: float | floating = dist_and_rotation_variance_prev
         max_atoms_result: int = max_atoms
 
-        atoms_filtered: Points = cls.filter_atoms_related_carbon(
+        atoms_filtered: IPoints = cls.filter_atoms_related_carbon(
             coordinates_atoms, carbon_channel)
 
-        num_of_atoms: int = len(atoms_filtered)
+        num_of_atoms: int = len(atoms_filtered.points)
 
         if num_of_atoms > max_atoms:
             coordinates_atoms_result = atoms_filtered
-            max_atoms_result = len(coordinates_atoms_result)
+            max_atoms_result = len(coordinates_atoms_result.points)
 
             # Update min distances betweenintercalated atoms
             min_dist_between_atoms_sum_result = cls._calculate_min_dist_between_inter_atoms_sum(
@@ -67,7 +71,7 @@ class InterAtomsFilter:
             # The nearest atoms have priority
             if current_min_dist < min_dist_between_atoms_sum_prev:
                 coordinates_atoms_result = atoms_filtered
-                max_atoms_result = len(coordinates_atoms_result)
+                max_atoms_result = len(coordinates_atoms_result.points)
                 min_dist_between_atoms_sum_result = current_min_dist
 
                 # Print average min distance betweenintercalated atoms
@@ -88,7 +92,7 @@ class InterAtomsFilter:
 
                 if current_dist_and_rotation_variance > dist_and_rotation_variance_prev:
                     coordinates_atoms_result = atoms_filtered
-                    max_atoms_result = len(coordinates_atoms_result)
+                    max_atoms_result = len(coordinates_atoms_result.points)
                     dist_and_rotation_variance_result = current_dist_and_rotation_variance
 
         return (
@@ -99,7 +103,7 @@ class InterAtomsFilter:
         )
 
     @staticmethod
-    def _calculate_min_dist_between_inter_atoms_sum(inter_points: Points) -> float:
+    def _calculate_min_dist_between_inter_atoms_sum(inter_points: IPoints) -> float:
         min_dist: ndarray = DistanceMeasurer.calculate_min_distances_between_points(
             inter_points.points)
         return round(np.sum(min_dist), 4)
@@ -107,13 +111,13 @@ class InterAtomsFilter:
     @classmethod
     def filter_atoms_related_carbon(
             cls,
-            inter_points: Points,
-            carbon_channel: CarbonHoneycombChannel,
+            inter_points: IPoints,
+            carbon_channel: ICarbonHoneycombChannel,
             # structure_settings: StructureSettings,
-    ) -> Points:
+    ) -> IPoints:
         """Filter intercalated atoms related planes and then related carbon atoms."""
 
-        inter_points_filtered: Points = cls.filter_atoms_related_clannel_planes(
+        inter_points_filtered: IPoints = cls.filter_atoms_related_clannel_planes(
             inter_points=inter_points,
             carbon_channel=carbon_channel,
             # distance_from_plane=structure_settings.distance_from_plane,
@@ -135,16 +139,16 @@ class InterAtomsFilter:
 
     @staticmethod
     def filter_atoms_related_clannel_planes(
-            inter_points: Points,
-            carbon_channel: CarbonHoneycombChannel,
+            inter_points: IPoints,
+            carbon_channel: ICarbonHoneycombChannel,
             distance_from_plane: float = 0,
-    ) -> Points:
+    ) -> IPoints:
         """
         Filter points from coordinates array by planes
         (remove atoms that are outside channel and atoms inside that are closer than distance_from_plane param).
         """
 
-        filtered_points: Points = inter_points.copy()
+        filtered_points: IPoints = inter_points.copy()
         carbon_channel_center: np.ndarray = carbon_channel.channel_center
 
         for plane in carbon_channel.planes:
@@ -162,17 +166,17 @@ class InterAtomsFilter:
             # from src.structure_visualizer import StructureVisualizer
             # StructureVisualizer.show_two_structures(carbon_channel.points, filtered_points.points)
 
-            if len(filtered_points) == 0:
+            if len(filtered_points.points) == 0:
                 return filtered_points
 
         return filtered_points
 
     @staticmethod
     def _filter_atoms_relates_carbon_atoms(
-        inter_points: Points,
-        carbon_points: Points,
+        inter_points: IPoints,
+        carbon_points: IPoints,
         max_distance_to_carbon_atoms: float,
-    ) -> Points:
+    ) -> IPoints:
         """
         Filter points from the inter_points array
         by the max distance (max_distance_to_carbon_atoms param)

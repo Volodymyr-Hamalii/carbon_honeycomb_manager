@@ -1,36 +1,19 @@
-from pathlib import Path
 from typing import Any
-import json
-from dataclasses import dataclass, asdict
 
 from src.interfaces import IDataConverterModel
-from src.services import Constants, Logger, FileReader, FileWriter
+from src.mvp.general import GeneralModel
+from src.entities import MvpParams
+from src.services import Logger
 
 logger = Logger("DataConverterModel")
 
 
-@dataclass
-class ConversionState:
-    """State for data conversion operations."""
-    last_project_dir: str = ""
-    last_subproject_dir: str = ""
-    last_structure_dir: str = ""
-    last_file_name: str = ""
-    last_target_format: str = ""
-    conversion_history: list[dict[str, Any]] = None
-
-    def __post_init__(self):
-        if self.conversion_history is None:
-            self.conversion_history = []
-
-
-class DataConverterModel(IDataConverterModel):
+class DataConverterModel(GeneralModel, IDataConverterModel):
     """Model for data converter functionality."""
+    mvp_name: str = "data_converter"
 
-    def __init__(self):
-        self.mvp_name = "data_converter"
-        self._state = ConversionState()
-        self._load_state()
+    def __init__(self) -> None:
+        super().__init__()
 
     def get_available_formats(self) -> list[str]:
         """Get list of available file formats."""
@@ -38,47 +21,41 @@ class DataConverterModel(IDataConverterModel):
 
     def get_conversion_state(self) -> dict[str, Any]:
         """Get current conversion state."""
-        return asdict(self._state)
+        params = self.get_mvp_params()
+        return {
+            "last_project_dir": params.current_selection.get("project_dir", ""),
+            "last_subproject_dir": params.current_selection.get("subproject_dir", ""),
+            "last_structure_dir": params.current_selection.get("structure_dir", ""),
+            "last_file_name": params.file_name or "",
+            "last_target_format": params.file_format or "",
+        }
 
     def set_conversion_state(self, state: dict[str, Any]) -> None:
         """Set conversion state."""
-        self._state = ConversionState(**state)
-        self._save_state()
+        params = self.get_mvp_params()
+        if "last_project_dir" in state:
+            params.current_selection["project_dir"] = state["last_project_dir"]
+        if "last_subproject_dir" in state:
+            params.current_selection["subproject_dir"] = state["last_subproject_dir"]
+        if "last_structure_dir" in state:
+            params.current_selection["structure_dir"] = state["last_structure_dir"]
+        if "last_file_name" in state:
+            params.file_name = state["last_file_name"]
+        if "last_target_format" in state:
+            params.file_format = state["last_target_format"]
+        self.set_mvp_params(params)
 
     def save_conversion_history(self, conversion_info: dict[str, Any]) -> None:
         """Save conversion operation to history."""
-        self._state.conversion_history.append(conversion_info)
-        # Keep only last 100 conversions
-        if len(self._state.conversion_history) > 100:
-            self._state.conversion_history = self._state.conversion_history[-100:]
-        self._save_state()
+        params = self.get_mvp_params()
+        params.session_history.append({"type": "conversion", **conversion_info})
+        # Keep only last 100 operations
+        if len(params.session_history) > 100:
+            params.session_history = params.session_history[-100:]
+        self.set_mvp_params(params)
 
     def get_conversion_history(self) -> list[dict[str, Any]]:
         """Get conversion history."""
-        return self._state.conversion_history.copy()
+        params = self.get_mvp_params()
+        return [item for item in params.session_history if item.get("type") == "conversion"]
 
-    def _load_state(self) -> None:
-        """Load state from file."""
-        try:
-            state_file = Constants.path.MVP_PARAMS_DATA_PATH / f"{self.mvp_name}_state.json"
-            if state_file.exists():
-                state_data = FileReader.read_json_file(
-                    folder_path=Constants.path.MVP_PARAMS_DATA_PATH,
-                    file_name=f"{self.mvp_name}_state.json",
-                )
-                if state_data:
-                    self._state = ConversionState(**state_data)
-        except Exception as e:
-            logger.warning(f"Failed to load state: {e}")
-            self._state = ConversionState()
-
-    def _save_state(self) -> None:
-        """Save state to file."""
-        try:
-            state_file = Constants.path.MVP_PARAMS_DATA_PATH / f"{self.mvp_name}_state.json"
-            FileWriter.write_json_file(
-                data=asdict(self._state),
-                path_to_file=state_file,
-            )
-        except Exception as e:
-            logger.warning(f"Failed to save state: {e}")
