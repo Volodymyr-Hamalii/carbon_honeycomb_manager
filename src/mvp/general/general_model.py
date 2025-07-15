@@ -1,8 +1,7 @@
 from pathlib import Path
 from dataclasses import asdict
-from typing import Any
 from src.interfaces import IGeneralModel, PMvpParams
-from src.entities import MvpParams, CoordinateLimits
+from src.entities import MvpParams
 from src.services import Constants, Logger, FileReader, FileWriter
 
 
@@ -162,7 +161,7 @@ class GeneralModel(IGeneralModel):
         """
         try:
             # Create a copy to avoid modifying the original dict
-            params_dict = mvp_params_dict.copy()
+            params_dict: dict = mvp_params_dict.copy()
             
             # Remove coordinate_limits from dict if present (we use individual fields now)
             params_dict.pop("coordinate_limits", None)
@@ -178,7 +177,7 @@ class GeneralModel(IGeneralModel):
             cls._convert_infinity_strings_to_floats(params_dict)
 
             # Ensure required fields have safe defaults
-            safe_defaults = {
+            safe_defaults: dict = {
                 "current_selection": {},
                 "application_settings": {},
                 "session_history": [],

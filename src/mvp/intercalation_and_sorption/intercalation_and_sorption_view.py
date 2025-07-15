@@ -1,4 +1,5 @@
 """View for intercalation and sorption functionality."""
+
 import customtkinter as ctk
 from typing import Any, Callable
 from pathlib import Path

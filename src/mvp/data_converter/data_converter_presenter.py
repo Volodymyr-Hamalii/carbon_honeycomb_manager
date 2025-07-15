@@ -44,7 +44,7 @@ class DataConverterPresenter(IDataConverterPresenter):
             ):
                 raise ValueError("Invalid conversion parameters")
 
-            path_to_init_file = PathBuilder.build_path_to_result_data_file(
+            path_to_init_file: Path = PathBuilder.build_path_to_result_data_file(
                 project_dir=project_dir,
                 subproject_dir=subproject_dir,
                 structure_dir=structure_dir,
@@ -57,16 +57,16 @@ class DataConverterPresenter(IDataConverterPresenter):
             self.view.show_conversion_progress("Reading source file...")
             
             # Read the data based on the source format
-            df = self._read_source_file(path_to_init_file, source_format)
+            df: pd.DataFrame = self._read_source_file(path_to_init_file, source_format)
 
             self.view.show_conversion_progress("Writing target file...")
             
             # Write the data based on the target format
-            path_to_file_to_save = path_to_init_file.with_suffix(f".{target_format}")
+            path_to_file_to_save: Path = path_to_init_file.with_suffix(f".{target_format}")
             self._write_target_file(df, path_to_file_to_save, target_format)
 
             # Save conversion history
-            conversion_info = {
+            conversion_info: dict[str, str] = {
                 "source_file": str(path_to_init_file),
                 "target_file": str(path_to_file_to_save),
                 "source_format": source_format,
@@ -101,7 +101,7 @@ class DataConverterPresenter(IDataConverterPresenter):
         if target_format not in self.model.get_available_formats():
             return False
         
-        path_to_file = PathBuilder.build_path_to_result_data_file(
+        path_to_file: Path = PathBuilder.build_path_to_result_data_file(
             project_dir=project_dir,
             subproject_dir=subproject_dir,
             structure_dir=structure_dir,
@@ -117,14 +117,14 @@ class DataConverterPresenter(IDataConverterPresenter):
 
     def on_conversion_failed(self, error: Exception) -> None:
         """Handle conversion failure."""
-        error_message = f"Conversion failed: {str(error)}"
+        error_message: str = f"Conversion failed: {str(error)}"
         self.view.show_conversion_error(error_message)
         logger.error(error_message)
 
     def _handle_conversion_request(self) -> None:
         """Handle conversion request from view."""
         try:
-            params = self.view.get_conversion_parameters()
+            params: dict[str, str] = self.view.get_conversion_parameters()
             self.convert_file(
                 project_dir=params["project_dir"],
                 subproject_dir=params["subproject_dir"],
@@ -138,15 +138,15 @@ class DataConverterPresenter(IDataConverterPresenter):
     def _read_source_file(self, path_to_file: Path, source_format: str) -> pd.DataFrame:
         """Read source file and return DataFrame."""
         if source_format == ".xlsx":
-            df = FileReader.read_excel_file(path_to_file=path_to_file)
+            df: pd.DataFrame | None = FileReader.read_excel_file(path_to_file=path_to_file)
             if df is None:
                 raise ValueError(f"Failed to read Excel file: {path_to_file}")
 
             # If more than 3 columns, find columns with "X", "Y", "Z"
             if len(df.columns) > 3:
-                x_col = next((col for col in df.columns if "x" in col.lower()), None)
-                y_col = next((col for col in df.columns if "y" in col.lower()), None)
-                z_col = next((col for col in df.columns if "z" in col.lower()), None)
+                x_col: str | None = next((col for col in df.columns if "x" in col.lower()), None)
+                y_col: str | None = next((col for col in df.columns if "y" in col.lower()), None)
+                z_col: str | None = next((col for col in df.columns if "z" in col.lower()), None)
                 if x_col and y_col and z_col:
                     df = df[[x_col, y_col, z_col]]
                 else:

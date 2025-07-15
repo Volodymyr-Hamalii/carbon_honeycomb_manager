@@ -11,7 +11,7 @@ logger = Logger("MainPresenter")
 class MainPresenter(IMainPresenter):
     """Main application presenter."""
 
-    def __init__(self, model: IMainModel, view: IMainView):
+    def __init__(self, model: IMainModel, view: IMainView) -> None:
         self.model: IMainModel = model
         self.view: IMainView = view
         self._initialize()
@@ -36,7 +36,7 @@ class MainPresenter(IMainPresenter):
             self.view.show_status_message("Loading application...")
 
             # Load projects
-            projects = self.model.get_projects()
+            projects: list[str] = self.model.get_projects()
             self.view.set_projects(projects)
 
             # Restore previous state if available
@@ -45,7 +45,7 @@ class MainPresenter(IMainPresenter):
             self.view.show_status_message("Application ready")
 
         except Exception as e:
-            error_message = f"Failed to initialize application: {str(e)}"
+            error_message: str = f"Failed to initialize application: {str(e)}"
             self.view.show_error_message(error_message)
             logger.error(error_message)
 

@@ -19,62 +19,67 @@ class DataConverterView(GeneralView, IDataConverterView):
         super().__init__()
         self.title("Data Converter")
         self.geometry("500x400")
-        
+
         # Context variables
         self.project_dir = ""
         self.subproject_dir = ""
         self.structure_dir = ""
-        
+
         # UI components
         self.source_file_dropdown: DropdownList | None = None
         self.target_format_dropdown: DropdownList | None = None
         self.convert_btn: Button | None = None
-        
+
         # Callbacks
         self.callbacks: dict[str, Callable] = {}
 
     def set_context(self, project_dir: str, subproject_dir: str, structure_dir: str) -> None:
         """Set the context for this view."""
-        self.project_dir = project_dir
-        self.subproject_dir = subproject_dir
-        self.structure_dir = structure_dir
+        self.project_dir: str = project_dir
+        self.subproject_dir: str = subproject_dir
+        self.structure_dir: str = structure_dir
         self.title(f"Data Converter - {project_dir}/{subproject_dir}/{structure_dir}")
 
     def set_ui(self) -> None:
         """Set up the UI components."""
         main_frame = ctk.CTkFrame(self)
         main_frame.pack(fill="both", expand=True, padx=20, pady=20)
-        
+
         # Title
-        title_label = ctk.CTkLabel(main_frame, text="File Format Converter", 
-                                   font=ctk.CTkFont(size=20, weight="bold"))
+        title_label = ctk.CTkLabel(
+            main_frame, text="File Format Converter",
+            font=ctk.CTkFont(size=20, weight="bold"),
+        )
         title_label.pack(pady=(0, 20))
-        
+
         # Source file selection
         source_frame = ctk.CTkFrame(main_frame)
         source_frame.pack(fill="x", pady=(0, 10))
-        
+
         ctk.CTkLabel(source_frame, text="Source File:").pack(pady=5)
         self.source_file_dropdown = DropdownList(source_frame, ["Loading..."])
         self.source_file_dropdown.pack(pady=5)
-        
+
         # Target format selection
         target_frame = ctk.CTkFrame(main_frame)
         target_frame.pack(fill="x", pady=(0, 10))
-        
+
         ctk.CTkLabel(target_frame, text="Target Format:").pack(pady=5)
         self.target_format_dropdown = DropdownList(target_frame, ["xlsx", "dat", "pdb"])
         self.target_format_dropdown.pack(pady=5)
-        
+
         # Convert button
-        self.convert_btn = Button(main_frame, text="Convert File", 
-                                  command=self._on_convert_file)
+        self.convert_btn = Button(
+            main_frame,
+            text="Convert File",
+            command=self._on_convert_file,
+        )
         self.convert_btn.pack(pady=20)
-        
+
         # Status frame
         status_frame = ctk.CTkFrame(main_frame)
         status_frame.pack(fill="x", pady=(10, 0))
-        
+
         self.status_label = ctk.CTkLabel(status_frame, text="Ready to convert")
         self.status_label.pack(pady=10)
 

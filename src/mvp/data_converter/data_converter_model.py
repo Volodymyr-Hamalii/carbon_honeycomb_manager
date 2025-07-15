@@ -1,8 +1,7 @@
 from typing import Any
 
-from src.interfaces import IDataConverterModel
+from src.interfaces import IDataConverterModel, PMvpParams
 from src.mvp.general import GeneralModel
-from src.entities import MvpParams
 from src.services import Logger
 
 logger = Logger("DataConverterModel")
@@ -21,7 +20,7 @@ class DataConverterModel(GeneralModel, IDataConverterModel):
 
     def get_conversion_state(self) -> dict[str, Any]:
         """Get current conversion state."""
-        params = self.get_mvp_params()
+        params: PMvpParams = self.get_mvp_params()
         return {
             "last_project_dir": params.current_selection.get("project_dir", ""),
             "last_subproject_dir": params.current_selection.get("subproject_dir", ""),
@@ -32,7 +31,7 @@ class DataConverterModel(GeneralModel, IDataConverterModel):
 
     def set_conversion_state(self, state: dict[str, Any]) -> None:
         """Set conversion state."""
-        params = self.get_mvp_params()
+        params: PMvpParams = self.get_mvp_params()
         if "last_project_dir" in state:
             params.current_selection["project_dir"] = state["last_project_dir"]
         if "last_subproject_dir" in state:
@@ -47,7 +46,7 @@ class DataConverterModel(GeneralModel, IDataConverterModel):
 
     def save_conversion_history(self, conversion_info: dict[str, Any]) -> None:
         """Save conversion operation to history."""
-        params = self.get_mvp_params()
+        params: PMvpParams = self.get_mvp_params()
         params.session_history.append({"type": "conversion", **conversion_info})
         # Keep only last 100 operations
         if len(params.session_history) > 100:
@@ -56,6 +55,6 @@ class DataConverterModel(GeneralModel, IDataConverterModel):
 
     def get_conversion_history(self) -> list[dict[str, Any]]:
         """Get conversion history."""
-        params = self.get_mvp_params()
+        params: PMvpParams = self.get_mvp_params()
         return [item for item in params.session_history if item.get("type") == "conversion"]
 

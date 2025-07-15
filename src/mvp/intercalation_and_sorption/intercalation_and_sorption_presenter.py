@@ -1,6 +1,6 @@
 """Presenter for intercalation and sorption functionality."""
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 import pandas as pd
 
 from src.interfaces import (
@@ -17,14 +17,14 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
     """Presenter for intercalation and sorption functionality."""
 
     def __init__(self, model: IIntercalationAndSorptionModel, view: IIntercalationAndSorptionView) -> None:
-        self.model = model
-        self.view = view
+        self.model: IIntercalationAndSorptionModel = model
+        self.view: IIntercalationAndSorptionView = view
         self._initialize()
 
     def _initialize(self) -> None:
         """Initialize the presenter."""
         # Set up callbacks for UI operations
-        callbacks = {
+        callbacks: dict[str, Callable[[], None]] = {
             "plot_inter_in_c_structure": self._handle_plot_inter_in_c_structure,
             "generate_inter_plane_coordinates": self._handle_generate_inter_plane_coordinates,
             "update_inter_plane_coordinates": self._handle_update_inter_plane_coordinates,

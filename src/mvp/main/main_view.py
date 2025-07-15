@@ -102,7 +102,7 @@ class MainView(ctk.CTk, IMainView):
     def set_projects(self, projects: list[str]) -> None:
         """Set projects list in the UI."""
         if self._projects_dropdown:
-            values = projects if projects else ["No projects"]
+            values: list[str] = projects if projects else ["No projects"]
             self._projects_dropdown.configure(values=values)
             if projects:
                 self._projects_dropdown.set(projects[0])
@@ -110,7 +110,7 @@ class MainView(ctk.CTk, IMainView):
     def set_subprojects(self, subprojects: list[str]) -> None:
         """Set subprojects list in the UI."""
         if self._subprojects_dropdown:
-            values = subprojects if subprojects else ["No subprojects"]
+            values: list[str] = subprojects if subprojects else ["No subprojects"]
             self._subprojects_dropdown.configure(values=values)
             if subprojects:
                 self._subprojects_dropdown.set(subprojects[0])
@@ -118,7 +118,7 @@ class MainView(ctk.CTk, IMainView):
     def set_structures(self, structures: list[str]) -> None:
         """Set structures list in the UI."""
         if self._structures_dropdown:
-            values = structures if structures else ["No structures"]
+            values: list[str] = structures if structures else ["No structures"]
             self._structures_dropdown.configure(values=values)
             if structures:
                 self._structures_dropdown.set(structures[0])
