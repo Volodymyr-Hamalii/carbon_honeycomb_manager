@@ -2,8 +2,7 @@ from functools import cached_property
 from dataclasses import dataclass
 import numpy as np
 
-from src.services.coordinate_operations.planes_operations import PlanesBuilder
-from src.services.coordinate_operations.lines_operations import LinesOperations
+# Import services only when needed to avoid circular imports
 from .points import Points
 
 
@@ -46,6 +45,8 @@ class FlatFigure(Points):
             c = points[j]
             # We already used p1, p2, but we might revisit them in the loop;
             # that's okay if they help us find a non-collinear point.
+            # Import locally to avoid circular imports
+            from src.services.coordinate_operations.lines_operations import LinesOperations
             if not LinesOperations.points_are_collinear(p1, p2, c):
                 p3 = c
                 break
@@ -53,4 +54,6 @@ class FlatFigure(Points):
         if p3 is None:
             raise ValueError("All points are collinear. Cannot define a plane.")
 
+        # Import locally to avoid circular imports
+        from src.services.coordinate_operations.planes_operations import PlanesBuilder
         return PlanesBuilder.build_plane_params(p1, p2, p3)

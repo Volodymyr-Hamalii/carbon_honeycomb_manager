@@ -157,7 +157,7 @@ class InterAtomsTranslator:
                 if min_dist * 0.98 < min_allowed_dist:
                     min_allowed_dist = min_dist
                     logger.warning(
-                        "Min allowed distance betweenintercalated atoms and C atoms "
+                        "Min allowed distance between intercalated atoms and carbon atoms "
                         f"is less than {atom_params.DIST_BETWEEN_ATOMS:.2f}: {min_allowed_dist:.2f}"
                     )
 

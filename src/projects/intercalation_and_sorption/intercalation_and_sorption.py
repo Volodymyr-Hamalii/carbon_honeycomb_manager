@@ -84,7 +84,7 @@ class IntercalationAndSorption:
         project_dir: str,
         subproject_dir: str,
         structure_dir: str,
-        params: MvpParams,
+        params: PMvpParams,
     ) -> Path:
         """Generate intercalated plane coordinates file."""
         atom_params: ConstantsAtomParams = ATOM_PARAMS_MAP[subproject_dir.lower()]
@@ -434,3 +434,160 @@ class IntercalationAndSorption:
         ]
 
         return grouped_coordinates
+
+    @staticmethod
+    def update_inter_channel_coordinates(
+        project_dir: str,
+        subproject_dir: str,
+        structure_dir: str,
+        params: PMvpParams,
+    ) -> Path:
+        """Update inter channel coordinates using selected file."""
+        atom_params: ConstantsAtomParams = ATOM_PARAMS_MAP[subproject_dir.lower()]
+
+        # Build carbon channel from init data
+        carbon_channel: ICarbonHoneycombChannel = CarbonHoneycombModeller.build_carbon_channel(
+            project_dir, subproject_dir, structure_dir, file_name=Constants.file_names.INIT_DAT_FILE
+        )
+
+        # Read the selected file
+        path_to_file: Path = PathBuilder.build_path_to_result_data_file(
+            project_dir, subproject_dir, structure_dir, file_name=params.file_name or "intercalated-channel-coordinates.xlsx"
+        )
+
+        inter_atoms_full_channel_coordinates_df: pd.DataFrame | None = FileReader.read_excel_file(
+            path_to_file=path_to_file,
+            to_print_warning=False,
+        )
+
+        if inter_atoms_full_channel_coordinates_df is None:
+            raise IOError(f"Failed to read {params.file_name} Excel file")
+
+        inter_atoms: IPoints = InterAtomsParser.parse_inter_atoms_coordinates_df(
+            inter_atoms_full_channel_coordinates_df
+        )
+        inter_atoms: IPoints = InterAtomsTranslator.translate_for_all_planes(
+            carbon_channel,
+            inter_atoms,
+            params.number_of_planes,
+            params.to_to_try_to_reflect_inter_atoms,
+            atom_params,
+        )
+
+        FileWriter.write_excel_file(
+            df=inter_atoms.to_df(columns=["i", "x_inter", "y_inter", "z_inter"]),
+            path_to_file=path_to_file,
+            sheet_name="Intercalated atoms for the channel",
+        )
+
+        return path_to_file
+
+    @staticmethod
+    def save_inter_in_channel_details(
+        project_dir: str,
+        subproject_dir: str,
+        structure_dir: str,
+        params: PMvpParams,
+    ) -> Path:
+        """Save intercalated in channel details to an Excel file."""
+        data: pd.DataFrame = IntercalationAndSorption.get_inter_in_channel_details(
+            project_dir, subproject_dir, structure_dir, params
+        )
+
+        result_file_name: str = (params.file_name or "intercalated-channel-coordinates").split(".")[0] + "_" + Constants.file_names.CHANNEL_DETAILS_XLSX_FILE
+
+        # Write DataFrame to Excel file
+        path_to_file: Path = PathBuilder.build_path_to_result_data_file(
+            project_dir, subproject_dir, structure_dir, file_name=result_file_name
+        )
+
+        FileWriter.write_excel_file(
+            df=data,
+            path_to_file=path_to_file,
+            sheet_name="Intercalated atoms in channel details",
+        )
+
+        return path_to_file
+
+    @staticmethod
+    def get_inter_in_channel_details(
+        project_dir: str,
+        subproject_dir: str,
+        structure_dir: str,
+        params: PMvpParams,
+    ) -> pd.DataFrame:
+        """Get details of intercalated atoms in the channel."""
+        carbon_channel: ICarbonHoneycombChannel = CarbonHoneycombModeller.build_carbon_channel(
+            project_dir, subproject_dir, structure_dir, file_name=Constants.file_names.INIT_DAT_FILE
+        )
+
+        path_to_file: Path = PathBuilder.build_path_to_result_data_file(
+            project_dir, subproject_dir, structure_dir, file_name=params.file_name or "intercalated-channel-coordinates.xlsx"
+        )
+
+        intercalated_coordinates_df: pd.DataFrame | None = FileReader.read_excel_file(
+            path_to_file=path_to_file,
+            to_print_warning=False,
+        )
+
+        if intercalated_coordinates_df is None:
+            raise IOError(f"Failed to read {params.file_name} Excel file")
+
+        inter_atoms: Points = InterAtomsParser.parse_inter_atoms_coordinates_df(
+            intercalated_coordinates_df
+        )
+
+        # Prepare data for DataFrame
+        data: list[dict[str, str | float]] = []
+
+        for i, inter_atom in enumerate(inter_atoms.points):
+            min_distance_to_carbon: float = float(np.min(DistanceMeasurer.calculate_min_distances(
+                np.array([inter_atom]), carbon_channel.points
+            )))
+            
+            data.append({
+                "Index": i,
+                "X": float(inter_atom[0]),
+                "Y": float(inter_atom[1]),
+                "Z": float(inter_atom[2]),
+                "Min Distance to Carbon": min_distance_to_carbon,
+            })
+
+        return pd.DataFrame(data)
+
+    @staticmethod
+    def translate_inter_to_all_channels_plot(
+        project_dir: str,
+        subproject_dir: str,
+        structure_dir: str,
+        params: PMvpParams,
+    ) -> None:
+        """Plot intercalated atoms translated to all channels."""
+        # This would show a visualization of all channels with intercalated atoms
+        # For now, we'll use the existing plot functionality
+        IntercalationAndSorption.plot_inter_in_c_structure(
+            project_dir, subproject_dir, structure_dir, params
+        )
+
+    @staticmethod
+    def translate_inter_to_all_channels_generate_files(
+        project_dir: str,
+        subproject_dir: str,
+        structure_dir: str,
+        params: PMvpParams,
+    ) -> tuple[Path, Path]:
+        """Generate files for intercalated atoms in all channels."""
+        # This would generate multiple files - for now, we'll create basic outputs
+        atom_params: ConstantsAtomParams = ATOM_PARAMS_MAP[subproject_dir.lower()]
+        
+        # Generate the main coordinates file
+        coords_path: Path = IntercalationAndSorption.generate_inter_plane_coordinates_file(
+            project_dir, subproject_dir, structure_dir, params
+        )
+        
+        # Generate the details file
+        details_path = IntercalationAndSorption.save_inter_in_channel_details(
+            project_dir, subproject_dir, structure_dir, params
+        )
+        
+        return coords_path, details_path

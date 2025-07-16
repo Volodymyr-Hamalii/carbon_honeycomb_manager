@@ -12,6 +12,7 @@ logger = Logger("IntercalationAndSorptionModel")
 
 class IntercalationAndSorptionModel(GeneralModel, IIntercalationAndSorptionModel):
     """Model for intercalation and sorption functionality."""
+    mvp_name: str = "intercalation_and_sorption"
 
     def __init__(self) -> None:
         super().__init__()
