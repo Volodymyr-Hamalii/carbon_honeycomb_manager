@@ -125,6 +125,8 @@ Claude should always:
 - Check that all used variables and methods exist and are correctly typed
 - Validate that all functions include accurate return type annotations
 - Avoid deprecated or outdated practices
+- If the class inherits an interface or protocol - check
+if the interface or protocol has all the required methods and attributes.
 
 ### Code Linting
 
@@ -162,7 +164,7 @@ def fetch_data(url: str, timeout: int = 5) -> dict:
 
 **Claude should:**
 
-- Never leave function arguments or return types untyped
+- Never leave initialized variable, function arguments or return types untyped
 
 ### Docstrings
 
