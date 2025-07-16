@@ -6,6 +6,12 @@ RasMol
 venv
 __pycache__
 
+old_gui_logic/*
+data/configs/*
+data/projects/*
+
+todo_list.md
+
 # Test data
 # !init_data/A1-7_h3
 # !result_data/A1-7_h3
