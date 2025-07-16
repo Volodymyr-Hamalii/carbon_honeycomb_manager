@@ -161,3 +161,13 @@ class InitDataPresenter(GeneralPresenter, IShowInitDataPresenter):
         except Exception as e:
             self.handle_error("get channel display settings", e)
             return {}
+
+    def load_available_files(self, project_dir: str, subproject_dir: str, structure_dir: str) -> None:
+        """Load available files for the given context."""
+        try:
+            files = self.get_available_files(project_dir, subproject_dir, structure_dir)
+            self.view.set_available_files(files)
+            logger.info(f"Loaded {len(files)} files for {project_dir}/{subproject_dir}/{structure_dir}")
+        except Exception as e:
+            logger.error(f"Failed to load available files: {e}")
+            self.view.set_available_files(["None"])

@@ -160,6 +160,9 @@ class MainPresenter(IMainPresenter):
             view.set_context(project_dir, subproject_dir, structure_dir)
             view.set_ui()
             
+            # Load available files after context is set
+            presenter.load_available_files(project_dir, subproject_dir, structure_dir)
+            
             # Show the window
             view.mainloop()
             
@@ -196,6 +199,10 @@ class MainPresenter(IMainPresenter):
             view.set_context(project_dir, subproject_dir, structure_dir)
             view.set_ui()
             
+            # Load available files after context is set (if presenter has this method)
+            if hasattr(presenter, 'load_available_files'):
+                presenter.load_available_files(project_dir, subproject_dir, structure_dir)
+            
             # Show the window
             view.mainloop()
             
@@ -231,6 +238,10 @@ class MainPresenter(IMainPresenter):
             # Set up the view with current context
             view.set_context(project_dir, subproject_dir, structure_dir)
             view.set_ui()
+            
+            # Load available files after context is set (if presenter has this method)
+            if hasattr(presenter, 'load_available_files'):
+                presenter.load_available_files(project_dir, subproject_dir, structure_dir)
             
             # Show the window
             view.mainloop()

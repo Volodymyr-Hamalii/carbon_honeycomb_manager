@@ -31,3 +31,8 @@ class IDataConverterModel(IGeneralModel):
     def get_conversion_history(self) -> list[dict[str, Any]]:
         """Get conversion history."""
         ...
+
+    @abstractmethod
+    def get_available_files(self, project_dir: str, subproject_dir: str, structure_dir: str) -> list[str]:
+        """Get list of available files for conversion."""
+        ...

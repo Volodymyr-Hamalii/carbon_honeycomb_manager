@@ -2,7 +2,7 @@ from typing import Any
 
 from src.interfaces import IDataConverterModel, PMvpParams
 from src.mvp.general import GeneralModel
-from src.services import Logger
+from src.services import Logger, FileReader, PathBuilder
 
 logger = Logger("DataConverterModel")
 
@@ -57,4 +57,46 @@ class DataConverterModel(GeneralModel, IDataConverterModel):
         """Get conversion history."""
         params: PMvpParams = self.get_mvp_params()
         return [item for item in params.session_history if item.get("type") == "conversion"]
+
+    def get_available_files(self, project_dir: str, subproject_dir: str, structure_dir: str) -> list[str]:
+        """Get list of available files for conversion."""
+        try:
+            # Look for files in both init_data and result_data directories
+            files = []
+            
+            # Check init_data directory
+            init_data_path = PathBuilder.build_path_to_init_data_dir(
+                project_dir=project_dir,
+                subproject_dir=subproject_dir,
+                structure_dir=structure_dir,
+            )
+            if init_data_path.exists():
+                init_files = FileReader.read_list_of_files(init_data_path, to_include_nested_files=True)
+                if init_files:
+                    files.extend(init_files)
+            
+            # Check result_data directory
+            result_data_path = PathBuilder.build_path_to_result_data_dir(
+                project_dir=project_dir,
+                subproject_dir=subproject_dir,
+                structure_dir=structure_dir,
+            )
+            if result_data_path.exists():
+                result_files = FileReader.read_list_of_files(result_data_path, to_include_nested_files=True)
+                if result_files:
+                    files.extend(result_files)
+            
+            # Filter for supported formats and remove duplicates
+            supported_formats = ['.xlsx', '.dat', '.pdb']
+            filtered_files = []
+            for file in files:
+                if any(file.lower().endswith(fmt) for fmt in supported_formats):
+                    if file not in filtered_files:
+                        filtered_files.append(file)
+            
+            return filtered_files or ["No files found"]
+            
+        except Exception as e:
+            logger.error(f"Failed to get available files: {e}")
+            return ["No files found"]
 

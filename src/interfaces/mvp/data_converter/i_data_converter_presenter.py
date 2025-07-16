@@ -45,3 +45,8 @@ class IDataConverterPresenter(IGeneralPresenter):
     def on_conversion_failed(self, error: Exception) -> None:
         """Handle conversion failure."""
         ...
+
+    @abstractmethod
+    def load_available_files(self, project_dir: str, subproject_dir: str, structure_dir: str) -> None:
+        """Load available files for the given context."""
+        ...
