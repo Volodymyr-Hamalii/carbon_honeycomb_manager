@@ -52,3 +52,8 @@ class IIntercalationAndSorptionModel(IGeneralModel):
     def get_channel_constants(self, structure_info: dict[str, str]) -> pd.DataFrame:
         """Get intercalation constants for the structure."""
         ...
+
+    @abstractmethod
+    def get_available_files(self, project_dir: str, subproject_dir: str, structure_dir: str) -> list[str]:
+        """Get list of available intercalated structure files (.xlsx) from result directory."""
+        ...

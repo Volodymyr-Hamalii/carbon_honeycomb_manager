@@ -7,7 +7,7 @@ import pandas as pd
 
 from src.interfaces import IIntercalationAndSorptionView
 from src.mvp.general import GeneralView
-from src.ui.components import Button, CheckBox, InputField, InputFieldCoordLimits
+from src.ui.components import Button, CheckBox, InputField, InputFieldCoordLimits, DropdownList
 from src.services import Logger
 
 logger = Logger("IntercalationAndSorptionView")
@@ -31,6 +31,7 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
         self.visualization_checkboxes: dict[str, CheckBox] = {}
         self.coordinate_limits: dict[str, InputFieldCoordLimits] = {}
         self.operation_buttons: dict[str, Button] = {}
+        self.file_selection_dropdown: DropdownList | None = None
 
         # Callbacks
         self.callbacks: dict[str, Callable] = {}
@@ -62,6 +63,17 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
 
         self.intercalation_params["temperature"] = InputField(params_frame, "Temperature (K)")
         self.intercalation_params["temperature"].pack(pady=2)
+
+        # File selection
+        file_frame = ctk.CTkFrame(main_frame)
+        file_frame.pack(fill="x", pady=(0, 10))
+
+        ctk.CTkLabel(file_frame, text="File Selection",
+                     font=ctk.CTkFont(size=16, weight="bold")).pack(pady=5)
+
+        ctk.CTkLabel(file_frame, text="Select intercalated structure file:").pack(pady=2)
+        self.file_selection_dropdown = DropdownList(file_frame, ["Loading..."], command=self._on_file_selected)
+        self.file_selection_dropdown.pack(pady=2)
 
         # Visualization settings
         viz_frame = ctk.CTkFrame(main_frame)
@@ -335,3 +347,21 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
         """Handle translate inter to all channels generate button click."""
         if "translate_inter_to_all_channels_generate" in self.callbacks:
             self.callbacks["translate_inter_to_all_channels_generate"]()
+
+    def _on_file_selected(self, file_name: str) -> None:
+        """Handle file selection from dropdown."""
+        if "file_selected" in self.callbacks:
+            self.callbacks["file_selected"](file_name)
+
+    def set_available_files(self, files: list[str]) -> None:
+        """Set available files for selection."""
+        if self.file_selection_dropdown:
+            self.file_selection_dropdown.configure(values=files)
+            if files and files[0] != "Loading...":
+                self.file_selection_dropdown.set(files[0])
+
+    def get_selected_file(self) -> str:
+        """Get selected file from the dropdown."""
+        if self.file_selection_dropdown:
+            return self.file_selection_dropdown.get()
+        return ""

@@ -34,6 +34,7 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
             "get_inter_in_channel_details": self._handle_get_inter_in_channel_details,
             "translate_inter_to_all_channels_plot": self._handle_translate_inter_to_all_channels_plot,
             "translate_inter_to_all_channels_generate": self._handle_translate_inter_to_all_channels_generate,
+            "file_selected": self._handle_file_selected,
         }
         self.view.set_operation_callbacks(callbacks)
 
@@ -307,3 +308,19 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
         """Handle translate inter to all channels generate callback."""
         # TODO: Get context from view and call translate_inter_to_all_channels_generate_files
         pass
+
+    def _handle_file_selected(self, file_name: str) -> None:
+        """Handle file selection from dropdown."""
+        logger.info(f"File selected: {file_name}")
+        # TODO: Store selected file name and use it in operations
+        # For now, just log the selection
+
+    def load_available_files(self, project_dir: str, subproject_dir: str, structure_dir: str) -> None:
+        """Load available files for the given context."""
+        try:
+            files = self.model.get_available_files(project_dir, subproject_dir, structure_dir)
+            self.view.set_available_files(files)
+            logger.info(f"Loaded {len(files)} files for {project_dir}/{subproject_dir}/{structure_dir}")
+        except Exception as e:
+            logger.error(f"Failed to load available files: {e}")
+            self.view.set_available_files(["No files found"])

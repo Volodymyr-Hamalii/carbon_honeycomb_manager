@@ -1,10 +1,11 @@
 """Model for intercalation and sorption functionality."""
+from pathlib import Path
 from typing import Any
 import pandas as pd
 
 from src.interfaces import IIntercalationAndSorptionModel
 from src.mvp.general import GeneralModel
-from src.services import Logger
+from src.services import Logger, FileReader, PathBuilder
 
 logger = Logger("IntercalationAndSorptionModel")
 
@@ -60,3 +61,28 @@ class IntercalationAndSorptionModel(GeneralModel, IIntercalationAndSorptionModel
             "Value": [1.2, -0.5, 2.3],
             "Unit": ["Å", "eV", "eV/Å"]
         })
+
+    def get_available_files(self, project_dir: str, subproject_dir: str, structure_dir: str) -> list[str]:
+        """Get list of available intercalated structure files (.xlsx) from result directory."""
+        try:
+            # Look for .xlsx files in result_data directory (intercalated structure files)
+            result_data_path: Path = PathBuilder.build_path_to_result_data_dir(
+                project_dir=project_dir,
+                subproject_dir=subproject_dir,
+                structure_dir=structure_dir,
+            )
+            
+            if not result_data_path.exists():
+                return ["No files found"]
+            
+            # Get .xlsx files specifically (intercalated structure files)
+            files: list[str] = FileReader.read_list_of_files(result_data_path, format=".xlsx", to_include_nested_files=True)
+            
+            if not files:
+                return ["No files found"]
+            
+            return files
+            
+        except Exception as e:
+            logger.error(f"Failed to get available files: {e}")
+            return ["No files found"]
