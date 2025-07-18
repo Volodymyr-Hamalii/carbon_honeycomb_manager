@@ -2,7 +2,12 @@
 from typing import Any
 import pandas as pd
 
-from src.interfaces import IShowInitDataPresenter, IShowInitDataModel, IShowInitDataView
+from src.interfaces import (
+    PMvpParams,
+    IShowInitDataPresenter,
+    IShowInitDataModel,
+    IShowInitDataView,
+)
 from src.mvp.general import GeneralPresenter
 from src.services import Logger
 from src.projects.carbon_honeycomb_actions import CarbonHoneycombModeller
@@ -173,7 +178,7 @@ class InitDataPresenter(GeneralPresenter, IShowInitDataPresenter):
                 "subproject_dir": subproject_dir,
                 "structure_dir": structure_dir,
             }
-            
+
             files = self.get_available_files(project_dir, subproject_dir, structure_dir)
             self.view.set_available_files(files)
             logger.info(f"Loaded {len(files)} files for {project_dir}/{subproject_dir}/{structure_dir}")
@@ -197,17 +202,19 @@ class InitDataPresenter(GeneralPresenter, IShowInitDataPresenter):
             if not self._current_context:
                 self.view.show_visualization_error("No context available. Please reload the window.")
                 return
-            
+
             # Get current MVP params with file selection
-            params = self.model.get_mvp_params()
-            selected_file = self.view.get_selected_file()
+            params: PMvpParams = self.model.get_mvp_params()
+            selected_file: str = self.view.get_selected_file()
             if selected_file and selected_file not in ["None", "No files found"]:
                 params.file_name = selected_file
-            
+                # Update the model with the new file name
+                self.model.set_mvp_params(params)
+
             # Get visualization settings from view
-            viz_settings = self.view.get_visualization_settings()
-            coord_limits = self.view.get_coordinate_limits()
-            
+            viz_settings: dict[str, Any] = self.view.get_visualization_settings()
+            coord_limits: dict[str, float] = self.view.get_coordinate_limits()
+
             # Update params with view settings
             if "to_build_bonds" in viz_settings:
                 params.to_build_bonds = viz_settings["to_build_bonds"]
@@ -219,7 +226,7 @@ class InitDataPresenter(GeneralPresenter, IShowInitDataPresenter):
                 params.bonds_num_of_min_distances = viz_settings["bonds_num_of_min_distances"]
             if "bonds_skip_first_distances" in viz_settings:
                 params.bonds_skip_first_distances = viz_settings["bonds_skip_first_distances"]
-            
+
             # Update coordinate limits (directly on params, not on frozen coordinate_limits property)
             if coord_limits:
                 if "x_min" in coord_limits and "x_max" in coord_limits:
@@ -231,13 +238,13 @@ class InitDataPresenter(GeneralPresenter, IShowInitDataPresenter):
                 if "z_min" in coord_limits and "z_max" in coord_limits:
                     params.z_min = coord_limits["z_min"]
                     params.z_max = coord_limits["z_max"]
-            
+
             self.show_init_structure(
                 project_dir=self._current_context["project_dir"],
                 subproject_dir=self._current_context["subproject_dir"],
                 structure_dir=self._current_context["structure_dir"],
             )
-            
+
         except Exception as e:
             self.on_visualization_failed("init_structure", e)
 
@@ -247,17 +254,19 @@ class InitDataPresenter(GeneralPresenter, IShowInitDataPresenter):
             if not self._current_context:
                 self.view.show_visualization_error("No context available. Please reload the window.")
                 return
-            
+
             # Get current MVP params with file selection
             params = self.model.get_mvp_params()
-            selected_file = self.view.get_selected_file()
+            selected_file: str = self.view.get_selected_file()
             if selected_file and selected_file not in ["None", "No files found"]:
                 params.file_name = selected_file
-            
+                # Update the model with the new file name
+                self.model.set_mvp_params(params)
+
             # Get visualization settings from view
             viz_settings = self.view.get_visualization_settings()
             coord_limits = self.view.get_coordinate_limits()
-            
+
             # Update params with view settings
             if "to_build_bonds" in viz_settings:
                 params.to_build_bonds = viz_settings["to_build_bonds"]
@@ -269,7 +278,7 @@ class InitDataPresenter(GeneralPresenter, IShowInitDataPresenter):
                 params.bonds_num_of_min_distances = viz_settings["bonds_num_of_min_distances"]
             if "bonds_skip_first_distances" in viz_settings:
                 params.bonds_skip_first_distances = viz_settings["bonds_skip_first_distances"]
-            
+
             # Update coordinate limits (directly on params, not on frozen coordinate_limits property)
             if coord_limits:
                 if "x_min" in coord_limits and "x_max" in coord_limits:
@@ -281,13 +290,13 @@ class InitDataPresenter(GeneralPresenter, IShowInitDataPresenter):
                 if "z_min" in coord_limits and "z_max" in coord_limits:
                     params.z_min = coord_limits["z_min"]
                     params.z_max = coord_limits["z_max"]
-            
+
             self.show_one_channel_structure(
                 project_dir=self._current_context["project_dir"],
                 subproject_dir=self._current_context["subproject_dir"],
                 structure_dir=self._current_context["structure_dir"],
             )
-            
+
         except Exception as e:
             self.on_visualization_failed("one_channel_structure", e)
 
@@ -297,17 +306,19 @@ class InitDataPresenter(GeneralPresenter, IShowInitDataPresenter):
             if not self._current_context:
                 self.view.show_visualization_error("No context available. Please reload the window.")
                 return
-            
+
             # Get current MVP params with file selection
             params = self.model.get_mvp_params()
-            selected_file = self.view.get_selected_file()
+            selected_file: str = self.view.get_selected_file()
             if selected_file and selected_file not in ["None", "No files found"]:
                 params.file_name = selected_file
-            
+                # Update the model with the new file name
+                self.model.set_mvp_params(params)
+
             # Get visualization settings from view
             viz_settings = self.view.get_visualization_settings()
             coord_limits = self.view.get_coordinate_limits()
-            
+
             # Update params with view settings
             if "to_build_bonds" in viz_settings:
                 params.to_build_bonds = viz_settings["to_build_bonds"]
@@ -319,7 +330,7 @@ class InitDataPresenter(GeneralPresenter, IShowInitDataPresenter):
                 params.bonds_num_of_min_distances = viz_settings["bonds_num_of_min_distances"]
             if "bonds_skip_first_distances" in viz_settings:
                 params.bonds_skip_first_distances = viz_settings["bonds_skip_first_distances"]
-            
+
             # Update coordinate limits (directly on params, not on frozen coordinate_limits property)
             if coord_limits:
                 if "x_min" in coord_limits and "x_max" in coord_limits:
@@ -331,13 +342,13 @@ class InitDataPresenter(GeneralPresenter, IShowInitDataPresenter):
                 if "z_min" in coord_limits and "z_max" in coord_limits:
                     params.z_min = coord_limits["z_min"]
                     params.z_max = coord_limits["z_max"]
-            
+
             self.show_2d_channel_scheme(
                 project_dir=self._current_context["project_dir"],
                 subproject_dir=self._current_context["subproject_dir"],
                 structure_dir=self._current_context["structure_dir"],
             )
-            
+
         except Exception as e:
             self.on_visualization_failed("2d_channel_scheme", e)
 
@@ -347,18 +358,18 @@ class InitDataPresenter(GeneralPresenter, IShowInitDataPresenter):
             if not self._current_context:
                 self.view.show_visualization_error("No context available. Please reload the window.")
                 return
-            
+
             params_df = self.get_channel_params(
                 project_dir=self._current_context["project_dir"],
                 subproject_dir=self._current_context["subproject_dir"],
                 structure_dir=self._current_context["structure_dir"],
             )
-            
+
             if not params_df.empty:
                 self.view.display_channel_parameters(params_df)
                 self.view.show_visualization_success("Channel parameters retrieved successfully")
             else:
                 self.view.show_visualization_error("Failed to get channel parameters")
-            
+
         except Exception as e:
             self.on_visualization_failed("get_channel_params", e)

@@ -72,3 +72,13 @@ class IShowInitDataView(IGeneralView):
     def reset_form(self) -> None:
         """Reset the form to default values."""
         ...
+
+    @abstractmethod
+    def set_available_files(self, files: list[str]) -> None:
+        """Set available files in dropdown."""
+        ...
+
+    @abstractmethod
+    def get_selected_file(self) -> str:
+        """Get currently selected file."""
+        ...
