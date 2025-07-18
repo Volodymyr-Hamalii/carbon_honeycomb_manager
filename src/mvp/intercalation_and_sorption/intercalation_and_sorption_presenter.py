@@ -488,6 +488,11 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
         except Exception as e:
             self.on_operation_failed("translate_inter_to_all_channels_generate", e)
 
+    def _handle_translate_inter_to_all_channels_generate_files(self) -> None:
+        """Handle translate inter to all channels generate files callback (alias)."""
+        # This is an alias for the existing method to match expected naming
+        self._handle_translate_inter_to_all_channels_generate()
+
     def _handle_file_selected(self, file_name: str) -> None:
         """Handle file selection from dropdown."""
         logger.info(f"File selected: {file_name}")

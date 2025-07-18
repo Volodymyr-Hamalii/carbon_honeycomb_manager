@@ -44,12 +44,22 @@ class DataConverterPresenter(IDataConverterPresenter):
             ):
                 raise ValueError("Invalid conversion parameters")
 
+            # Try to find the file in both result_data and init_data directories
             path_to_init_file: Path = PathBuilder.build_path_to_result_data_file(
                 project_dir=project_dir,
                 subproject_dir=subproject_dir,
                 structure_dir=structure_dir,
                 file_name=file_name,
             )
+            
+            # If not found in result_data, try init_data
+            if not path_to_init_file.exists():
+                path_to_init_file = PathBuilder.build_path_to_init_data_file(
+                    project_dir=project_dir,
+                    subproject_dir=subproject_dir,
+                    structure_dir=structure_dir,
+                    file_name=file_name,
+                )
 
             # Determine the source format
             source_format = path_to_init_file.suffix
@@ -95,12 +105,24 @@ class DataConverterPresenter(IDataConverterPresenter):
         target_format: str,
     ) -> bool:
         """Validate conversion parameters."""
-        if not all([project_dir, subproject_dir, structure_dir, file_name]):
+        if not project_dir:
+            logger.error("Project directory is empty")
+            return False
+        if not subproject_dir:
+            logger.error("Subproject directory is empty")
+            return False
+        if not structure_dir:
+            logger.error("Structure directory is empty")
+            return False
+        if not file_name or file_name in ["Loading...", "No files found"]:
+            logger.error(f"Invalid file name: {file_name}")
             return False
         
         if target_format not in self.model.get_available_formats():
+            logger.error(f"Invalid target format: {target_format}")
             return False
         
+        # Check if file exists in result_data directory
         path_to_file: Path = PathBuilder.build_path_to_result_data_file(
             project_dir=project_dir,
             subproject_dir=subproject_dir,
@@ -108,7 +130,20 @@ class DataConverterPresenter(IDataConverterPresenter):
             file_name=file_name,
         )
         
-        return path_to_file.exists()
+        # If not found in result_data, try init_data
+        if not path_to_file.exists():
+            path_to_file = PathBuilder.build_path_to_init_data_file(
+                project_dir=project_dir,
+                subproject_dir=subproject_dir,
+                structure_dir=structure_dir,
+                file_name=file_name,
+            )
+        
+        if not path_to_file.exists():
+            logger.error(f"Source file does not exist in either result_data or init_data: {file_name}")
+            return False
+            
+        return True
 
     def on_conversion_completed(self, output_path: Path) -> None:
         """Handle conversion completion."""
