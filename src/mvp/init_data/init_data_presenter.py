@@ -30,14 +30,18 @@ class InitDataPresenter(GeneralPresenter, IShowInitDataPresenter):
         project_dir: str,
         subproject_dir: str,
         structure_dir: str,
+        params: PMvpParams | None = None,
     ) -> None:
         """Show initial structure visualization."""
         try:
+            if params is None:
+                params = self.model.get_mvp_params()
+            
             CarbonHoneycombModeller.show_init_structure(
                 project_dir=project_dir,
                 subproject_dir=subproject_dir,
                 structure_dir=structure_dir,
-                params=self.model.get_mvp_params(),
+                params=params,
             )
             self.on_visualization_completed("init_structure")
         except Exception as e:
@@ -48,14 +52,18 @@ class InitDataPresenter(GeneralPresenter, IShowInitDataPresenter):
         project_dir: str,
         subproject_dir: str,
         structure_dir: str,
+        params: PMvpParams | None = None,
     ) -> None:
         """Show one channel structure visualization."""
         try:
+            if params is None:
+                params = self.model.get_mvp_params()
+            
             CarbonHoneycombModeller.show_one_channel_structure(
                 project_dir=project_dir,
                 subproject_dir=subproject_dir,
                 structure_dir=structure_dir,
-                params=self.model.get_mvp_params(),
+                params=params,
             )
             self.on_visualization_completed("one_channel_structure")
         except Exception as e:
@@ -66,14 +74,18 @@ class InitDataPresenter(GeneralPresenter, IShowInitDataPresenter):
         project_dir: str,
         subproject_dir: str,
         structure_dir: str,
+        params: PMvpParams | None = None,
     ) -> None:
         """Show 2D channel scheme."""
         try:
+            if params is None:
+                params = self.model.get_mvp_params()
+            
             CarbonHoneycombModeller.show_2d_channel_scheme(
                 project_dir=project_dir,
                 subproject_dir=subproject_dir,
                 structure_dir=structure_dir,
-                params=self.model.get_mvp_params(),
+                params=params,
             )
             self.on_visualization_completed("2d_channel_scheme")
         except Exception as e:
@@ -243,6 +255,7 @@ class InitDataPresenter(GeneralPresenter, IShowInitDataPresenter):
                 project_dir=self._current_context["project_dir"],
                 subproject_dir=self._current_context["subproject_dir"],
                 structure_dir=self._current_context["structure_dir"],
+                params=params,
             )
 
         except Exception as e:
@@ -295,6 +308,7 @@ class InitDataPresenter(GeneralPresenter, IShowInitDataPresenter):
                 project_dir=self._current_context["project_dir"],
                 subproject_dir=self._current_context["subproject_dir"],
                 structure_dir=self._current_context["structure_dir"],
+                params=params,
             )
 
         except Exception as e:
@@ -347,6 +361,7 @@ class InitDataPresenter(GeneralPresenter, IShowInitDataPresenter):
                 project_dir=self._current_context["project_dir"],
                 subproject_dir=self._current_context["subproject_dir"],
                 structure_dir=self._current_context["structure_dir"],
+                params=params,
             )
 
         except Exception as e:

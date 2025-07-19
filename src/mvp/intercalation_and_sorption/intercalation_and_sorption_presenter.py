@@ -470,11 +470,21 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
                 self.view.show_operation_error("No context available. Please reload the window.")
                 return
             
-            # Get current MVP params with file selection
+            # Get current MVP params with file selection and UI settings
             params = self.model.get_mvp_params()
             selected_file = self.view.get_selected_file()
             if selected_file and selected_file != "No files found":
                 params.file_name = selected_file
+                # Update the model with the new file name
+                self.model.set_mvp_params(params)
+            
+            # Get UI settings and update params
+            if hasattr(self.view, 'get_operation_settings'):
+                ui_settings = self.view.get_operation_settings()
+                # Update params with UI settings if available
+                for key, value in ui_settings.items():
+                    if hasattr(params, key):
+                        setattr(params, key, value)
             
             coords_path, details_path = IntercalationAndSorption.translate_inter_to_all_channels_generate_files(
                 project_dir=self._current_context["project_dir"],
