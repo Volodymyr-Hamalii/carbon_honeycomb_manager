@@ -75,6 +75,21 @@ class IIntercalationAndSorptionView(IGeneralView):
         ...
 
     @abstractmethod
+    def get_selected_file(self) -> str:
+        """Get currently selected file."""
+        ...
+
+    @abstractmethod
+    def set_available_files(self, files: list[str]) -> None:
+        """Set available files in dropdown."""
+        ...
+
+    @abstractmethod
+    def get_operation_settings(self) -> dict[str, Any]:
+        """Get operation settings from the UI."""
+        ...
+
+    @abstractmethod
     def reset_form(self) -> None:
         """Reset the form to default values."""
         ...
