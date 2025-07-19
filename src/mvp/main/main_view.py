@@ -72,6 +72,15 @@ class MainView(ctk.CTk, IMainView):
         button_frame = ctk.CTkFrame(self)
         button_frame.pack(fill="x", padx=10, pady=10)
 
+        # Show init data button
+        self._show_init_data_btn = ctk.CTkButton(
+            button_frame,
+            text="Show Init Data",
+            command=self._on_show_init_data_clicked,
+            state="disabled",
+        )
+        self._show_init_data_btn.pack(side="left", padx=5)
+
         # Data converter button
         self._data_converter_btn = ctk.CTkButton(
             button_frame,
@@ -89,15 +98,6 @@ class MainView(ctk.CTk, IMainView):
             state="disabled"
         )
         self._intercalation_btn.pack(side="left", padx=5)
-
-        # Show init data button
-        self._show_init_data_btn = ctk.CTkButton(
-            button_frame,
-            text="Show Init Data",
-            command=self._on_show_init_data_clicked,
-            state="disabled"
-        )
-        self._show_init_data_btn.pack(side="left", padx=5)
 
     def set_projects(self, projects: list[str]) -> None:
         """Set projects list in the UI."""
