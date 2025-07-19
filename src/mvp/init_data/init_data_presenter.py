@@ -1,5 +1,5 @@
 """Presenter for init data functionality."""
-from typing import Any
+from typing import Any, Callable
 import pandas as pd
 
 from src.interfaces import (
@@ -188,7 +188,7 @@ class InitDataPresenter(GeneralPresenter, IShowInitDataPresenter):
 
     def _setup_view_callbacks(self) -> None:
         """Set up view callbacks for button handlers."""
-        callbacks = {
+        callbacks: dict[str, Callable] = {
             "show_init_structure": self._handle_show_init_structure,
             "show_one_channel_structure": self._handle_show_one_channel_structure,
             "show_2d_channel_scheme": self._handle_show_2d_channel_scheme,

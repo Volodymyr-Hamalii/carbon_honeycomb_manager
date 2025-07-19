@@ -86,7 +86,7 @@ class MainView(ctk.CTk, IMainView):
             button_frame,
             text="Data Converter",
             command=self._on_data_converter_clicked,
-            state="disabled"
+            state="disabled",
         )
         self._data_converter_btn.pack(side="left", padx=5)
 
@@ -95,7 +95,7 @@ class MainView(ctk.CTk, IMainView):
             button_frame,
             text="Intercalation & Sorption",
             command=self._on_intercalation_clicked,
-            state="disabled"
+            state="disabled",
         )
         self._intercalation_btn.pack(side="left", padx=5)
 
