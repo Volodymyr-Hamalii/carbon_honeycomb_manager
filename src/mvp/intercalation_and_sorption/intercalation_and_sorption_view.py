@@ -27,7 +27,7 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
         self.structure_dir = ""
 
         # UI components
-        self.intercalation_params: dict[str, InputField] = {}
+        # self.intercalation_params: dict[str, InputField] = {}
         self.visualization_checkboxes: dict[str, CheckBox] = {}
         self.coordinate_limits: dict[str, InputFieldCoordLimits] = {}
         self.operation_buttons: dict[str, Button] = {}
@@ -48,21 +48,21 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
         main_frame = ctk.CTkScrollableFrame(self)
         main_frame.pack(fill="both", expand=True, padx=10, pady=10)
 
-        # Intercalation parameters
-        params_frame = ctk.CTkFrame(main_frame)
-        params_frame.pack(fill="x", pady=(0, 10))
+        # # Intercalation parameters
+        # params_frame = ctk.CTkFrame(main_frame)
+        # params_frame.pack(fill="x", pady=(0, 10))
 
-        ctk.CTkLabel(params_frame, text="Intercalation Parameters",
-                     font=ctk.CTkFont(size=16, weight="bold")).pack(pady=5)
+        # ctk.CTkLabel(params_frame, text="Intercalation Parameters",
+        #              font=ctk.CTkFont(size=16, weight="bold")).pack(pady=5)
 
-        self.intercalation_params["atom_type"] = InputField(params_frame, "Atom Type")
-        self.intercalation_params["atom_type"].pack(pady=2)
+        # self.intercalation_params["atom_type"] = InputField(params_frame, "Atom Type")
+        # self.intercalation_params["atom_type"].pack(pady=2)
 
-        self.intercalation_params["concentration"] = InputField(params_frame, "Concentration")
-        self.intercalation_params["concentration"].pack(pady=2)
+        # self.intercalation_params["concentration"] = InputField(params_frame, "Concentration")
+        # self.intercalation_params["concentration"].pack(pady=2)
 
-        self.intercalation_params["temperature"] = InputField(params_frame, "Temperature (K)")
-        self.intercalation_params["temperature"].pack(pady=2)
+        # self.intercalation_params["temperature"] = InputField(params_frame, "Temperature (K)")
+        # self.intercalation_params["temperature"].pack(pady=2)
 
         # File selection
         file_frame = ctk.CTkFrame(main_frame)
@@ -184,18 +184,18 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
         )
         self.operation_buttons["translate_inter_to_all_channels_generate"].pack(pady=2)
 
-    def set_intercalation_parameters(self, parameters: dict[str, Any]) -> None:
-        """Set intercalation parameters in the UI."""
-        for key, value in parameters.items():
-            if key in self.intercalation_params:
-                self.intercalation_params[key].set_value(str(value))
+    # def set_intercalation_parameters(self, parameters: dict[str, Any]) -> None:
+    #     """Set intercalation parameters in the UI."""
+    #     for key, value in parameters.items():
+    #         if key in self.intercalation_params:
+    #             self.intercalation_params[key].set_value(str(value))
 
-    def get_intercalation_parameters(self) -> dict[str, Any]:
-        """Get intercalation parameters from the UI."""
-        parameters = {}
-        for key, field in self.intercalation_params.items():
-            parameters[key] = field.get_value()
-        return parameters
+    # def get_intercalation_parameters(self) -> dict[str, Any]:
+    #     """Get intercalation parameters from the UI."""
+    #     parameters = {}
+    #     for key, field in self.intercalation_params.items():
+    #         parameters[key] = field.get_value()
+    #     return parameters
 
     def set_visualization_settings(self, settings: dict[str, Any]) -> None:
         """Set visualization settings in the UI."""
@@ -290,8 +290,8 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
     def reset_form(self) -> None:
         """Reset the form to default values."""
         # Reset intercalation parameters
-        for field in self.intercalation_params.values():
-            field.set_value("")
+        # for field in self.intercalation_params.values():
+        #     field.set_value("")
 
         # Reset visualization settings
         for checkbox in self.visualization_checkboxes.values():
@@ -371,7 +371,7 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
         settings = {}
         
         # Combine all settings from different UI components
-        settings.update(self.get_intercalation_parameters())
+        # settings.update(self.get_intercalation_parameters())
         settings.update(self.get_visualization_settings())
         settings.update(self.get_coordinate_limits())
         

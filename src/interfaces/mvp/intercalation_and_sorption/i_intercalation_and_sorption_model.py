@@ -8,15 +8,15 @@ from src.interfaces.mvp.general import IGeneralModel
 class IIntercalationAndSorptionModel(IGeneralModel):
     """Interface for intercalation and sorption model."""
 
-    @abstractmethod
-    def get_intercalation_parameters(self) -> dict[str, Any]:
-        """Get intercalation parameters."""
-        ...
+    # @abstractmethod
+    # def get_intercalation_parameters(self) -> dict[str, Any]:
+    #     """Get intercalation parameters."""
+    #     ...
 
-    @abstractmethod
-    def set_intercalation_parameters(self, parameters: dict[str, Any]) -> None:
-        """Set intercalation parameters."""
-        ...
+    # @abstractmethod
+    # def set_intercalation_parameters(self, parameters: dict[str, Any]) -> None:
+    #     """Set intercalation parameters."""
+    #     ...
 
     @abstractmethod
     def get_visualization_settings(self) -> dict[str, Any]:

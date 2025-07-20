@@ -27,7 +27,7 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
     def _initialize(self) -> None:
         """Initialize the presenter."""
         # Set up callbacks for UI operations
-        callbacks: dict[str, Callable[[], None]] = {
+        callbacks: dict[str, Callable[..., None]] = {
             "plot_inter_in_c_structure": self._handle_plot_inter_in_c_structure,
             "generate_inter_plane_coordinates": self._handle_generate_inter_plane_coordinates,
             "update_inter_plane_coordinates": self._handle_update_inter_plane_coordinates,
@@ -233,9 +233,9 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
             self.on_operation_failed("translate_inter_to_all_channels_generate_files", e)
             raise
 
-    def set_intercalation_parameters(self, parameters: dict[str, Any]) -> None:
-        """Set intercalation parameters."""
-        self.model.set_intercalation_parameters(parameters)
+    # def set_intercalation_parameters(self, parameters: dict[str, Any]) -> None:
+    #     """Set intercalation parameters."""
+    #     self.model.set_intercalation_parameters(parameters)
 
     def set_visualization_settings(self, settings: dict[str, Any]) -> None:
         """Set visualization settings."""

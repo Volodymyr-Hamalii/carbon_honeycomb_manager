@@ -99,15 +99,15 @@ class IIntercalationAndSorptionPresenter(IGeneralPresenter):
         """Generate files for intercalated atoms in all channels."""
         ...
 
-    @abstractmethod
-    def set_intercalation_parameters(self, parameters: dict[str, Any]) -> None:
-        """Set intercalation parameters."""
-        ...
+    # @abstractmethod
+    # def set_intercalation_parameters(self, parameters: dict[str, Any]) -> None:
+    #     """Set intercalation parameters."""
+    #     ...
 
-    @abstractmethod
-    def set_visualization_settings(self, settings: dict[str, Any]) -> None:
-        """Set visualization settings."""
-        ...
+    # @abstractmethod
+    # def set_visualization_settings(self, settings: dict[str, Any]) -> None:
+    #     """Set visualization settings."""
+    #     ...
 
     @abstractmethod
     def on_operation_completed(self, operation_type: str, result: Any) -> None:

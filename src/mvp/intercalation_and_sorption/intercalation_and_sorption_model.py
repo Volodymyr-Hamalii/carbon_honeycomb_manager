@@ -16,18 +16,18 @@ class IntercalationAndSorptionModel(GeneralModel, IIntercalationAndSorptionModel
 
     def __init__(self) -> None:
         super().__init__()
-        self._intercalation_parameters: dict[str, Any] = {}
+        # self._intercalation_parameters: dict[str, Any] = {}
         self._visualization_settings: dict[str, Any] = {}
         self._coordinate_limits: dict[str, float] = {}
         self._operation_history: list[dict[str, Any]] = []
 
-    def get_intercalation_parameters(self) -> dict[str, Any]:
-        """Get intercalation parameters."""
-        return self._intercalation_parameters.copy()
+    # def get_intercalation_parameters(self) -> dict[str, Any]:
+    #     """Get intercalation parameters."""
+    #     return self._intercalation_parameters.copy()
 
-    def set_intercalation_parameters(self, parameters: dict[str, Any]) -> None:
-        """Set intercalation parameters."""
-        self._intercalation_parameters = parameters.copy()
+    # def set_intercalation_parameters(self, parameters: dict[str, Any]) -> None:
+    #     """Set intercalation parameters."""
+    #     self._intercalation_parameters = parameters.copy()
 
     def get_visualization_settings(self) -> dict[str, Any]:
         """Get visualization settings."""

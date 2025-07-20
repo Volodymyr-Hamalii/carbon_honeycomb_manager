@@ -9,15 +9,15 @@ from src.interfaces.mvp.general import IGeneralView
 class IIntercalationAndSorptionView(IGeneralView):
     """Interface for intercalation and sorption view."""
 
-    @abstractmethod
-    def set_intercalation_parameters(self, parameters: dict[str, Any]) -> None:
-        """Set intercalation parameters in the UI."""
-        ...
+    # @abstractmethod
+    # def set_intercalation_parameters(self, parameters: dict[str, Any]) -> None:
+    #     """Set intercalation parameters in the UI."""
+    #     ...
 
-    @abstractmethod
-    def get_intercalation_parameters(self) -> dict[str, Any]:
-        """Get intercalation parameters from the UI."""
-        ...
+    # @abstractmethod
+    # def get_intercalation_parameters(self) -> dict[str, Any]:
+    #     """Get intercalation parameters from the UI."""
+    #     ...
 
     @abstractmethod
     def set_visualization_settings(self, settings: dict[str, Any]) -> None:
