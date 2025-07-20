@@ -3,14 +3,13 @@ import customtkinter as ctk
 from tkinter import messagebox
 
 from src.interfaces import IMainView
-# from src.ui.components.dropdown_list import DropdownList
-# from old_gui_logic.windows.windows_template import WindowsTemplate
+from src.mvp.general import GeneralView
 from src.services import Logger
 
 logger = Logger("MainView")
 
 
-class MainView(ctk.CTk, IMainView):
+class MainView(GeneralView, IMainView):
     """Main application view."""
 
     def __init__(self):

@@ -254,7 +254,7 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
     def on_operation_failed(self, operation_type: str, error: Exception) -> None:
         """Handle operation failure."""
         error_message = f"{operation_type} failed: {str(error)}"
-        self.view.show_operation_error(error_message)
+        self.view.show_error_message(error_message)
         logger.error(error_message)
 
         operation_info = {
@@ -270,8 +270,11 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
         """Handle plot inter in C structure callback."""
         try:
             if not self._current_context:
-                self.view.show_operation_error("No context available. Please reload the window.")
+                self.view.show_error_message("No context available. Please reload the window.")
                 return
+
+            # Show processing status
+            self.view.show_processing_message("Plotting intercalated atoms in carbon structure...")
 
             # Get current MVP params with file selection
             params = self.model.get_mvp_params()
@@ -286,7 +289,7 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
                 params=params,
             )
 
-            self.on_operation_completed("plot_inter_in_c_structure", "Plot generated successfully")
+            self.view.show_success_message("Plot generated successfully")
 
         except Exception as e:
             self.on_operation_failed("plot_inter_in_c_structure", e)
@@ -295,8 +298,11 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
         """Handle generate inter plane coordinates callback."""
         try:
             if not self._current_context:
-                self.view.show_operation_error("No context available. Please reload the window.")
+                self.view.show_error_message("No context available. Please reload the window.")
                 return
+
+            # Show processing status
+            self.view.show_processing_message("Generating intercalated plane coordinates file...")
 
             # Get current MVP params
             params = self.model.get_mvp_params()
@@ -308,7 +314,7 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
                 params=params,
             )
 
-            self.on_operation_completed("generate_inter_plane_coordinates", f"File generated: {output_path}")
+            self.view.show_success_message(f"File generated successfully: {output_path}")
 
         except Exception as e:
             self.on_operation_failed("generate_inter_plane_coordinates", e)
@@ -471,8 +477,11 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
         """Handle translate inter to all channels generate callback."""
         try:
             if not self._current_context:
-                self.view.show_operation_error("No context available. Please reload the window.")
+                self.view.show_error_message("No context available. Please reload the window.")
                 return
+
+            # Show processing status
+            self.view.show_processing_message("Generating files for all channels...")
 
             # Get current MVP params with file selection and UI settings
             params = self.model.get_mvp_params()
@@ -497,10 +506,7 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
                 params=params,
             )
 
-            self.on_operation_completed(
-                "translate_inter_to_all_channels_generate",
-                f"Files generated: {coords_path}, {details_path}",
-            )
+            self.view.show_success_message(f"Files generated successfully: {coords_path}, {details_path}")
 
         except Exception as e:
             self.on_operation_failed("translate_inter_to_all_channels_generate", e)

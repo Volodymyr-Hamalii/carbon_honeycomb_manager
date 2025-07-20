@@ -136,7 +136,7 @@ class InitDataPresenter(GeneralPresenter, IShowInitDataPresenter):
     def on_visualization_completed(self, visualization_type: str) -> None:
         """Handle visualization completion."""
         message = f"{visualization_type.replace('_', ' ').title()} visualization completed"
-        self.handle_success("show visualization", message)
+        self.view.show_success_message(message)
 
         # Save view state
         state = {
@@ -147,7 +147,8 @@ class InitDataPresenter(GeneralPresenter, IShowInitDataPresenter):
 
     def on_visualization_failed(self, visualization_type: str, error: Exception) -> None:
         """Handle visualization failure."""
-        self.handle_error(f"show {visualization_type} visualization", error)
+        error_message = f"Failed to show {visualization_type} visualization: {str(error)}"
+        self.view.show_error_message(error_message)
 
     def get_available_files(self, project_dir: str, subproject_dir: str, structure_dir: str) -> list[str]:
         """Get available files for selection."""
@@ -212,8 +213,11 @@ class InitDataPresenter(GeneralPresenter, IShowInitDataPresenter):
         """Handle show init structure callback."""
         try:
             if not self._current_context:
-                self.view.show_visualization_error("No context available. Please reload the window.")
+                self.view.show_error_message("No context available. Please reload the window.")
                 return
+
+            # Show processing status
+            self.view.show_processing_message("Generating initial structure visualization...")
 
             # Get current MVP params with file selection
             params: PMvpParams = self.model.get_mvp_params()
@@ -265,8 +269,11 @@ class InitDataPresenter(GeneralPresenter, IShowInitDataPresenter):
         """Handle show one channel structure callback."""
         try:
             if not self._current_context:
-                self.view.show_visualization_error("No context available. Please reload the window.")
+                self.view.show_error_message("No context available. Please reload the window.")
                 return
+
+            # Show processing status
+            self.view.show_processing_message("Generating one channel structure visualization...")
 
             # Get current MVP params with file selection
             params = self.model.get_mvp_params()
@@ -318,8 +325,11 @@ class InitDataPresenter(GeneralPresenter, IShowInitDataPresenter):
         """Handle show 2D channel scheme callback."""
         try:
             if not self._current_context:
-                self.view.show_visualization_error("No context available. Please reload the window.")
+                self.view.show_error_message("No context available. Please reload the window.")
                 return
+
+            # Show processing status
+            self.view.show_processing_message("Generating 2D channel scheme visualization...")
 
             # Get current MVP params with file selection
             params = self.model.get_mvp_params()
@@ -371,8 +381,11 @@ class InitDataPresenter(GeneralPresenter, IShowInitDataPresenter):
         """Handle get channel parameters callback."""
         try:
             if not self._current_context:
-                self.view.show_visualization_error("No context available. Please reload the window.")
+                self.view.show_error_message("No context available. Please reload the window.")
                 return
+
+            # Show processing status
+            self.view.show_processing_message("Retrieving channel parameters...")
 
             params_df = self.get_channel_params(
                 project_dir=self._current_context["project_dir"],
@@ -382,9 +395,9 @@ class InitDataPresenter(GeneralPresenter, IShowInitDataPresenter):
 
             if not params_df.empty:
                 self.view.display_channel_parameters(params_df)
-                self.view.show_visualization_success("Channel parameters retrieved successfully")
+                self.view.show_success_message("Channel parameters retrieved successfully")
             else:
-                self.view.show_visualization_error("Failed to get channel parameters")
+                self.view.show_error_message("Failed to get channel parameters")
 
         except Exception as e:
             self.on_visualization_failed("get_channel_params", e)
