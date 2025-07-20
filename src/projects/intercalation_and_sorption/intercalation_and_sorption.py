@@ -537,23 +537,49 @@ class IntercalationAndSorption:
             intercalated_coordinates_df
         )
 
-        # Prepare data for DataFrame
-        data: list[dict[str, str | float]] = []
+        # Prepare data for DataFrame with multi-level columns like the old implementation
+        data: list[dict[tuple[str, str], float]] = []
 
-        for i, inter_atom in enumerate(inter_atoms.points):
-            min_distance_to_carbon: float = float(np.min(DistanceMeasurer.calculate_min_distances(
+        for inter_atom in inter_atoms.points:
+            # Calculate minimum distance to carbon atoms
+            min_dist_to_carbon: float = float(np.min(DistanceMeasurer.calculate_min_distances(
                 np.array([inter_atom]), carbon_channel.points
             )))
-            
+
+            # Calculate minimum distance to planes
+            min_dist_to_plane: float = float("inf")
+            for plane in carbon_channel.planes:
+                dist: float = DistanceMeasurer.calculate_distance_from_plane(
+                    np.array([inter_atom]), plane.plane_params
+                )
+                if dist < min_dist_to_plane:
+                    min_dist_to_plane = dist
+
+            # Calculate distances to all other intercalated atoms
+            dists_to_inter: NDArray[np.float64] = DistanceMeasurer.calculate_min_distances(
+                inter_atoms.points, np.array([inter_atom])
+            )
+            min_dist_to_inter: float = float(np.min(dists_to_inter[dists_to_inter > 0]))  # Exclude self-distance
+
+            # Collect data for each intercalated atom coordinate
             data.append({
-                "Index": i,
-                "X": float(inter_atom[0]),
-                "Y": float(inter_atom[1]),
-                "Z": float(inter_atom[2]),
-                "Min Distance to Carbon": min_distance_to_carbon,
+                ("Intercalated atoms", "X"): round(float(inter_atom[0]), 2),
+                ("Intercalated atoms", "Y"): round(float(inter_atom[1]), 2),
+                ("Intercalated atoms", "Z"): round(float(inter_atom[2]), 2),
+                ("Min distance to", "plane"): round(min_dist_to_plane, 2),
+                ("Min distance to", "C"): round(min_dist_to_carbon, 2),
+                ("Min distance to", "inter"): round(min_dist_to_inter, 2),
+                **{("Dists to other intercalated atoms", f"{i}"): round(float(dist), 2) 
+                   for i, dist in enumerate(dists_to_inter)}
             })
 
-        return pd.DataFrame(data)
+        # Create DataFrame with multi-level columns
+        df: pd.DataFrame = pd.DataFrame(data)
+
+        # Set multi-level columns
+        df.columns = pd.MultiIndex.from_tuples(df.columns)
+
+        return df
 
     @staticmethod
     def translate_inter_to_all_channels_plot(
