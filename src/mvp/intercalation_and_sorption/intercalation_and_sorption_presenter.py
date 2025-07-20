@@ -484,8 +484,8 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
             self.view.show_processing_message("Generating files for all channels...")
 
             # Get current MVP params with file selection and UI settings
-            params = self.model.get_mvp_params()
-            selected_file = self.view.get_selected_file()
+            params: PMvpParams = self.model.get_mvp_params()
+            selected_file: str = self.view.get_selected_file()
             if selected_file and selected_file != "No files found":
                 params.file_name = selected_file
                 # Update the model with the new file name

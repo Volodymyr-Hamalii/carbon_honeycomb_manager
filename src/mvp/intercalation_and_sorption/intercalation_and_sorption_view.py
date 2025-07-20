@@ -7,7 +7,7 @@ import pandas as pd
 
 from src.interfaces import IIntercalationAndSorptionView
 from src.mvp.general import GeneralView
-from src.ui.components import Button, CheckBox, InputField, InputFieldCoordLimits, DropdownList
+from src.ui.components import Button, CheckBox, InputField, InputFieldCoordLimits, DropdownList, Table
 from src.services import Logger
 
 logger = Logger("IntercalationAndSorptionView")
@@ -253,28 +253,35 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
         # Create a new window to display the DataFrame
         details_window = ctk.CTkToplevel(self)
         details_window.title("Channel Details")
-        details_window.geometry("500x400")
 
-        # Create a text widget to display the details
-        text_widget = ctk.CTkTextbox(details_window)
-        text_widget.pack(fill="both", expand=True, padx=10, pady=10)
+        width: int = min(len(details.columns) * 50 + 100, 1000)
+        height: int = min(len(details) * 20 + 100, 1000)
+        details_window.geometry(f"{width}x{height}")
 
-        # Insert the DataFrame as text
-        text_widget.insert("0.0", details.to_string(index=False))
+        # Create and display the table
+        table = Table(
+            data=details,
+            master=details_window,
+            title="Channel Details",
+            to_show_index=True
+        )
+        table.pack(fill="both", expand=True, padx=10, pady=10)
 
     def display_channel_constants(self, constants: pd.DataFrame) -> None:
         """Display channel constants in the UI."""
         # Create a new window to display the DataFrame
         constants_window = ctk.CTkToplevel(self)
         constants_window.title("Channel Constants")
-        constants_window.geometry("400x300")
+        constants_window.geometry("450x200")
 
-        # Create a text widget to display the constants
-        text_widget = ctk.CTkTextbox(constants_window)
-        text_widget.pack(fill="both", expand=True, padx=10, pady=10)
-
-        # Insert the DataFrame as text
-        text_widget.insert("0.0", constants.to_string(index=False))
+        # Create and display the table
+        table = Table(
+            data=constants,
+            master=constants_window,
+            title="Channel Constants",
+            to_show_index=True
+        )
+        table.pack(fill="both", expand=True, padx=10, pady=10)
 
     def set_operation_callbacks(self, callbacks: dict[str, Callable]) -> None:
         """Set callbacks for operation buttons."""

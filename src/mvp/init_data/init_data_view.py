@@ -11,6 +11,7 @@ from src.ui.components import (
     DropdownList,
     InputField,
     InputFieldCoordLimits,
+    Table,
 )
 from src.services import Logger
 
@@ -260,14 +261,16 @@ class InitDataView(GeneralView, IShowInitDataView):
         # Create a new window to display the DataFrame
         param_window = ctk.CTkToplevel(self)
         param_window.title("Channel Parameters")
-        param_window.geometry("400x300")
+        param_window.geometry("800x600")
         
-        # Create a text widget to display the parameters
-        text_widget = ctk.CTkTextbox(param_window)
-        text_widget.pack(fill="both", expand=True, padx=10, pady=10)
-        
-        # Insert the DataFrame as text
-        text_widget.insert("0.0", parameters.to_string(index=False))
+        # Create and display the table
+        table = Table(
+            data=parameters,
+            master=param_window,
+            title="Channel Parameters",
+            to_show_index=True
+        )
+        table.pack(fill="both", expand=True, padx=10, pady=10)
 
     def set_visualization_callbacks(self, callbacks: dict[str, Callable]) -> None:
         """Set callbacks for visualization buttons."""
