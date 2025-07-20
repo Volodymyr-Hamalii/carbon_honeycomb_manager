@@ -12,7 +12,7 @@ from src.interfaces import (
     PMvpParams,
     PCoordinateLimits,
 )
-from src.entities import Points, CoordinateLimits, MvpParams
+from src.entities import Points, CoordinateLimits
 from src.services import (
     Constants,
     ConstantsAtomParams,
@@ -142,7 +142,7 @@ class IntercalationAndSorption:
         project_dir: str,
         subproject_dir: str,
         structure_dir: str,
-        params: MvpParams,
+        params: PMvpParams,
     ) -> Path:
         """Update intercalated plane coordinates file."""
         file_name: str | None = params.file_name

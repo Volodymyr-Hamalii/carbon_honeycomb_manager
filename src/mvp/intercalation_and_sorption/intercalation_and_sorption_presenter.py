@@ -7,6 +7,7 @@ from src.interfaces import (
     IIntercalationAndSorptionPresenter,
     IIntercalationAndSorptionModel,
     IIntercalationAndSorptionView,
+    PMvpParams,
 )
 from src.services import Logger
 from src.projects.intercalation_and_sorption import IntercalationAndSorption
@@ -271,22 +272,22 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
             if not self._current_context:
                 self.view.show_operation_error("No context available. Please reload the window.")
                 return
-            
+
             # Get current MVP params with file selection
             params = self.model.get_mvp_params()
             selected_file = self.view.get_selected_file()
             if selected_file and selected_file != "No files found":
                 params.file_name = selected_file
-            
+
             IntercalationAndSorption.plot_inter_in_c_structure(
                 project_dir=self._current_context["project_dir"],
                 subproject_dir=self._current_context["subproject_dir"],
                 structure_dir=self._current_context["structure_dir"],
                 params=params,
             )
-            
+
             self.on_operation_completed("plot_inter_in_c_structure", "Plot generated successfully")
-            
+
         except Exception as e:
             self.on_operation_failed("plot_inter_in_c_structure", e)
 
@@ -296,19 +297,19 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
             if not self._current_context:
                 self.view.show_operation_error("No context available. Please reload the window.")
                 return
-            
+
             # Get current MVP params
             params = self.model.get_mvp_params()
-            
+
             output_path = IntercalationAndSorption.generate_inter_plane_coordinates_file(
                 project_dir=self._current_context["project_dir"],
                 subproject_dir=self._current_context["subproject_dir"],
                 structure_dir=self._current_context["structure_dir"],
                 params=params,
             )
-            
+
             self.on_operation_completed("generate_inter_plane_coordinates", f"File generated: {output_path}")
-            
+
         except Exception as e:
             self.on_operation_failed("generate_inter_plane_coordinates", e)
 
@@ -318,22 +319,22 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
             if not self._current_context:
                 self.view.show_operation_error("No context available. Please reload the window.")
                 return
-            
+
             # Get current MVP params with file selection
-            params = self.model.get_mvp_params()
-            selected_file = self.view.get_selected_file()
+            params: PMvpParams = self.model.get_mvp_params()
+            selected_file: str = self.view.get_selected_file()
             if selected_file and selected_file != "No files found":
                 params.file_name = selected_file
-            
-            output_path = IntercalationAndSorption.update_inter_plane_coordinates_file(
+
+            output_path: Path = IntercalationAndSorption.update_inter_plane_coordinates_file(
                 project_dir=self._current_context["project_dir"],
                 subproject_dir=self._current_context["subproject_dir"],
                 structure_dir=self._current_context["structure_dir"],
                 params=params,
             )
-            
+
             self.on_operation_completed("update_inter_plane_coordinates", f"File updated: {output_path}")
-            
+
         except Exception as e:
             self.on_operation_failed("update_inter_plane_coordinates", e)
 
@@ -343,22 +344,22 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
             if not self._current_context:
                 self.view.show_operation_error("No context available. Please reload the window.")
                 return
-            
+
             # Get current MVP params with file selection
             params = self.model.get_mvp_params()
             selected_file = self.view.get_selected_file()
             if selected_file and selected_file != "No files found":
                 params.file_name = selected_file
-            
+
             output_path = IntercalationAndSorption.translate_inter_atoms_to_other_planes(
                 project_dir=self._current_context["project_dir"],
                 subproject_dir=self._current_context["subproject_dir"],
                 structure_dir=self._current_context["structure_dir"],
                 params=params,
             )
-            
+
             self.on_operation_completed("translate_inter_atoms", f"Translation completed: {output_path}")
-            
+
         except Exception as e:
             self.on_operation_failed("translate_inter_atoms", e)
 
@@ -368,22 +369,25 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
             if not self._current_context:
                 self.view.show_operation_error("No context available. Please reload the window.")
                 return
-            
+
             # Get current MVP params with file selection
             params = self.model.get_mvp_params()
             selected_file = self.view.get_selected_file()
             if selected_file and selected_file != "No files found":
                 params.file_name = selected_file
-            
+
             output_path = IntercalationAndSorption.update_inter_channel_coordinates(
                 project_dir=self._current_context["project_dir"],
                 subproject_dir=self._current_context["subproject_dir"],
                 structure_dir=self._current_context["structure_dir"],
                 params=params,
             )
-            
-            self.on_operation_completed("update_inter_channel_coordinates", f"Channel coordinates updated: {output_path}")
-            
+
+            self.on_operation_completed(
+                "update_inter_channel_coordinates",
+                f"Channel coordinates updated: {output_path}",
+            )
+
         except Exception as e:
             self.on_operation_failed("update_inter_channel_coordinates", e)
 
@@ -393,22 +397,22 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
             if not self._current_context:
                 self.view.show_operation_error("No context available. Please reload the window.")
                 return
-            
+
             # Get current MVP params with file selection
             params = self.model.get_mvp_params()
             selected_file = self.view.get_selected_file()
             if selected_file and selected_file != "No files found":
                 params.file_name = selected_file
-            
+
             output_path = IntercalationAndSorption.save_inter_in_channel_details(
                 project_dir=self._current_context["project_dir"],
                 subproject_dir=self._current_context["subproject_dir"],
                 structure_dir=self._current_context["structure_dir"],
                 params=params,
             )
-            
+
             self.on_operation_completed("save_inter_in_channel_details", f"Channel details saved: {output_path}")
-            
+
         except Exception as e:
             self.on_operation_failed("save_inter_in_channel_details", e)
 
@@ -418,23 +422,23 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
             if not self._current_context:
                 self.view.show_operation_error("No context available. Please reload the window.")
                 return
-            
+
             # Get current MVP params with file selection
             params = self.model.get_mvp_params()
             selected_file = self.view.get_selected_file()
             if selected_file and selected_file != "No files found":
                 params.file_name = selected_file
-            
+
             details = IntercalationAndSorption.get_inter_in_channel_details(
                 project_dir=self._current_context["project_dir"],
                 subproject_dir=self._current_context["subproject_dir"],
                 structure_dir=self._current_context["structure_dir"],
                 params=params,
             )
-            
+
             self.view.display_channel_details(details)
             self.on_operation_completed("get_inter_in_channel_details", "Channel details retrieved")
-            
+
         except Exception as e:
             self.on_operation_failed("get_inter_in_channel_details", e)
 
@@ -444,22 +448,22 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
             if not self._current_context:
                 self.view.show_operation_error("No context available. Please reload the window.")
                 return
-            
+
             # Get current MVP params with file selection
             params = self.model.get_mvp_params()
             selected_file = self.view.get_selected_file()
             if selected_file and selected_file != "No files found":
                 params.file_name = selected_file
-            
+
             IntercalationAndSorption.translate_inter_to_all_channels_plot(
                 project_dir=self._current_context["project_dir"],
                 subproject_dir=self._current_context["subproject_dir"],
                 structure_dir=self._current_context["structure_dir"],
                 params=params,
             )
-            
+
             self.on_operation_completed("translate_inter_to_all_channels_plot", "All channels plot generated")
-            
+
         except Exception as e:
             self.on_operation_failed("translate_inter_to_all_channels_plot", e)
 
@@ -469,7 +473,7 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
             if not self._current_context:
                 self.view.show_operation_error("No context available. Please reload the window.")
                 return
-            
+
             # Get current MVP params with file selection and UI settings
             params = self.model.get_mvp_params()
             selected_file = self.view.get_selected_file()
@@ -477,7 +481,7 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
                 params.file_name = selected_file
                 # Update the model with the new file name
                 self.model.set_mvp_params(params)
-            
+
             # Get UI settings and update params
             if hasattr(self.view, 'get_operation_settings'):
                 ui_settings = self.view.get_operation_settings()
@@ -485,16 +489,19 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
                 for key, value in ui_settings.items():
                     if hasattr(params, key):
                         setattr(params, key, value)
-            
+
             coords_path, details_path = IntercalationAndSorption.translate_inter_to_all_channels_generate_files(
                 project_dir=self._current_context["project_dir"],
                 subproject_dir=self._current_context["subproject_dir"],
                 structure_dir=self._current_context["structure_dir"],
                 params=params,
             )
-            
-            self.on_operation_completed("translate_inter_to_all_channels_generate", f"Files generated: {coords_path}, {details_path}")
-            
+
+            self.on_operation_completed(
+                "translate_inter_to_all_channels_generate",
+                f"Files generated: {coords_path}, {details_path}",
+            )
+
         except Exception as e:
             self.on_operation_failed("translate_inter_to_all_channels_generate", e)
 
@@ -518,7 +525,7 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
                 "subproject_dir": subproject_dir,
                 "structure_dir": structure_dir
             }
-            
+
             files = self.model.get_available_files(project_dir, subproject_dir, structure_dir)
             self.view.set_available_files(files)
             logger.info(f"Loaded {len(files)} files for {project_dir}/{subproject_dir}/{structure_dir}")
