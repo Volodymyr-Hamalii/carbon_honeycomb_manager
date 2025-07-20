@@ -290,9 +290,11 @@ class MainPresenter(IMainPresenter):
                         structures = self.model.get_structures(project_dir, subproject_dir)
                         self.view.set_structures(structures)
                         
-                        # Restore structure selection
+                        # Restore structure selection and enable buttons
                         if structure_dir and structure_dir in structures:
                             self.view.set_selected_structure(structure_dir)
+                            # Call the selection method to trigger button enabling logic
+                            self.set_structure_selection(structure_dir)
                             
                 logger.info(f"Application state restored: {project_dir}/{subproject_dir}/{structure_dir}")
             else:
