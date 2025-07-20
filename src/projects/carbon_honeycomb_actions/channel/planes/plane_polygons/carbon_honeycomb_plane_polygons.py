@@ -10,12 +10,12 @@ class CarbonHoneycombPolygon(FlatFigure):
 
 
 @dataclass(frozen=True)
-class CarbonHoneycombHexagon(ICarbonHoneycombHexagon, CarbonHoneycombPolygon):
+class CarbonHoneycombHexagon(CarbonHoneycombPolygon, ICarbonHoneycombHexagon):
     """Carbon honeycomb hexagon implementation."""
     pass
 
 
 @dataclass(frozen=True)
-class CarbonHoneycombPentagon(ICarbonHoneycombPentagon, CarbonHoneycombPolygon):
+class CarbonHoneycombPentagon(CarbonHoneycombPolygon, ICarbonHoneycombPentagon):
     """Carbon honeycomb pentagon implementation."""
     pass
