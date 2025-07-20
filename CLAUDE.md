@@ -207,9 +207,3 @@ Claude must verify that the code works by:
 ## Current Development Status
 
 The project is in transition from legacy GUI (`old_gui_logic/`) to new MVP architecture. The main entry point still references `src_1.AppGui` which appears to be missing, indicating active refactoring.
-
-### Known Issues (from todo_list.md)
-
-- Replace `np.ndarray` with `NDArray` type hints
-- Replace `np.floating` with correct types
-- Set interfaces for classes like `ConstantsAtomParams`
