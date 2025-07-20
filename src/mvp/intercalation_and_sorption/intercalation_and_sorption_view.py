@@ -365,3 +365,14 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
         if self.file_selection_dropdown:
             return self.file_selection_dropdown.get()
         return ""
+
+    def get_operation_settings(self) -> dict[str, Any]:
+        """Get operation settings from the UI."""
+        settings = {}
+        
+        # Combine all settings from different UI components
+        settings.update(self.get_intercalation_parameters())
+        settings.update(self.get_visualization_settings())
+        settings.update(self.get_coordinate_limits())
+        
+        return settings
