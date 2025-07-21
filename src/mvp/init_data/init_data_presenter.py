@@ -135,8 +135,8 @@ class InitDataPresenter(GeneralPresenter, IShowInitDataPresenter):
 
     def on_visualization_completed(self, visualization_type: str) -> None:
         """Handle visualization completion."""
-        message = f"{visualization_type.replace('_', ' ').title()} visualization completed"
-        self.view.show_success_message(message)
+        # message = f"{visualization_type.replace('_', ' ').title()} visualization completed"
+        # self.view.show_success_message(message)
 
         # Save view state
         state = {
@@ -194,6 +194,10 @@ class InitDataPresenter(GeneralPresenter, IShowInitDataPresenter):
 
             files = self.get_available_files(project_dir, subproject_dir, structure_dir)
             self.view.set_available_files(files)
+            
+            # Load UI from current MVP parameters
+            self._load_ui_from_params()
+            
             logger.info(f"Loaded {len(files)} files for {project_dir}/{subproject_dir}/{structure_dir}")
         except Exception as e:
             logger.error(f"Failed to load available files: {e}")
@@ -401,3 +405,32 @@ class InitDataPresenter(GeneralPresenter, IShowInitDataPresenter):
 
         except Exception as e:
             self.on_visualization_failed("get_channel_params", e)
+
+    def _load_ui_from_params(self) -> None:
+        """Load UI components from current MVP parameters."""
+        try:
+            params = self.model.get_mvp_params()
+            
+            # Load visualization settings
+            viz_settings = {
+                "to_build_bonds": params.to_build_bonds,
+                "to_show_coordinates": params.to_show_coordinates,
+                "to_show_c_indexes": params.to_show_c_indexes,
+                "bonds_num_of_min_distances": params.bonds_num_of_min_distances,
+                "bonds_skip_first_distances": params.bonds_skip_first_distances,
+            }
+            self.view.set_visualization_settings(viz_settings)
+            
+            # Load coordinate limits
+            coord_limits: dict[str, float] = {
+                "x_min": params.x_min,
+                "x_max": params.x_max,
+                "y_min": params.y_min,
+                "y_max": params.y_max,
+                "z_min": params.z_min,
+                "z_max": params.z_max,
+            }
+            self.view.set_coordinate_limits(coord_limits)
+            
+        except Exception as e:
+            logger.error(f"Failed to load UI from params: {e}")

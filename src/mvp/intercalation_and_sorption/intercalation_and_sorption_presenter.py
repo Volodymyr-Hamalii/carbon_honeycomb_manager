@@ -276,11 +276,16 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
             # Show processing status
             self.view.show_processing_message("Plotting intercalated atoms in carbon structure...")
 
-            # Get current MVP params with file selection
+            # Get current MVP params with file selection and UI settings
             params = self.model.get_mvp_params()
             selected_file = self.view.get_selected_file()
             if selected_file and selected_file != "No files found":
                 params.file_name = selected_file
+
+            # Get UI settings and update params
+            ui_settings = self.view.get_operation_settings()
+            self._update_params_from_ui_settings(params, ui_settings)
+            self.model.set_mvp_params(params)
 
             IntercalationAndSorption.plot_inter_in_c_structure(
                 project_dir=self._current_context["project_dir"],
@@ -288,8 +293,6 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
                 structure_dir=self._current_context["structure_dir"],
                 params=params,
             )
-
-            self.view.show_success_message("Plot generated successfully")
 
         except Exception as e:
             self.on_operation_failed("plot_inter_in_c_structure", e)
@@ -494,10 +497,12 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
             # Get UI settings and update params
             if hasattr(self.view, 'get_operation_settings'):
                 ui_settings = self.view.get_operation_settings()
-                # Update params with UI settings if available
-                for key, value in ui_settings.items():
-                    if hasattr(params, key):
-                        setattr(params, key, value)
+                
+                # Update MVP params with all UI settings
+                self._update_params_from_ui_settings(params, ui_settings)
+                
+                # Save updated params to model
+                self.model.set_mvp_params(params)
 
             coords_path, details_path = IntercalationAndSorption.translate_inter_to_all_channels_generate_files(
                 project_dir=self._current_context["project_dir"],
@@ -534,7 +539,82 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
 
             files = self.model.get_available_files(project_dir, subproject_dir, structure_dir)
             self.view.set_available_files(files)
+            
+            # Load UI from current MVP parameters
+            self.load_ui_from_params()
+            
             logger.info(f"Loaded {len(files)} files for {project_dir}/{subproject_dir}/{structure_dir}")
         except Exception as e:
             logger.error(f"Failed to load available files: {e}")
             self.view.set_available_files(["No files found"])
+
+    def _update_params_from_ui_settings(self, params: PMvpParams, ui_settings: dict[str, Any]) -> None:
+        """Update MVP params from UI settings."""
+        # Update visualization settings
+        for key, value in ui_settings.items():
+            if hasattr(params, key):
+                setattr(params, key, value)
+        
+        # Specifically handle coordinate limits
+        if "x_min" in ui_settings:
+            params.x_min = ui_settings["x_min"]
+        if "x_max" in ui_settings:
+            params.x_max = ui_settings["x_max"]
+        if "y_min" in ui_settings:
+            params.y_min = ui_settings["y_min"]
+        if "y_max" in ui_settings:
+            params.y_max = ui_settings["y_max"]
+        if "z_min" in ui_settings:
+            params.z_min = ui_settings["z_min"]
+        if "z_max" in ui_settings:
+            params.z_max = ui_settings["z_max"]
+
+    def load_ui_from_params(self) -> None:
+        """Load UI components from current MVP parameters."""
+        try:
+            params = self.model.get_mvp_params()
+            
+            # Load visualization settings
+            viz_settings = {
+                "to_build_bonds": params.to_build_bonds,
+                "to_show_coordinates": params.to_show_coordinates,
+                "to_show_c_indexes": params.to_show_c_indexes,
+                "to_show_inter_atoms_indexes": params.to_show_inter_atoms_indexes,
+                "to_show_dists_to_plane": params.to_show_dists_to_plane,
+                "to_show_dists_to_edges": params.to_show_dists_to_edges,
+                "to_show_channel_angles": params.to_show_channel_angles,
+                "to_show_plane_lengths": params.to_show_plane_lengths,
+                "to_translate_inter": params.to_translate_inter,
+                "to_replace_nearby_atoms": params.to_replace_nearby_atoms,
+                "to_remove_too_close_atoms": params.to_remove_too_close_atoms,
+                "to_to_try_to_reflect_inter_atoms": params.to_to_try_to_reflect_inter_atoms,
+                "to_equidistant_inter_points": params.to_equidistant_inter_points,
+                "to_filter_inter_atoms": params.to_filter_inter_atoms,
+                "to_remove_inter_atoms_with_min_and_max_x_coordinates": params.to_remove_inter_atoms_with_min_and_max_x_coordinates,
+                "bonds_num_of_min_distances": params.bonds_num_of_min_distances,
+                "bonds_skip_first_distances": params.bonds_skip_first_distances,
+            }
+            self.view.set_visualization_settings(viz_settings)
+            
+            # Load intercalation parameters
+            inter_params = {
+                "number_of_planes": params.number_of_planes,
+                "num_of_inter_atoms_layers": params.num_of_inter_atoms_layers,
+                "inter_atoms_lattice_type": params.inter_atoms_lattice_type,
+            }
+            if hasattr(self.view, 'set_intercalation_parameters'):
+                self.view.set_intercalation_parameters(inter_params)
+            
+            # Load coordinate limits
+            coord_limits = {
+                "x_min": params.x_min,
+                "x_max": params.x_max,
+                "y_min": params.y_min,
+                "y_max": params.y_max,
+                "z_min": params.z_min,
+                "z_max": params.z_max,
+            }
+            self.view.set_coordinate_limits(coord_limits)
+            
+        except Exception as e:
+            logger.error(f"Failed to load UI from params: {e}")

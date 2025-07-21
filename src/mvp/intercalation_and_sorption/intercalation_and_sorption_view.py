@@ -28,11 +28,13 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
         self.structure_dir = ""
 
         # UI components
-        # self.intercalation_params: dict[str, InputField] = {}
         self.visualization_checkboxes: dict[str, CheckBox] = {}
         self.coordinate_limits: dict[str, InputFieldCoordLimits] = {}
         self.operation_buttons: dict[str, Button] = {}
+        self.intercalation_params: dict[str, InputField] = {}
         self.file_selection_dropdown: DropdownList | None = None
+        self.bonds_num_input: InputField | None = None
+        self.bonds_skip_input: InputField | None = None
 
         # Callbacks
         self.callbacks: dict[str, Callable] = {}
@@ -76,24 +78,70 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
         self.file_selection_dropdown = DropdownList(file_frame, ["Loading..."], command=self._on_file_selected)
         self.file_selection_dropdown.pack(pady=2)
 
-        # Visualization settings
+        # Visualization settings - organized in columns
         viz_frame = ctk.CTkFrame(main_frame)
         viz_frame.pack(fill="x", pady=(0, 10))
 
         ctk.CTkLabel(viz_frame, text="Visualization Settings",
                      font=ctk.CTkFont(size=16, weight="bold")).pack(pady=5)
 
-        self.visualization_checkboxes["show_carbon"] = CheckBox(viz_frame, text="Show carbon structure")
-        self.visualization_checkboxes["show_carbon"].pack(pady=2)
+        # Create two columns for better organization
+        columns_frame = ctk.CTkFrame(viz_frame, fg_color="transparent")
+        columns_frame.pack(fill="x", padx=10, pady=5)
 
-        self.visualization_checkboxes["show_intercalated"] = CheckBox(viz_frame, text="Show intercalated atoms")
-        self.visualization_checkboxes["show_intercalated"].pack(pady=2)
+        # Left column - Structure display
+        left_column = ctk.CTkFrame(columns_frame)
+        left_column.pack(side="left", fill="both", expand=True, padx=(0, 5))
 
-        self.visualization_checkboxes["show_bonds"] = CheckBox(viz_frame, text="Show bonds")
-        self.visualization_checkboxes["show_bonds"].pack(pady=2)
+        ctk.CTkLabel(left_column, text="Structure Display", 
+                     font=ctk.CTkFont(size=12, weight="bold")).pack(pady=2)
 
-        self.visualization_checkboxes["show_channels"] = CheckBox(viz_frame, text="Show channels")
-        self.visualization_checkboxes["show_channels"].pack(pady=2)
+        self.visualization_checkboxes["to_build_bonds"] = CheckBox(left_column, text="Build bonds")
+        self.visualization_checkboxes["to_build_bonds"].pack(pady=1, anchor="w")
+
+        self.visualization_checkboxes["to_show_coordinates"] = CheckBox(left_column, text="Show coordinates")
+        self.visualization_checkboxes["to_show_coordinates"].pack(pady=1, anchor="w")
+
+        self.visualization_checkboxes["to_show_c_indexes"] = CheckBox(left_column, text="Show carbon atom indexes")
+        self.visualization_checkboxes["to_show_c_indexes"].pack(pady=1, anchor="w")
+
+        self.visualization_checkboxes["to_show_inter_atoms_indexes"] = CheckBox(left_column, text="Show intercalated atom indexes")
+        self.visualization_checkboxes["to_show_inter_atoms_indexes"].pack(pady=1, anchor="w")
+
+        # Right column - Channel analysis
+        right_column = ctk.CTkFrame(columns_frame)
+        right_column.pack(side="right", fill="both", expand=True, padx=(5, 0))
+
+        ctk.CTkLabel(right_column, text="Channel Analysis", 
+                     font=ctk.CTkFont(size=12, weight="bold")).pack(pady=2)
+
+        self.visualization_checkboxes["to_show_dists_to_plane"] = CheckBox(right_column, text="Show distances to plane")
+        self.visualization_checkboxes["to_show_dists_to_plane"].pack(pady=1, anchor="w")
+
+        self.visualization_checkboxes["to_show_dists_to_edges"] = CheckBox(right_column, text="Show distances to edges")
+        self.visualization_checkboxes["to_show_dists_to_edges"].pack(pady=1, anchor="w")
+
+        self.visualization_checkboxes["to_show_channel_angles"] = CheckBox(right_column, text="Show channel angles")
+        self.visualization_checkboxes["to_show_channel_angles"].pack(pady=1, anchor="w")
+
+        self.visualization_checkboxes["to_show_plane_lengths"] = CheckBox(right_column, text="Show plane lengths")
+        self.visualization_checkboxes["to_show_plane_lengths"].pack(pady=1, anchor="w")
+
+        # Bonds parameters section
+        bonds_frame = ctk.CTkFrame(viz_frame)
+        bonds_frame.pack(fill="x", padx=10, pady=5)
+
+        ctk.CTkLabel(bonds_frame, text="Bond Parameters", 
+                     font=ctk.CTkFont(size=12, weight="bold")).pack(pady=2)
+
+        bonds_row = ctk.CTkFrame(bonds_frame, fg_color="transparent")
+        bonds_row.pack(fill="x", pady=2)
+
+        self.bonds_num_input = InputField(bonds_row, "Number of min distances")
+        self.bonds_num_input.pack(side="left", padx=(0, 5), fill="x", expand=True)
+
+        self.bonds_skip_input = InputField(bonds_row, "Skip first distances")
+        self.bonds_skip_input.pack(side="right", padx=(5, 0), fill="x", expand=True)
 
         # Coordinate limits
         coord_frame = ctk.CTkFrame(main_frame)
@@ -110,6 +158,55 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
 
         self.coordinate_limits["z"] = InputFieldCoordLimits(coord_frame, "Z limits")
         self.coordinate_limits["z"].pack(pady=2)
+
+        # Intercalation parameters
+        inter_frame = ctk.CTkFrame(main_frame)
+        inter_frame.pack(fill="x", pady=(0, 10))
+
+        ctk.CTkLabel(inter_frame, text="Intercalation Parameters",
+                     font=ctk.CTkFont(size=16, weight="bold")).pack(pady=5)
+
+        # Organize intercalation params in columns
+        inter_columns = ctk.CTkFrame(inter_frame, fg_color="transparent")
+        inter_columns.pack(fill="x", padx=10, pady=5)
+
+        # Left column - Basic parameters
+        inter_left = ctk.CTkFrame(inter_columns)
+        inter_left.pack(side="left", fill="both", expand=True, padx=(0, 5))
+
+        self.intercalation_params["number_of_planes"] = InputField(inter_left, "Number of planes")
+        self.intercalation_params["number_of_planes"].pack(pady=2, fill="x")
+
+        self.intercalation_params["num_of_inter_atoms_layers"] = InputField(inter_left, "Number of inter atom layers")
+        self.intercalation_params["num_of_inter_atoms_layers"].pack(pady=2, fill="x")
+
+        self.intercalation_params["inter_atoms_lattice_type"] = InputField(inter_left, "Inter atoms lattice type")
+        self.intercalation_params["inter_atoms_lattice_type"].pack(pady=2, fill="x")
+
+        # Right column - Boolean flags
+        inter_right = ctk.CTkFrame(inter_columns)
+        inter_right.pack(side="right", fill="both", expand=True, padx=(5, 0))
+
+        self.visualization_checkboxes["to_translate_inter"] = CheckBox(inter_right, text="Translate intercalated atoms")
+        self.visualization_checkboxes["to_translate_inter"].pack(pady=1, anchor="w")
+
+        self.visualization_checkboxes["to_replace_nearby_atoms"] = CheckBox(inter_right, text="Replace nearby atoms")
+        self.visualization_checkboxes["to_replace_nearby_atoms"].pack(pady=1, anchor="w")
+
+        self.visualization_checkboxes["to_remove_too_close_atoms"] = CheckBox(inter_right, text="Remove too close atoms")
+        self.visualization_checkboxes["to_remove_too_close_atoms"].pack(pady=1, anchor="w")
+
+        self.visualization_checkboxes["to_to_try_to_reflect_inter_atoms"] = CheckBox(inter_right, text="Try to reflect inter atoms")
+        self.visualization_checkboxes["to_to_try_to_reflect_inter_atoms"].pack(pady=1, anchor="w")
+
+        self.visualization_checkboxes["to_equidistant_inter_points"] = CheckBox(inter_right, text="Equidistant inter points")
+        self.visualization_checkboxes["to_equidistant_inter_points"].pack(pady=1, anchor="w")
+
+        self.visualization_checkboxes["to_filter_inter_atoms"] = CheckBox(inter_right, text="Filter inter atoms")
+        self.visualization_checkboxes["to_filter_inter_atoms"].pack(pady=1, anchor="w")
+
+        self.visualization_checkboxes["to_remove_inter_atoms_with_min_and_max_x_coordinates"] = CheckBox(inter_right, text="Remove atoms at X boundaries")
+        self.visualization_checkboxes["to_remove_inter_atoms_with_min_and_max_x_coordinates"].pack(pady=1, anchor="w")
 
         # Operation buttons
         operations_frame = ctk.CTkFrame(main_frame)
@@ -203,13 +300,55 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
         for key, value in settings.items():
             if key in self.visualization_checkboxes:
                 self.visualization_checkboxes[key].set_value(bool(value))
+        
+        # Handle bond parameters
+        if "bonds_num_of_min_distances" in settings and self.bonds_num_input:
+            self.bonds_num_input.set_value(str(settings["bonds_num_of_min_distances"]))
+        
+        if "bonds_skip_first_distances" in settings and self.bonds_skip_input:
+            self.bonds_skip_input.set_value(str(settings["bonds_skip_first_distances"]))
 
     def get_visualization_settings(self) -> dict[str, Any]:
         """Get visualization settings from the UI."""
         settings = {}
         for key, checkbox in self.visualization_checkboxes.items():
             settings[key] = checkbox.get()
+        
+        # Add bond parameters
+        if self.bonds_num_input:
+            try:
+                settings["bonds_num_of_min_distances"] = int(self.bonds_num_input.get_value())
+            except ValueError:
+                settings["bonds_num_of_min_distances"] = 2
+        
+        if self.bonds_skip_input:
+            try:
+                settings["bonds_skip_first_distances"] = int(self.bonds_skip_input.get_value())
+            except ValueError:
+                settings["bonds_skip_first_distances"] = 0
+        
         return settings
+    
+    def set_intercalation_parameters(self, params: dict[str, Any]) -> None:
+        """Set intercalation parameters in the UI."""
+        for key, value in params.items():
+            if key in self.intercalation_params:
+                self.intercalation_params[key].set_value(str(value))
+    
+    def get_intercalation_parameters(self) -> dict[str, Any]:
+        """Get intercalation parameters from the UI."""
+        params = {}
+        for key, field in self.intercalation_params.items():
+            value = field.get_value()
+            if key in ["number_of_planes", "num_of_inter_atoms_layers"]:
+                try:
+                    params[key] = int(value) if value else 6 if key == "number_of_planes" else 2
+                except ValueError:
+                    params[key] = 6 if key == "number_of_planes" else 2
+            else:
+                params[key] = value if value else ("FCC" if key == "inter_atoms_lattice_type" else "")
+        
+        return params
 
     def set_coordinate_limits(self, limits: dict[str, float]) -> None:
         """Set coordinate limits in the UI."""
@@ -379,7 +518,7 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
         settings = {}
         
         # Combine all settings from different UI components
-        # settings.update(self.get_intercalation_parameters())
+        settings.update(self.get_intercalation_parameters())
         settings.update(self.get_visualization_settings())
         settings.update(self.get_coordinate_limits())
         
