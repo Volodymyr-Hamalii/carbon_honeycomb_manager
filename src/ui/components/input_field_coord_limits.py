@@ -67,9 +67,12 @@ class InputFieldCoordLimits(ctk.CTkFrame):
         }
         self.min_entry = ctk.CTkEntry(entries_frame, **entry_config)
         self.min_entry.configure(state=state)
-        if default_min is not None and default_min != -float("inf"):
+        if default_min is not None and not self._is_infinity(default_min):
             self.min_entry.insert(0, str(default_min))
             self.last_min_value = str(default_min)
+        elif default_min is not None:
+            # Store infinity but don't display it
+            self.last_min_value = ""
         self.min_entry.pack(
             side="left",
             fill="x",
@@ -82,9 +85,12 @@ class InputFieldCoordLimits(ctk.CTkFrame):
         max_entry_config["placeholder_text"] = "Max"
         self.max_entry = ctk.CTkEntry(entries_frame, **max_entry_config)
         self.max_entry.configure(state=state)
-        if default_max is not None and default_max != float("inf"):
+        if default_max is not None and not self._is_infinity(default_max):
             self.max_entry.insert(0, str(default_max))
             self.last_max_value = str(default_max)
+        elif default_max is not None:
+            # Store infinity but don't display it
+            self.last_max_value = ""
         self.max_entry.pack(
             side="right",
             fill="x",
@@ -135,17 +141,33 @@ class InputFieldCoordLimits(ctk.CTkFrame):
         if self.change_callback:
             self.auto_sync_job = self.after(self.auto_sync_interval, self._check_for_changes)
 
+    def _is_infinity(self, value: str | int | float) -> bool:
+        """Check if a value represents infinity."""
+        if isinstance(value, (int, float)):
+            return value == float('inf') or value == -float('inf')
+        if isinstance(value, str):
+            return value.lower() in ['inf', '-inf'] or str(value) in ['inf', '-inf']
+        return False
+
     def set_min_value(self, value: str | int | float) -> None:
         """Set the minimum value."""
         self.min_entry.delete(0, "end")
-        self.min_entry.insert(0, str(value))
-        self.last_min_value = str(value)
+        if not self._is_infinity(value):
+            self.min_entry.insert(0, str(value))
+            self.last_min_value = str(value)
+        else:
+            # Don't display infinity values, keep field empty
+            self.last_min_value = ""
 
     def set_max_value(self, value: str | int | float) -> None:
         """Set the maximum value."""
         self.max_entry.delete(0, "end")
-        self.max_entry.insert(0, str(value))
-        self.last_max_value = str(value)
+        if not self._is_infinity(value):
+            self.max_entry.insert(0, str(value))
+            self.last_max_value = str(value)
+        else:
+            # Don't display infinity values, keep field empty
+            self.last_max_value = ""
 
     def get_min_value(self) -> str:
         """Get the current minimum value."""

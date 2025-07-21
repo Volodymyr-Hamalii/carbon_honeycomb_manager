@@ -221,28 +221,67 @@ class InitDataView(GeneralView, IShowInitDataView):
         limits: dict[str, float] = {}
 
         if self.coord_x_limits_input:
-            try:
-                limits["x_min"] = float(self.coord_x_limits_input.get_min_value())
-                limits["x_max"] = float(self.coord_x_limits_input.get_max_value())
-            except ValueError:
+            # Handle min value
+            min_val = self.coord_x_limits_input.get_min_value().strip()
+            if min_val == "":
                 limits["x_min"] = -float("inf")
+            else:
+                try:
+                    limits["x_min"] = float(min_val)
+                except ValueError:
+                    limits["x_min"] = -float("inf")
+            
+            # Handle max value
+            max_val = self.coord_x_limits_input.get_max_value().strip()
+            if max_val == "":
                 limits["x_max"] = float("inf")
+            else:
+                try:
+                    limits["x_max"] = float(max_val)
+                except ValueError:
+                    limits["x_max"] = float("inf")
 
         if self.coord_y_limits_input:
-            try:
-                limits["y_min"] = float(self.coord_y_limits_input.get_min_value())
-                limits["y_max"] = float(self.coord_y_limits_input.get_max_value())
-            except ValueError:
+            # Handle min value
+            min_val = self.coord_y_limits_input.get_min_value().strip()
+            if min_val == "":
                 limits["y_min"] = -float("inf")
+            else:
+                try:
+                    limits["y_min"] = float(min_val)
+                except ValueError:
+                    limits["y_min"] = -float("inf")
+            
+            # Handle max value
+            max_val = self.coord_y_limits_input.get_max_value().strip()
+            if max_val == "":
                 limits["y_max"] = float("inf")
+            else:
+                try:
+                    limits["y_max"] = float(max_val)
+                except ValueError:
+                    limits["y_max"] = float("inf")
 
         if self.coord_z_limits_input:
-            try:
-                limits["z_min"] = float(self.coord_z_limits_input.get_min_value())
-                limits["z_max"] = float(self.coord_z_limits_input.get_max_value())
-            except ValueError:
+            # Handle min value
+            min_val = self.coord_z_limits_input.get_min_value().strip()
+            if min_val == "":
                 limits["z_min"] = -float("inf")
+            else:
+                try:
+                    limits["z_min"] = float(min_val)
+                except ValueError:
+                    limits["z_min"] = -float("inf")
+            
+            # Handle max value
+            max_val = self.coord_z_limits_input.get_max_value().strip()
+            if max_val == "":
                 limits["z_max"] = float("inf")
+            else:
+                try:
+                    limits["z_max"] = float(max_val)
+                except ValueError:
+                    limits["z_max"] = float("inf")
 
         return limits
 

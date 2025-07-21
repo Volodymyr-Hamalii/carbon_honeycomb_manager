@@ -389,12 +389,25 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
         """Get coordinate limits from the UI."""
         limits = {}
         for axis, field in self.coordinate_limits.items():
-            try:
-                limits[f"{axis}_min"] = float(field.get_min_value())
-                limits[f"{axis}_max"] = float(field.get_max_value())
-            except ValueError:
-                limits[f"{axis}_min"] = 0.0
-                limits[f"{axis}_max"] = 100.0
+            # Handle min value
+            min_val: str = field.get_min_value().strip()
+            if min_val == "":
+                limits[f"{axis}_min"] = -float("inf")
+            else:
+                try:
+                    limits[f"{axis}_min"] = float(min_val)
+                except ValueError:
+                    limits[f"{axis}_min"] = -float("inf")
+            
+            # Handle max value
+            max_val: str = field.get_max_value().strip()
+            if max_val == "":
+                limits[f"{axis}_max"] = float("inf")
+            else:
+                try:
+                    limits[f"{axis}_max"] = float(max_val)
+                except ValueError:
+                    limits[f"{axis}_max"] = float("inf")
         return limits
 
     def show_operation_progress(self, message: str) -> None:
