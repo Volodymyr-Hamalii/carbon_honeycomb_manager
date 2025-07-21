@@ -23,7 +23,7 @@ class GeneralView(ScrollableMixin, ctk.CTk, IGeneralView):
         """Set up common UI elements."""
         # Status bar at bottom
         self.status_label = StatusLabel(self)
-        self.status_label.pack(side="bottom", fill="x")
+        self.status_label.pack(side="bottom", fill="x", expand=False)
         
         # Enable touchpad scrolling after UI is set up
         self.after(300, self.enable_touchpad_scrolling)
