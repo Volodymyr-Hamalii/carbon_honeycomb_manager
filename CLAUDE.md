@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a Python application for building honeycomb carbon models from `.dat` or `.pdb` files, with capabilities for intercalation with other structures. The application is built using a GUI with CustomTkinter and follows an MVP (Model-View-Presenter) architecture pattern.
+This is a Python application for building honeycomb carbon models from `.dat` or `.pdb` files, with capabilities for intercalation with other structures. The application is built using a GUI with CustomTkinter and follows a strict MVP (Model-View-Presenter) architecture pattern with comprehensive interface contracts.
 
 ## Development Commands
 
@@ -28,182 +28,212 @@ python main.py
 build_app_for_windows.bat
 ```
 
-### Environment Configuration
-
-- Set `DEV_MODE=true` in `.env` file to enable development mode with error tracebacks
-- No `.env` file is currently present in the repository
-
 ## Architecture Overview
 
 ### MVP Pattern Implementation
 
-The application follows a strict MVP (Model-View-Presenter) architecture:
+The application follows a strict MVP (Model-View-Presenter) architecture with complete interface segregation:
 
 - **Models**: Located in `src/mvp/*/` - Handle data management and business logic
-- **Views**: Located in `src/mvp/*/` - Handle UI components using CustomTkinter
-- **Presenters**: Located in `src/mvp/*/` - Handle communication between Model and View
-- **Interfaces**: Located in `src/interfaces/mvp/` - Define contracts for MVP components
+- **Views**: Located in `src/mvp/*/` - Handle UI components using CustomTkinter with centralized styling
+- **Presenters**: Located in `src/mvp/*/` - Handle communication between Model and View, parameter binding
+- **Interfaces**: Located in `src/interfaces/mvp/` - Define complete contracts for all MVP components
 
-### Key Architecture Components
+### Current MVP Modules
 
-#### Core MVP Structure
+1. **`main`** - Main application window with project navigation
+2. **`init_data`** - Initial carbon structure visualization and analysis
+3. **`intercalation_and_sorption`** - Complex intercalation modeling with channel analysis
+4. **`data_converter`** - Data format conversion utilities
 
-- `GeneralModel`: Base model class with MVP parameter management
-- `GeneralView`: Base view class extending `customtkinter.CTk`
-- `GeneralPresenter`: Base presenter class (currently minimal)
-- All MVP components follow interface contracts defined in `src/interfaces/`
+### Project Structure
 
-#### Configuration Management
+```
+src/
+├── entities/           # Data models and parameter classes
+│   ├── figures/       # Geometric entities (points, lattices)
+│   └── params/        # Configuration dataclasses (MvpParams, CoordinateLimits)
+├── interfaces/        # Complete interface definitions
+│   ├── entities/      # Data model protocols
+│   ├── mvp/          # MVP component interfaces
+│   ├── projects/     # Project logic interfaces
+│   ├── services/     # Service layer interfaces
+│   └── ui/           # UI component interfaces
+├── mvp/              # MVP implementation modules
+├── projects/         # Domain-specific business logic
+│   ├── carbon_honeycomb_actions/    # Core carbon structure operations
+│   ├── intercalation_and_sorption/  # Intercalation algorithms
+│   └── data_manipulation/           # Data processing
+├── services/         # Utility services
+│   ├── coordinate_operations/       # Geometric calculations
+│   ├── structure_visualizer/       # Visualization engine
+│   └── utils/                      # File I/O, logging, constants
+└── ui/               # UI infrastructure
+    ├── components/   # Reusable UI widgets
+    ├── styles/       # Centralized styling system
+    └── templates/    # UI templates and mixins
+```
 
-- `MvpParams`: Main configuration dataclass with comprehensive parameters
-- `CoordinateLimits`: Nested configuration for coordinate boundaries
-- Configuration files stored in `data/configs/mvp_params/` as JSON
-- Constants centralized in `src/services/utils/constants.py`
+### Data Structure
 
-#### Project Structure
-
-- `src/entities/`: Data structures and models
-- `src/services/`: Business logic and utilities
-- `src/interfaces/`: All interface definitions
-- `src/ui/`: UI components and styling
-- `old_gui_logic/`: Legacy GUI implementation (being refactored)
-
-### Data Management
-
-- Project data stored in `data/projects/` and `project_data/`
-- Supports multiple file formats: `.xlsx`, `.dat`, `.pdb`
-- Structure: `projects/{project_type}/{element}/{data_type}/{structure_name}/`
+```
+data/
+├── configs/mvp_params/      # JSON configuration files per MVP module
+├── constants/               # Physical and mathematical constants
+└── projects/               # Project data organized by element and type
+    └── {element}/
+        ├── init_data/      # Initial structure files (.pdb, .dat)
+        ├── result_data/    # Generated analysis results (.xlsx)
+        └── al-inter-fixed/ # Intercalated structure data
+```
 
 ### Key Dependencies
 
-- **CustomTkinter**: Modern GUI framework
-- **NumPy**: Numerical computations
-- **Pandas**: Data manipulation
-- **MDAnalysis**: Molecular dynamics analysis
-- **Matplotlib**: Plotting and visualization
+- **CustomTkinter**: Modern GUI framework with dark/light themes
+- **NumPy**: Numerical computations and array operations
+- **Pandas**: Data manipulation and Excel I/O
+- **Matplotlib**: Scientific plotting and visualization
 - **OpenPyXL**: Excel file handling
+- **MDAnalysis**: Molecular dynamics analysis
 
-## Common Development Patterns
+## Development Patterns
 
-### Adding New MVP Components
+### MVP Component Creation
 
-1. Create interfaces in `src/interfaces/mvp/{component_name}/`
-2. Implement concrete classes in `src/mvp/{component_name}/`
-3. Follow existing naming conventions:
-   - for interfaces: `I{Name}Model`, `I{Name}View`, `I{Name}Presenter`;
-   - for protocols: `P{Name}Params`, `P{Name}Limits`.
+1. **Define Interfaces First**: Create complete interface contracts in `src/interfaces/mvp/{component_name}/`
+2. **Follow Naming Conventions**:
+   - Interfaces: `I{Name}Model`, `I{Name}View`, `I{Name}Presenter`
+   - Protocols: `P{Name}Params`, `P{Name}Limits`
+3. **Implement Concrete Classes**: Create implementations in `src/mvp/{component_name}/`
+4. **Ensure Complete Interface Compliance**: All methods used must be defined in interfaces
 
 ### Configuration Management
 
-- Use `MvpParams` dataclass for configuration
-- Load/save configurations via `GeneralModel.get_mvp_params()` and `GeneralModel.set_mvp_params()`
-- Configuration files are automatically managed as JSON in `data/configs/mvp_params/`
+- **Central Configuration**: Use `MvpParams` dataclass for all MVP parameters
+- **Automatic Persistence**: Configurations saved as JSON in `data/configs/mvp_params/`
+- **Parameter Binding**: Full bidirectional binding between UI components and MVP state
+- **State Restoration**: UI loads from saved MVP parameters on window open
+
+### UI Development
+
+- **Centralized Styling**: All styles defined in `src/ui/styles/` (colors, spacing, themes)
+- **Component Reuse**: Use components from `src/ui/components/` with consistent styling
+- **Scrolling Support**: Use `ScrollableMixin` for keyboard and touchpad scrolling
+- **Template Inheritance**: Extend `GeneralView` and `ScrollableToplevel` for consistent behavior
 
 ### File Operations
 
-- Use `FileReader` and `FileWriter` services from `src/services/utils/files_manager/`
-- Path constants defined in `Constants.path` class
-- Support for multiple formats through `file_format` parameter
+- **Service Layer**: Use `FileReader` and `FileWriter` from `src/services/utils/files_manager/`
+- **Path Management**: Constants defined in `src/services/utils/constants.py`
+- **Multi-Format Support**: Handle `.xlsx`, `.dat`, `.pdb` files through unified interface
 
 ### Error Handling
 
-- Logger available via `src.services.utils.logger.Logger`
-- Development mode enables detailed error tracebacks
-- Use try-catch blocks for configuration parsing with fallback to defaults
-
-## Important Development Notes
+- **Structured Logging**: Use `src.services.utils.logger.Logger` throughout
+- **Graceful Degradation**: Try-catch blocks with fallback to default values
+- **User Feedback**: Consistent error messaging through `GeneralView` base methods
 
 ## Code Style & Quality Guidelines
 
-When using Claude for code generation or refactoring, follow these quality standards to ensure maintainability, consistency, and correctness.
+**CRITICAL: Claude must automatically follow these guidelines for ALL code work. No exceptions.**
 
-### General Expectations
+### Mandatory Pre-Work Checklist
 
-Claude should always:
+Claude MUST always:
 
-- Ensure all code runs without errors
-- Check that all used variables and methods exist and are correctly typed
-- Validate that all functions include accurate return type annotations
-- Avoid deprecated or outdated practices
-- If the class inherits an interface or protocol - check
-if the interface or protocol has all the required methods and attributes.
+1. **Read CLAUDE.md First**: Automatically apply all project-specific guidelines
+2. **Check Interface Compliance**: Verify all methods exist in their respective interfaces
+3. **Validate Type Safety**: Ensure all method signatures match exactly
+4. **Run Mental Compilation**: Simulate code execution to catch errors before responding.
+    If there are some errors - fix them and run all checks one more time.
 
-### Code Linting
+### Core Quality Standards
+
+#### Type Safety (Non-Negotiable)
+
+- **Complete Type Annotations**: Every function, variable, and parameter must be typed
+- **Interface Compliance**: All methods used must exist in their respective interfaces
+- **No Type Mismatches**: Method signatures must match interface definitions exactly
+
+```python
+# ✅ Correct
+def process_data(data: list[str], config: PMvpParams) -> dict[str, Any]:
+    """Process data using MVP parameters."""
+    ...
+
+# ❌ Incorrect - missing types
+def process_data(data, config):
+    ...
+```
+
+#### Linting (Zero Tolerance)
 
 **Default linter:** Pylance (via Pyright)
 
-Code must pass without lint errors.
-
-**Ensure:**
+**Must have:**
 
 - No unused imports or variables
 - No missing or mismatched types
 - No shadowed or ambiguous names
-- Explicit visibility of function return types and argument types
+- Explicit return types on all functions
 
-**Claude should:**
+#### Interface-First Development
 
-- Automatically fix or point out linting issues when generating or editing Python code
+- **Check Interface Definition**: Before using any method, verify it exists in the interface
+- **Add Missing Methods**: If a method is needed but not in interface, add it first
+- **Complete Implementation**: All interface methods must be implemented
 
-### Type Annotations
+#### Documentation Standards
 
-Use PEP 484-style type hints throughout the codebase.
-
-**All functions must include:**
-
-- Argument types
-- Return types
-
-**Example:**
+- **Concise Docstrings**: Single-line summaries preferred
+- **Clear Parameter Description**: For complex functions only
+- **No Redundant Comments**: Code should be self-documenting
 
 ```python
-def fetch_data(url: str, timeout: int = 5) -> dict:
-    """Fetch data from the given URL."""
-    ...
+def load_ui_from_params(self) -> None:
+    """Load UI components from current MVP parameters."""
+    # Implementation here - no additional comments needed
 ```
 
-**Claude should:**
+### MVP-Specific Rules
 
-- Never leave initialized variable, function arguments or return types untyped
+#### Parameter Binding
 
-### Docstrings
+- **Bidirectional Binding**: UI ↔ MVP parameter synchronization required
+- **State Persistence**: All UI state must be restorable from MVP parameters
+- **Complete Coverage**: Every UI component must map to an MVP parameter
 
-Use short, informative docstrings for all functions and classes.
+#### UI Consistency
 
-**Follow this format:**
+- **Use Centralized Styles**: Import from `src/ui/styles/`
+- **Extend Base Classes**: Inherit from `GeneralView`, use `ScrollableMixin`
+- **Consistent Error Handling**: Use `GeneralView` messaging methods
 
-```python
-def process_data(data: list[str]) -> dict:
-    """Process a list of strings into a dictionary."""
-    ...
-```
+### Quality Verification Process
 
-If there are several parameters and the line is too long:
+Claude MUST perform this verification before any response:
 
-```python
-def process_data(
-        data: list[str],
-        some_param: str,
-        another_param: int | None,
-) -> dict:
-    """Process a list of strings into a dictionary."""
-    ...
-```
+1. **Interface Check**: ✅ All used methods exist in interfaces
+2. **Type Safety**: ✅ All functions have complete type annotations
+3. **Import Validation**: ✅ All imports are available and correct
+4. **Method Signatures**: ✅ All calls match interface definitions
+5. **Mental Execution**: ✅ Code logic flows correctly
+6. **MVP Compliance**: ✅ Parameter binding is bidirectional and complete
 
-**Claude should:**
+### Error Recovery Protocol
 
-- Prefer single-line summaries unless a longer explanation is necessary
+If Claude detects any quality issues:
 
-### 🔍 Error Checking
+1. **Fix Interface First**: Add missing methods to interfaces
+2. **Update Implementation**: Ensure all methods are properly implemented
+3. **Verify Types**: Check all type annotations are correct
+4. **Test Compilation**: Simulate import and execution
+5. **Document Changes**: Explain what was fixed and why
 
-Claude must verify that the code works by:
+### Current Architecture Status
 
-- Ensuring all method calls reference valid objects
-- All variables are initialized and typed
-- All functions and modules used are imported or defined
-
-**Claude should simulate running the code (or dry-run reasoning) to ensure correctness before returning a response.**
-
-## Current Development Status
-
-The project is in transition from legacy GUI (`old_gui_logic/`) to new MVP architecture. The main entry point still references `src_1.AppGui` which appears to be missing, indicating active refactoring.
+- **MVP Modules**: `main`, `init_data`, `intercalation_and_sorption`, `data_converter`
+- **Interface Segregation**: Complete separation of concerns with full contracts
+- **Centralized Styling**: All UI styling managed through `src/ui/styles/`
+- **Scrolling Infrastructure**: `ScrollableMixin` provides universal scrolling support
+- **Parameter Binding**: Full bidirectional UI ↔ MVP state synchronization
