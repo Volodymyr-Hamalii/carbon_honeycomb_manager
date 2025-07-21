@@ -10,10 +10,9 @@ from src.ui.components import (
     CheckBox,
     DropdownList,
     InputField,
-    InputFieldCoordLimits,
     Table,
 )
-from src.ui.templates import ScrollableToplevel
+from src.ui.templates import ScrollableToplevel, CoordinateLimitsTemplate
 from src.services import Logger
 
 
@@ -40,9 +39,7 @@ class InitDataView(GeneralView, IShowInitDataView):
         self.to_show_c_indexes_checkbox: CheckBox | None = None
         self.bonds_num_of_min_distances_input: InputField | None = None
         self.bonds_skip_first_distances_input: InputField | None = None
-        self.coord_x_limits_input: InputFieldCoordLimits | None = None
-        self.coord_y_limits_input: InputFieldCoordLimits | None = None
-        self.coord_z_limits_input: InputFieldCoordLimits | None = None
+        self.coordinate_limits_template: CoordinateLimitsTemplate | None = None
 
         # Buttons
         self.init_structure_btn: Button | None = None
@@ -100,29 +97,12 @@ class InitDataView(GeneralView, IShowInitDataView):
         )
         self.bonds_skip_first_distances_input.pack(pady=2)
 
-        # Coordinate limits
-        coord_frame = ctk.CTkFrame(main_frame)
-        coord_frame.pack(fill="x", pady=(0, 10))
-
-        ctk.CTkLabel(coord_frame, text="Coordinate Limits").pack(pady=5)
-
-        self.coord_x_limits_input = InputFieldCoordLimits(
-            coord_frame, "X limits",
-            change_callback=self._on_x_limits_changed
+        # Coordinate limits using template
+        self.coordinate_limits_template = CoordinateLimitsTemplate(
+            main_frame,
+            title="Plot coordinate limits"
         )
-        self.coord_x_limits_input.pack(pady=2)
-
-        self.coord_y_limits_input = InputFieldCoordLimits(
-            coord_frame, "Y limits",
-            change_callback=self._on_y_limits_changed
-        )
-        self.coord_y_limits_input.pack(pady=2)
-
-        self.coord_z_limits_input = InputFieldCoordLimits(
-            coord_frame, "Z limits",
-            change_callback=self._on_z_limits_changed
-        )
-        self.coord_z_limits_input.pack(pady=2)
+        self.coordinate_limits_template.pack(fill="x", pady=(0, 10))
 
         # Action buttons
         button_frame = ctk.CTkFrame(main_frame)
@@ -204,86 +184,14 @@ class InitDataView(GeneralView, IShowInitDataView):
 
     def set_coordinate_limits(self, limits: dict[str, float]) -> None:
         """Set coordinate limits in the UI."""
-        if self.coord_x_limits_input:
-            self.coord_x_limits_input.set_min_value(str(limits.get("x_min", -float("inf"))))
-            self.coord_x_limits_input.set_max_value(str(limits.get("x_max", float("inf"))))
-
-        if self.coord_y_limits_input:
-            self.coord_y_limits_input.set_min_value(str(limits.get("y_min", -float("inf"))))
-            self.coord_y_limits_input.set_max_value(str(limits.get("y_max", float("inf"))))
-
-        if self.coord_z_limits_input:
-            self.coord_z_limits_input.set_min_value(str(limits.get("z_min", -float("inf"))))
-            self.coord_z_limits_input.set_max_value(str(limits.get("z_max", float("inf"))))
+        if self.coordinate_limits_template:
+            self.coordinate_limits_template.set_coordinate_limits(limits)
 
     def get_coordinate_limits(self) -> dict[str, float]:
         """Get coordinate limits from the UI."""
-        limits: dict[str, float] = {}
-
-        if self.coord_x_limits_input:
-            # Handle min value
-            min_val = self.coord_x_limits_input.get_min_value().strip()
-            if min_val == "":
-                limits["x_min"] = -float("inf")
-            else:
-                try:
-                    limits["x_min"] = float(min_val)
-                except ValueError:
-                    limits["x_min"] = -float("inf")
-            
-            # Handle max value
-            max_val = self.coord_x_limits_input.get_max_value().strip()
-            if max_val == "":
-                limits["x_max"] = float("inf")
-            else:
-                try:
-                    limits["x_max"] = float(max_val)
-                except ValueError:
-                    limits["x_max"] = float("inf")
-
-        if self.coord_y_limits_input:
-            # Handle min value
-            min_val = self.coord_y_limits_input.get_min_value().strip()
-            if min_val == "":
-                limits["y_min"] = -float("inf")
-            else:
-                try:
-                    limits["y_min"] = float(min_val)
-                except ValueError:
-                    limits["y_min"] = -float("inf")
-            
-            # Handle max value
-            max_val = self.coord_y_limits_input.get_max_value().strip()
-            if max_val == "":
-                limits["y_max"] = float("inf")
-            else:
-                try:
-                    limits["y_max"] = float(max_val)
-                except ValueError:
-                    limits["y_max"] = float("inf")
-
-        if self.coord_z_limits_input:
-            # Handle min value
-            min_val = self.coord_z_limits_input.get_min_value().strip()
-            if min_val == "":
-                limits["z_min"] = -float("inf")
-            else:
-                try:
-                    limits["z_min"] = float(min_val)
-                except ValueError:
-                    limits["z_min"] = -float("inf")
-            
-            # Handle max value
-            max_val = self.coord_z_limits_input.get_max_value().strip()
-            if max_val == "":
-                limits["z_max"] = float("inf")
-            else:
-                try:
-                    limits["z_max"] = float(max_val)
-                except ValueError:
-                    limits["z_max"] = float("inf")
-
-        return limits
+        if self.coordinate_limits_template:
+            return self.coordinate_limits_template.get_coordinate_limits()
+        return {}
 
     def set_channel_display_settings(self, settings: dict[str, Any]) -> None:
         """Set channel display settings in the UI."""
@@ -403,24 +311,14 @@ class InitDataView(GeneralView, IShowInitDataView):
         if hasattr(self, '_presenter_auto_sync_callback'):
             self._presenter_auto_sync_callback('bonds_skip_first_distances', value)
 
-    def _on_x_limits_changed(self, min_val: str, max_val: str) -> None:
-        """Handle X coordinate limits change."""
+    def _on_coordinate_limits_changed(self, param_name: str, value: str) -> None:
+        """Handle coordinate limits change from template."""
         if hasattr(self, '_presenter_auto_sync_callback'):
-            self._presenter_auto_sync_callback('x_min', min_val)
-            self._presenter_auto_sync_callback('x_max', max_val)
-
-    def _on_y_limits_changed(self, min_val: str, max_val: str) -> None:
-        """Handle Y coordinate limits change."""
-        if hasattr(self, '_presenter_auto_sync_callback'):
-            self._presenter_auto_sync_callback('y_min', min_val)
-            self._presenter_auto_sync_callback('y_max', max_val)
-
-    def _on_z_limits_changed(self, min_val: str, max_val: str) -> None:
-        """Handle Z coordinate limits change."""
-        if hasattr(self, '_presenter_auto_sync_callback'):
-            self._presenter_auto_sync_callback('z_min', min_val)
-            self._presenter_auto_sync_callback('z_max', max_val)
+            self._presenter_auto_sync_callback(param_name, value)
 
     def set_auto_sync_callback(self, callback: Callable[[str, str], None]) -> None:
         """Set the auto-sync callback for parameter updates."""
         self._presenter_auto_sync_callback = callback
+        # Set callback on coordinate limits template
+        if self.coordinate_limits_template:
+            self.coordinate_limits_template.set_change_callback(self._on_coordinate_limits_changed)

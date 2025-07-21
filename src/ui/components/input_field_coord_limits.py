@@ -36,11 +36,12 @@ class InputFieldCoordLimits(ctk.CTkFrame):
         self.auto_sync_job: str | None = None
 
         # Create a frame to hold the entries
-        self.pack(
-            fill="x",
-            padx=style.spacing.get("padx", 10),
-            pady=style.spacing.get("pady", 5)  # Reduced padding since no Apply button
-        )
+        # Don't pack here - let parent handle packing to control width
+        # self.pack(
+        #     fill="x",
+        #     padx=style.spacing.get("padx", 10),
+        #     pady=style.spacing.get("pady", 5)  # Reduced padding since no Apply button
+        # )
 
         # Create and pack the label above the frame
         label_style: ComponentStyle = get_component_style("label")
@@ -63,8 +64,14 @@ class InputFieldCoordLimits(ctk.CTkFrame):
             "border_color": get_color_safe("input_field", "border_color"),
             "height": get_dimension_safe("input_field", "height"),
             "font": (style.font.get("family", "Arial"), style.font.get("size", 10)),
-            "placeholder_text": "Min"
+            "placeholder_text": "Min",
+            "placeholder_text_color": "#999999"  # Grey placeholder
         }
+        
+        # Add width if specified in kwargs
+        if "width" in kwargs:
+            entry_width = kwargs["width"] // 2  # Divide by 2 since we have min and max entries
+            entry_config["width"] = entry_width
         self.min_entry = ctk.CTkEntry(entries_frame, **entry_config)
         self.min_entry.configure(state=state)
         if default_min is not None and not self._is_infinity(default_min):
@@ -83,6 +90,7 @@ class InputFieldCoordLimits(ctk.CTkFrame):
         # Initialize the CTkEntry for max value
         max_entry_config = entry_config.copy()
         max_entry_config["placeholder_text"] = "Max"
+        max_entry_config["placeholder_text_color"] = "#999999"  # Grey placeholder
         self.max_entry = ctk.CTkEntry(entries_frame, **max_entry_config)
         self.max_entry.configure(state=state)
         if default_max is not None and not self._is_infinity(default_max):
@@ -125,8 +133,8 @@ class InputFieldCoordLimits(ctk.CTkFrame):
     def _check_for_changes(self) -> None:
         """Check if values have changed and call callback if they have."""
         try:
-            current_min = self.min_entry.get()
-            current_max = self.max_entry.get()
+            current_min: str = self.min_entry.get()
+            current_max: str = self.max_entry.get()
             
             if current_min != self.last_min_value or current_max != self.last_max_value:
                 self.last_min_value = current_min

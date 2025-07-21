@@ -7,8 +7,8 @@ import pandas as pd
 
 from src.interfaces import IIntercalationAndSorptionView
 from src.mvp.general import GeneralView
-from src.ui.components import Button, CheckBox, InputField, InputFieldCoordLimits, DropdownList, Table
-from src.ui.templates import ScrollableToplevel
+from src.ui.components import Button, CheckBox, InputField, DropdownList, Table
+from src.ui.templates import ScrollableToplevel, CoordinateLimitsTemplate
 from src.services import Logger
 
 logger = Logger("IntercalationAndSorptionView")
@@ -29,12 +29,12 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
 
         # UI components
         self.visualization_checkboxes: dict[str, CheckBox] = {}
-        self.coordinate_limits: dict[str, InputFieldCoordLimits] = {}
         self.operation_buttons: dict[str, Button] = {}
         self.intercalation_params: dict[str, InputField] = {}
         self.file_selection_dropdown: DropdownList | None = None
         self.bonds_num_input: InputField | None = None
         self.bonds_skip_input: InputField | None = None
+        self.coordinate_limits_template: CoordinateLimitsTemplate | None = None
 
         # Callbacks
         self.callbacks: dict[str, Callable] = {}
@@ -149,30 +149,12 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
         )
         self.bonds_skip_input.pack(side="right", padx=(5, 0), fill="x", expand=True)
 
-        # Coordinate limits
-        coord_frame = ctk.CTkFrame(main_frame)
-        coord_frame.pack(fill="x", pady=(0, 10))
-
-        ctk.CTkLabel(coord_frame, text="Coordinate Limits",
-                     font=ctk.CTkFont(size=16, weight="bold")).pack(pady=5)
-
-        self.coordinate_limits["x"] = InputFieldCoordLimits(
-            coord_frame, "X limits",
-            change_callback=self._on_x_limits_changed
+        # Coordinate limits using template
+        self.coordinate_limits_template = CoordinateLimitsTemplate(
+            main_frame,
+            title="Plot coordinate limits"
         )
-        self.coordinate_limits["x"].pack(pady=2)
-
-        self.coordinate_limits["y"] = InputFieldCoordLimits(
-            coord_frame, "Y limits",
-            change_callback=self._on_y_limits_changed
-        )
-        self.coordinate_limits["y"].pack(pady=2)
-
-        self.coordinate_limits["z"] = InputFieldCoordLimits(
-            coord_frame, "Z limits",
-            change_callback=self._on_z_limits_changed
-        )
-        self.coordinate_limits["z"].pack(pady=2)
+        self.coordinate_limits_template.pack(fill="x", pady=(0, 10))
 
         # Intercalation parameters
         inter_frame = ctk.CTkFrame(main_frame)
@@ -376,39 +358,14 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
 
     def set_coordinate_limits(self, limits: dict[str, float]) -> None:
         """Set coordinate limits in the UI."""
-        for axis in ["x", "y", "z"]:
-            if axis in self.coordinate_limits:
-                min_key = f"{axis}_min"
-                max_key = f"{axis}_max"
-                if min_key in limits:
-                    self.coordinate_limits[axis].set_min_value(str(limits[min_key]))
-                if max_key in limits:
-                    self.coordinate_limits[axis].set_max_value(str(limits[max_key]))
+        if self.coordinate_limits_template:
+            self.coordinate_limits_template.set_coordinate_limits(limits)
 
     def get_coordinate_limits(self) -> dict[str, float]:
         """Get coordinate limits from the UI."""
-        limits = {}
-        for axis, field in self.coordinate_limits.items():
-            # Handle min value
-            min_val: str = field.get_min_value().strip()
-            if min_val == "":
-                limits[f"{axis}_min"] = -float("inf")
-            else:
-                try:
-                    limits[f"{axis}_min"] = float(min_val)
-                except ValueError:
-                    limits[f"{axis}_min"] = -float("inf")
-            
-            # Handle max value
-            max_val: str = field.get_max_value().strip()
-            if max_val == "":
-                limits[f"{axis}_max"] = float("inf")
-            else:
-                try:
-                    limits[f"{axis}_max"] = float(max_val)
-                except ValueError:
-                    limits[f"{axis}_max"] = float("inf")
-        return limits
+        if self.coordinate_limits_template:
+            return self.coordinate_limits_template.get_coordinate_limits()
+        return {}
 
     def show_operation_progress(self, message: str) -> None:
         """Show operation progress to user."""
@@ -572,23 +529,10 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
         if hasattr(self, '_presenter_auto_sync_callback'):
             self._presenter_auto_sync_callback('bonds_skip_first_distances', value)
 
-    def _on_x_limits_changed(self, min_val: str, max_val: str) -> None:
-        """Handle X coordinate limits change."""
+    def _on_coordinate_limits_changed(self, param_name: str, value: str) -> None:
+        """Handle coordinate limits change from template."""
         if hasattr(self, '_presenter_auto_sync_callback'):
-            self._presenter_auto_sync_callback('x_min', min_val)
-            self._presenter_auto_sync_callback('x_max', max_val)
-
-    def _on_y_limits_changed(self, min_val: str, max_val: str) -> None:
-        """Handle Y coordinate limits change."""
-        if hasattr(self, '_presenter_auto_sync_callback'):
-            self._presenter_auto_sync_callback('y_min', min_val)
-            self._presenter_auto_sync_callback('y_max', max_val)
-
-    def _on_z_limits_changed(self, min_val: str, max_val: str) -> None:
-        """Handle Z coordinate limits change."""
-        if hasattr(self, '_presenter_auto_sync_callback'):
-            self._presenter_auto_sync_callback('z_min', min_val)
-            self._presenter_auto_sync_callback('z_max', max_val)
+            self._presenter_auto_sync_callback(param_name, value)
 
     def _on_number_of_planes_changed(self, value: str) -> None:
         """Handle number of planes input change."""
@@ -608,3 +552,6 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
     def set_auto_sync_callback(self, callback: Callable[[str, str], None]) -> None:
         """Set the auto-sync callback for parameter updates."""
         self._presenter_auto_sync_callback = callback
+        # Set callback on coordinate limits template
+        if self.coordinate_limits_template:
+            self.coordinate_limits_template.set_change_callback(self._on_coordinate_limits_changed)

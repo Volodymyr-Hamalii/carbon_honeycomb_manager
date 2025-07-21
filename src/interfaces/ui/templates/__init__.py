@@ -1,6 +1,5 @@
-from .i_window_general_template import IWindowGeneralTemplate
-
+from .i_coordinate_limits_template import ICoordinateLimitsTemplate
 
 __all__: list[str] = [
-    "IWindowGeneralTemplate",
+    "ICoordinateLimitsTemplate"
 ]
