@@ -133,6 +133,9 @@ class InitDataView(GeneralView, IShowInitDataView):
             command=self._on_get_channel_params,
         )
         self.channel_params_btn.pack(pady=5)
+        
+        # Call parent set_ui to refresh scrolling
+        super().set_ui()
 
     def set_visualization_settings(self, settings: dict[str, Any]) -> None:
         """Set visualization settings in the UI."""

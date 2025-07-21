@@ -287,6 +287,9 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
             command=self._on_translate_inter_to_all_channels_generate
         )
         self.operation_buttons["translate_inter_to_all_channels_generate"].pack(pady=2)
+        
+        # Call parent set_ui to refresh scrolling
+        super().set_ui()
 
     # def set_intercalation_parameters(self, parameters: dict[str, Any]) -> None:
     #     """Set intercalation parameters in the UI."""

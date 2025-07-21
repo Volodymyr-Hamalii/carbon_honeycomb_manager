@@ -16,6 +16,10 @@ class ScrollableMixin:
         """Enable touchpad scrolling for all scrollable components in this window."""
         # Type ignore needed for mixin's after method
         self.after(100, self._setup_scrolling)  # type: ignore
+        
+    def refresh_scrolling(self) -> None:
+        """Refresh scrolling setup - useful after UI changes."""
+        self._setup_scrolling()
 
     def _setup_scrolling(self) -> None:
         """Set up scrolling for all scrollable widgets found in the window."""
@@ -24,6 +28,20 @@ class ScrollableMixin:
         for widget in self._scrollable_widgets:
             self._bind_mousewheel_to_widget(widget)
             self._bind_keyboard_to_widget(widget)
+            
+        # Set the first scrollable widget as the default focused widget for keyboard scrolling
+        if self._scrollable_widgets and (not hasattr(self, '_focused_scrollable_widget') or self._focused_scrollable_widget is None):
+            # Prioritize CTkScrollableFrame over CTkCanvas
+            main_scrollable = None
+            for widget in self._scrollable_widgets:
+                if isinstance(widget, ctk.CTkScrollableFrame):
+                    main_scrollable = widget
+                    break
+            if not main_scrollable and self._scrollable_widgets:
+                main_scrollable = self._scrollable_widgets[0]
+            
+            if main_scrollable:
+                self._focused_scrollable_widget = main_scrollable  # type: ignore
 
     def _find_scrollable_widgets(self, parent: tk.Widget) -> None:
         """Recursively find all scrollable widgets in the window."""
@@ -36,12 +54,41 @@ class ScrollableMixin:
                 if canvas:
                     self._scrollable_widgets.append(canvas)
 
-            # Check for CTkCanvas (used in Tables)
+            # Check for CTkCanvas (used in Tables) but exclude small canvases that are part of input widgets
             elif isinstance(child, ctk.CTkCanvas):
-                self._scrollable_widgets.append(child)
+                # Only include canvas if it's likely a main content area, not an input widget canvas
+                if self._is_main_canvas(child):
+                    self._scrollable_widgets.append(child)
 
             # Recursively search children
             self._find_scrollable_widgets(child)
+
+    def _is_main_canvas(self, canvas: ctk.CTkCanvas) -> bool:
+        """Check if a canvas is a main scrollable area, not part of an input widget."""
+        try:
+            # Get canvas dimensions
+            width = canvas.winfo_reqwidth()
+            height = canvas.winfo_reqheight()
+            
+            # Small canvases (typically < 100px in either dimension) are usually part of input widgets
+            # Main scrollable canvases are typically much larger
+            if width < 100 or height < 100:
+                return False
+                
+            # Check parent hierarchy - if parent is an input widget, exclude this canvas
+            parent = canvas.master
+            while parent:
+                parent_class = parent.__class__.__name__
+                if any(name in parent_class for name in [
+                    'InputField', 'Entry', 'Button', 'CheckBox', 'ComboBox', 
+                    'Dropdown', 'Slider', 'Switch', 'Label'
+                ]):
+                    return False
+                parent = getattr(parent, 'master', None)
+                
+            return True
+        except (AttributeError, tk.TclError):
+            return False
 
     def _get_scrollable_frame_canvas(self, scrollable_frame: ctk.CTkScrollableFrame) -> Optional[ctk.CTkCanvas]:
         """Get the internal canvas from a CTkScrollableFrame."""
@@ -133,30 +180,22 @@ class ScrollableMixin:
                 pass
             return "break"
 
-        # Bind events for mouse enter/leave to manage global scrolling
-        def _bind_to_mousewheel(event: tk.Event) -> None:
-            """Bind global mouse wheel events when mouse enters the widget."""
-            # Type ignore needed for mixin's bind_all method
-            self.bind_all("<MouseWheel>", _on_mousewheel)  # type: ignore
-            self.bind_all("<Shift-MouseWheel>", _on_shift_mousewheel)  # type: ignore
-            self.bind_all("<Button-4>", _on_button_4)  # type: ignore
-            self.bind_all("<Button-5>", _on_button_5)  # type: ignore
-            self.bind_all("<Shift-Button-4>", _on_shift_button_4)  # type: ignore
-            self.bind_all("<Shift-Button-5>", _on_shift_button_5)  # type: ignore
-
-        def _unbind_from_mousewheel(event: tk.Event) -> None:
-            """Unbind global mouse wheel events when mouse leaves the widget."""
-            # Type ignore needed for mixin's unbind_all method
-            self.unbind_all("<MouseWheel>")  # type: ignore
-            self.unbind_all("<Shift-MouseWheel>")  # type: ignore
-            self.unbind_all("<Button-4>")  # type: ignore
-            self.unbind_all("<Button-5>")  # type: ignore
-            self.unbind_all("<Shift-Button-4>")  # type: ignore
-            self.unbind_all("<Shift-Button-5>")  # type: ignore
-
-        # Bind enter/leave events to the widget
-        widget.bind("<Enter>", _bind_to_mousewheel)
-        widget.bind("<Leave>", _unbind_from_mousewheel)
+        # Bind scroll events directly to the scrollable widget instead of using global bind_all
+        # This prevents input fields from triggering scrolling
+        widget.bind("<MouseWheel>", _on_mousewheel)
+        widget.bind("<Shift-MouseWheel>", _on_shift_mousewheel)
+        widget.bind("<Button-4>", _on_button_4)
+        widget.bind("<Button-5>", _on_button_5)
+        widget.bind("<Shift-Button-4>", _on_shift_button_4)
+        widget.bind("<Shift-Button-5>", _on_shift_button_5)
+        
+        # Set this widget as focused for keyboard scrolling when mouse enters it
+        # (but only main scrollable widgets should reach this point due to filtering)
+        def _set_focus_on_enter(event: tk.Event) -> None:
+            """Set this scrollable widget as focused when mouse enters."""
+            self._focused_scrollable_widget = widget  # type: ignore
+        
+        widget.bind("<Enter>", _set_focus_on_enter)
 
     def _bind_keyboard_to_widget(self, widget: Union[ctk.CTkCanvas, ctk.CTkScrollableFrame]) -> None:
         """Bind keyboard arrow keys and page navigation for scrolling."""

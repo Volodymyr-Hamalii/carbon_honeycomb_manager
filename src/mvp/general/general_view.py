@@ -25,8 +25,8 @@ class GeneralView(ScrollableMixin, ctk.CTk, IGeneralView):
         self.status_label = StatusLabel(self)
         self.status_label.pack(side="bottom", fill="x", expand=False)
         
-        # Enable touchpad scrolling after UI is set up
-        self.after(300, self.enable_touchpad_scrolling)
+        # Enable touchpad scrolling after UI is set up (delayed to allow subclass UI creation)
+        self.after(500, self.enable_touchpad_scrolling)
     
     def set_presenter(self, presenter: IGeneralPresenter) -> None:
         """Set the presenter for this view."""
@@ -82,4 +82,5 @@ class GeneralView(ScrollableMixin, ctk.CTk, IGeneralView):
     def set_ui(self) -> None:
         """Set up the UI (required by IGeneralView)."""
         # Override in subclasses to implement specific UI setup
-        pass
+        # After subclass UI is set up, refresh scrolling to detect new scrollable widgets
+        self.after(100, self.refresh_scrolling)
