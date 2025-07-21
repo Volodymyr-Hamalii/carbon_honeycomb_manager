@@ -2,6 +2,8 @@ import customtkinter as ctk
 import pandas as pd
 import tkinter as tk
 
+from src.ui.styles import get_component_style, ComponentStyle, get_color_safe
+
 
 class Table(ctk.CTkFrame):
     def __init__(
@@ -14,21 +16,22 @@ class Table(ctk.CTkFrame):
     ) -> None:
         super().__init__(master, **kwargs)
 
-        # Automatically determine the theme
-        current_theme: str = ctk.get_appearance_mode().lower()
-
-        # Define colors based on theme
-        # TODO: move to entities
-        if current_theme == "dark":
-            bg_color = "#333333"  # Dark background
-            header_bg_color = "#444444"  # Slightly lighter for headers
-            text_color = "white"
-            alt_row_color = "#3a3a3a"  # Alternate row color for dark theme
-        else:
-            bg_color = "white"
-            header_bg_color = "lightgray"
-            text_color = "black"
-            alt_row_color = "#f0f0f0"  # Alternate row color for light theme
+        # Apply centralized styles
+        style: ComponentStyle = get_component_style("table")
+        bg_color: str = get_color_safe("table", "bg_color")
+        header_bg_color: str = get_color_safe("table", "header_bg_color")
+        text_color: str = get_color_safe("table", "text_color")
+        alt_row_color: str = get_color_safe("table", "alt_row_color")
+        border_color: str = get_color_safe("table", "border_color")
+        
+        # Font configuration
+        cell_font_size: int = style.font.get("size", 9)
+        header_font_size: int = style.font.get("header_size", 10)
+        font_family: str = style.font.get("family", "Arial")
+        
+        # Spacing configuration
+        cell_padx: int = style.spacing.get("padx", 1)
+        cell_pady: int = style.spacing.get("pady", 1)
 
         # Set the background color for the entire table
         self.configure(bg_color=bg_color)
@@ -85,20 +88,20 @@ class Table(ctk.CTkFrame):
 
                     # Create a header for the top-level
                     if level == 0:
-                        header_frame = ctk.CTkFrame(table_frame, bg_color="black")
+                        header_frame = ctk.CTkFrame(table_frame, bg_color=border_color)
                         header_frame.grid(
                             row=level,
                             column=col_start + (1 if to_show_index else 0),
                             columnspan=(col_end - col_start + 1),
                             sticky="nsew",
-                            padx=1,
-                            pady=1,
+                            padx=cell_padx,
+                            pady=cell_pady,
                         )
                         header = tk.Text(
                             header_frame,
                             height=1,
                             width=sum(col_widths[col_start:col_end + 1]),
-                            font=("Arial", 10, "bold"),  # Bold font for headers
+                            font=(font_family, header_font_size, "bold"),  # Bold font for headers
                             bg=header_bg_color,  # Use theme-based header background color
                             fg=text_color,  # Use theme-based text color
                             bd=0,  # No border
@@ -113,19 +116,19 @@ class Table(ctk.CTkFrame):
 
                     # Create headers for the second level
                     for col in range(col_start, col_end + 1):
-                        header_frame = ctk.CTkFrame(table_frame, bg_color="black")
+                        header_frame = ctk.CTkFrame(table_frame, bg_color=border_color)
                         header_frame.grid(
                             row=level + 1,
                             column=col + (1 if to_show_index else 0),
                             sticky="nsew",
-                            padx=1,
-                            pady=1,
+                            padx=cell_padx,
+                            pady=cell_pady,
                         )
                         header = tk.Text(
                             header_frame,
                             height=1,
                             width=col_widths[col],
-                            font=("Arial", 10, "bold"),  # Bold font for headers
+                            font=(font_family, header_font_size, "bold"),  # Bold font for headers
                             bg=header_bg_color,  # Use theme-based header background color
                             fg=text_color,  # Use theme-based text color
                             bd=0,  # No border
@@ -142,8 +145,8 @@ class Table(ctk.CTkFrame):
         else:
             # Create a single row of headers
             for i, column in enumerate(data.columns):
-                header_frame = ctk.CTkFrame(table_frame, bg_color="black")
-                header_frame.grid(row=0, column=i + (1 if to_show_index else 0), sticky="nsew", padx=1, pady=1)
+                header_frame = ctk.CTkFrame(table_frame, bg_color=border_color)
+                header_frame.grid(row=0, column=i + (1 if to_show_index else 0), sticky="nsew", padx=cell_padx, pady=cell_pady)
                 header = tk.Text(
                     header_frame,
                     height=1,
@@ -168,13 +171,13 @@ class Table(ctk.CTkFrame):
 
             # Add index cell only if to_show_index is True
             if to_show_index:
-                index_frame = ctk.CTkFrame(table_frame, bg_color="black")
-                index_frame.grid(row=i + data.columns.nlevels, column=0, sticky="nsew", padx=1, pady=1)
+                index_frame = ctk.CTkFrame(table_frame, bg_color=border_color)
+                index_frame.grid(row=i + data.columns.nlevels, column=0, sticky="nsew", padx=cell_padx, pady=cell_pady)
                 index_cell = tk.Text(
                     index_frame,
                     height=1,
                     width=index_width,
-                    font=("Arial", 9),  # Reduced font size for cells
+                    font=(font_family, cell_font_size),  # Cell font
                     bg=header_bg_color,  # Use theme-based index cell background color
                     fg=text_color,  # Use theme-based text color
                     bd=0,  # No border
@@ -190,13 +193,13 @@ class Table(ctk.CTkFrame):
             for j, value in enumerate(row):
                 # Adjust column index if index column is not shown
                 col_index = j + 1 if to_show_index else j
-                cell_frame = ctk.CTkFrame(table_frame, bg_color="black")
-                cell_frame.grid(row=i + data.columns.nlevels, column=col_index, sticky="nsew", padx=1, pady=1)
+                cell_frame = ctk.CTkFrame(table_frame, bg_color=border_color)
+                cell_frame.grid(row=i + data.columns.nlevels, column=col_index, sticky="nsew", padx=cell_padx, pady=cell_pady)
                 cell = tk.Text(
                     cell_frame,
                     height=1,
                     width=col_widths[j],
-                    font=("Arial", 9),  # Reduced font size for cells
+                    font=(font_family, cell_font_size),  # Cell font
                     bg=row_bg_color,  # Use theme-based row background color
                     fg=text_color,  # Use theme-based text color
                     bd=0,  # No border

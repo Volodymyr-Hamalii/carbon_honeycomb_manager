@@ -2,7 +2,8 @@
 
 import customtkinter as ctk
 from enum import Enum
-from typing import Optional
+
+from src.ui.styles import get_component_style, ComponentStyle, STATUS_COLORS, get_color_safe
 
 
 class StatusType(Enum):
@@ -20,13 +21,16 @@ class StatusLabel(ctk.CTkFrame):
     def __init__(self, parent: ctk.CTk | ctk.CTkFrame, **kwargs) -> None:
         super().__init__(parent, **kwargs)
         
-        # Status colors
-        self.status_colors = {
-            StatusType.INFO: "#1f538d",      # Blue
-            StatusType.SUCCESS: "#2d5a27",   # Green  
-            StatusType.WARNING: "#8b5a00",   # Orange
-            StatusType.ERROR: "#8b0000",     # Red
-            StatusType.PROCESSING: "#4a4a4a" # Gray
+        # Apply centralized styles
+        style: ComponentStyle = get_component_style("frame")
+        
+        # Status colors from centralized configuration
+        self.status_colors: dict[StatusType, str] = {
+            StatusType.INFO: STATUS_COLORS.info,
+            StatusType.SUCCESS: STATUS_COLORS.success,
+            StatusType.WARNING: STATUS_COLORS.warning,
+            StatusType.ERROR: STATUS_COLORS.error,
+            StatusType.PROCESSING: STATUS_COLORS.processing,
         }
         
         # Default styling - start with minimum height
@@ -37,26 +41,42 @@ class StatusLabel(ctk.CTkFrame):
         
         # Create main content frame
         self.content_frame = ctk.CTkFrame(self, fg_color="transparent")
-        self.content_frame.pack(fill="both", expand=True, padx=5, pady=5)
+        self.content_frame.pack(
+            fill="both", 
+            expand=True, 
+            padx=style.spacing.get("padx", 5), 
+            pady=style.spacing.get("pady", 5)
+        )
         
         # Create status label with wrapping
+        label_style: ComponentStyle = get_component_style("label")
         self.status_label = ctk.CTkLabel(
             self.content_frame,
             text="Ready",
-            font=ctk.CTkFont(size=12),
-            text_color="white",
+            font=ctk.CTkFont(
+                family=label_style.font.get("family", "Arial"),
+                size=label_style.font.get("size", 12)
+            ),
+            text_color="white",  # Keep white for contrast on colored backgrounds
             wraplength=500,  # Wrap text at 500 pixels
             justify="left"
         )
         self.status_label.pack(pady=3, padx=5, side="left", fill="both", expand=True)
         
         # Create clear button
+        button_style: ComponentStyle = get_component_style("button")
         self.clear_button = ctk.CTkButton(
             self.content_frame,
             text="Clear",
             width=60,
             height=24,
-            font=ctk.CTkFont(size=10),
+            font=ctk.CTkFont(
+                family=button_style.font.get("family", "Arial"),
+                size=button_style.font.get("size", 10)
+            ),
+            fg_color=get_color_safe("button", "fg_color"),
+            text_color=get_color_safe("button", "text_color"),
+            hover_color=get_color_safe("button", "hover_color"),
             command=self.clear_status
         )
         self.clear_button.pack(pady=3, padx=5, side="right")
