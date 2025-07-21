@@ -18,9 +18,9 @@ class Button(ctk.CTkButton):
 
         # Merge default styles with user-provided kwargs
         default_config = {
-            # "fg_color": get_color_safe("button", "fg_color"),
+            "fg_color": get_color_safe("button", "fg_color"),
             "text_color": get_color_safe("button", "text_color"),
-            # "hover_color": get_color_safe("button", "hover_color"),
+            "hover_color": get_color_safe("button", "hover_color"),
             "height": get_dimension_safe("button", "height"),
             "font": (style.font.get("family", "Arial"), style.font.get("size", 10)),
         }

@@ -4,10 +4,11 @@ from tkinter import messagebox
 from src.interfaces import IGeneralView, IGeneralPresenter
 from src.services import Logger
 from src.ui.components import StatusLabel, StatusType
+from src.ui.templates import ScrollableMixin
 
 
-class GeneralView(ctk.CTk, IGeneralView):
-    """General view with default logic."""
+class GeneralView(ScrollableMixin, ctk.CTk, IGeneralView):
+    """General view with default logic and touchpad scrolling support."""
     
     def __init__(self) -> None:
         super().__init__()
@@ -23,6 +24,9 @@ class GeneralView(ctk.CTk, IGeneralView):
         # Status bar at bottom
         self.status_label = StatusLabel(self)
         self.status_label.pack(side="bottom", fill="x")
+        
+        # Enable touchpad scrolling after UI is set up
+        self.after(300, self.enable_touchpad_scrolling)
     
     def set_presenter(self, presenter: IGeneralPresenter) -> None:
         """Set the presenter for this view."""

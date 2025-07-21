@@ -42,20 +42,20 @@ class Table(ctk.CTkFrame):
             title_label.grid(row=0, column=0, columnspan=len(data.columns) + (1 if to_show_index else 0), sticky="ew")
 
         # Create a canvas to hold the table and scrollbars
-        canvas = ctk.CTkCanvas(self, bg=bg_color)
-        canvas.grid(row=1, column=0, sticky="nsew")
+        self.canvas = ctk.CTkCanvas(self, bg=bg_color)
+        self.canvas.grid(row=1, column=0, sticky="nsew")
 
         # Add scrollbars
-        v_scrollbar = ctk.CTkScrollbar(self, orientation='vertical', command=canvas.yview)
+        v_scrollbar = ctk.CTkScrollbar(self, orientation='vertical', command=self.canvas.yview)
         v_scrollbar.grid(row=1, column=1, sticky='ns')
-        h_scrollbar = ctk.CTkScrollbar(self, orientation='horizontal', command=canvas.xview)
+        h_scrollbar = ctk.CTkScrollbar(self, orientation='horizontal', command=self.canvas.xview)
         h_scrollbar.grid(row=2, column=0, sticky='ew')
 
-        canvas.configure(yscrollcommand=v_scrollbar.set, xscrollcommand=h_scrollbar.set)
+        self.canvas.configure(yscrollcommand=v_scrollbar.set, xscrollcommand=h_scrollbar.set)
 
         # Create a frame inside the canvas
-        table_frame = ctk.CTkFrame(canvas, bg_color=bg_color)
-        canvas.create_window((0, 0), window=table_frame, anchor='nw')
+        table_frame = ctk.CTkFrame(self.canvas, bg_color=bg_color)
+        self.canvas.create_window((0, 0), window=table_frame, anchor='nw')
 
         # Calculate column widths based on content
         col_widths: list[int] = []
@@ -218,4 +218,4 @@ class Table(ctk.CTkFrame):
 
         # Update scroll region
         table_frame.update_idletasks()
-        canvas.config(scrollregion=canvas.bbox("all"))
+        self.canvas.config(scrollregion=self.canvas.bbox("all"))

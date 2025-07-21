@@ -8,6 +8,7 @@ import pandas as pd
 from src.interfaces import IIntercalationAndSorptionView
 from src.mvp.general import GeneralView
 from src.ui.components import Button, CheckBox, InputField, InputFieldCoordLimits, DropdownList, Table
+from src.ui.templates import ScrollableToplevel
 from src.services import Logger
 
 logger = Logger("IntercalationAndSorptionView")
@@ -250,8 +251,8 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
 
     def display_channel_details(self, details: pd.DataFrame) -> None:
         """Display channel details in the UI."""
-        # Create a new window to display the DataFrame
-        details_window = ctk.CTkToplevel(self)
+        # Create a new window with touchpad scrolling support
+        details_window = ScrollableToplevel(self)
         details_window.title("Channel Details")
 
         width: int = min(len(details.columns) * 50 + 100, 1000)
@@ -269,8 +270,8 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
 
     def display_channel_constants(self, constants: pd.DataFrame) -> None:
         """Display channel constants in the UI."""
-        # Create a new window to display the DataFrame
-        constants_window = ctk.CTkToplevel(self)
+        # Create a new window with touchpad scrolling support
+        constants_window = ScrollableToplevel(self)
         constants_window.title("Channel Constants")
         constants_window.geometry("450x200")
 

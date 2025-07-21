@@ -13,6 +13,7 @@ from src.ui.components import (
     InputFieldCoordLimits,
     Table,
 )
+from src.ui.templates import ScrollableToplevel
 from src.services import Logger
 
 
@@ -258,8 +259,8 @@ class InitDataView(GeneralView, IShowInitDataView):
 
     def display_channel_parameters(self, parameters: pd.DataFrame) -> None:
         """Display channel parameters in the UI."""
-        # Create a new window to display the DataFrame
-        param_window = ctk.CTkToplevel(self)
+        # Create a new window with touchpad scrolling support
+        param_window = ScrollableToplevel(self)
         param_window.title("Channel Parameters")
         param_window.geometry("800x600")
 
