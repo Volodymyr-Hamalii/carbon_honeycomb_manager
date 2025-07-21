@@ -82,3 +82,8 @@ class IShowInitDataView(IGeneralView):
     def get_selected_file(self) -> str:
         """Get currently selected file."""
         ...
+
+    @abstractmethod
+    def set_auto_sync_callback(self, callback: Callable[[str, str], None]) -> None:
+        """Set the auto-sync callback for parameter updates."""
+        ...

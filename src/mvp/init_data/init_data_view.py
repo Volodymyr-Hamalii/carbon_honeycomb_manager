@@ -89,12 +89,14 @@ class InitDataView(GeneralView, IShowInitDataView):
         self.to_show_c_indexes_checkbox.pack(pady=2)
 
         self.bonds_num_of_min_distances_input = InputField(
-            viz_frame, "Number of min distances for bonds"
+            viz_frame, "Number of min distances for bonds",
+            change_callback=self._on_bonds_num_changed
         )
         self.bonds_num_of_min_distances_input.pack(pady=2)
 
         self.bonds_skip_first_distances_input = InputField(
-            viz_frame, "Skip first distances for bonds"
+            viz_frame, "Skip first distances for bonds",
+            change_callback=self._on_bonds_skip_changed
         )
         self.bonds_skip_first_distances_input.pack(pady=2)
 
@@ -104,13 +106,22 @@ class InitDataView(GeneralView, IShowInitDataView):
 
         ctk.CTkLabel(coord_frame, text="Coordinate Limits").pack(pady=5)
 
-        self.coord_x_limits_input = InputFieldCoordLimits(coord_frame, "X limits")
+        self.coord_x_limits_input = InputFieldCoordLimits(
+            coord_frame, "X limits",
+            change_callback=self._on_x_limits_changed
+        )
         self.coord_x_limits_input.pack(pady=2)
 
-        self.coord_y_limits_input = InputFieldCoordLimits(coord_frame, "Y limits")
+        self.coord_y_limits_input = InputFieldCoordLimits(
+            coord_frame, "Y limits",
+            change_callback=self._on_y_limits_changed
+        )
         self.coord_y_limits_input.pack(pady=2)
 
-        self.coord_z_limits_input = InputFieldCoordLimits(coord_frame, "Z limits")
+        self.coord_z_limits_input = InputFieldCoordLimits(
+            coord_frame, "Z limits",
+            change_callback=self._on_z_limits_changed
+        )
         self.coord_z_limits_input.pack(pady=2)
 
         # Action buttons
@@ -341,3 +352,36 @@ class InitDataView(GeneralView, IShowInitDataView):
         if self.file_names_dropdown:
             return self.file_names_dropdown.get()
         return "None"
+
+    # Auto-sync callback methods
+    def _on_bonds_num_changed(self, value: str) -> None:
+        """Handle bonds number input change."""
+        if hasattr(self, '_presenter_auto_sync_callback'):
+            self._presenter_auto_sync_callback('bonds_num_of_min_distances', value)
+
+    def _on_bonds_skip_changed(self, value: str) -> None:
+        """Handle bonds skip input change."""
+        if hasattr(self, '_presenter_auto_sync_callback'):
+            self._presenter_auto_sync_callback('bonds_skip_first_distances', value)
+
+    def _on_x_limits_changed(self, min_val: str, max_val: str) -> None:
+        """Handle X coordinate limits change."""
+        if hasattr(self, '_presenter_auto_sync_callback'):
+            self._presenter_auto_sync_callback('x_min', min_val)
+            self._presenter_auto_sync_callback('x_max', max_val)
+
+    def _on_y_limits_changed(self, min_val: str, max_val: str) -> None:
+        """Handle Y coordinate limits change."""
+        if hasattr(self, '_presenter_auto_sync_callback'):
+            self._presenter_auto_sync_callback('y_min', min_val)
+            self._presenter_auto_sync_callback('y_max', max_val)
+
+    def _on_z_limits_changed(self, min_val: str, max_val: str) -> None:
+        """Handle Z coordinate limits change."""
+        if hasattr(self, '_presenter_auto_sync_callback'):
+            self._presenter_auto_sync_callback('z_min', min_val)
+            self._presenter_auto_sync_callback('z_max', max_val)
+
+    def set_auto_sync_callback(self, callback: Callable[[str, str], None]) -> None:
+        """Set the auto-sync callback for parameter updates."""
+        self._presenter_auto_sync_callback = callback

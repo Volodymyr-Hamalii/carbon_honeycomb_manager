@@ -137,10 +137,16 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
         bonds_row = ctk.CTkFrame(bonds_frame, fg_color="transparent")
         bonds_row.pack(fill="x", pady=2)
 
-        self.bonds_num_input = InputField(bonds_row, "Number of min distances")
+        self.bonds_num_input = InputField(
+            bonds_row, "Number of min distances",
+            change_callback=self._on_bonds_num_changed
+        )
         self.bonds_num_input.pack(side="left", padx=(0, 5), fill="x", expand=True)
 
-        self.bonds_skip_input = InputField(bonds_row, "Skip first distances")
+        self.bonds_skip_input = InputField(
+            bonds_row, "Skip first distances",
+            change_callback=self._on_bonds_skip_changed
+        )
         self.bonds_skip_input.pack(side="right", padx=(5, 0), fill="x", expand=True)
 
         # Coordinate limits
@@ -150,13 +156,22 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
         ctk.CTkLabel(coord_frame, text="Coordinate Limits",
                      font=ctk.CTkFont(size=16, weight="bold")).pack(pady=5)
 
-        self.coordinate_limits["x"] = InputFieldCoordLimits(coord_frame, "X limits")
+        self.coordinate_limits["x"] = InputFieldCoordLimits(
+            coord_frame, "X limits",
+            change_callback=self._on_x_limits_changed
+        )
         self.coordinate_limits["x"].pack(pady=2)
 
-        self.coordinate_limits["y"] = InputFieldCoordLimits(coord_frame, "Y limits")
+        self.coordinate_limits["y"] = InputFieldCoordLimits(
+            coord_frame, "Y limits",
+            change_callback=self._on_y_limits_changed
+        )
         self.coordinate_limits["y"].pack(pady=2)
 
-        self.coordinate_limits["z"] = InputFieldCoordLimits(coord_frame, "Z limits")
+        self.coordinate_limits["z"] = InputFieldCoordLimits(
+            coord_frame, "Z limits",
+            change_callback=self._on_z_limits_changed
+        )
         self.coordinate_limits["z"].pack(pady=2)
 
         # Intercalation parameters
@@ -174,13 +189,22 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
         inter_left = ctk.CTkFrame(inter_columns)
         inter_left.pack(side="left", fill="both", expand=True, padx=(0, 5))
 
-        self.intercalation_params["number_of_planes"] = InputField(inter_left, "Number of planes")
+        self.intercalation_params["number_of_planes"] = InputField(
+            inter_left, "Number of planes",
+            change_callback=self._on_number_of_planes_changed
+        )
         self.intercalation_params["number_of_planes"].pack(pady=2, fill="x")
 
-        self.intercalation_params["num_of_inter_atoms_layers"] = InputField(inter_left, "Number of inter atom layers")
+        self.intercalation_params["num_of_inter_atoms_layers"] = InputField(
+            inter_left, "Number of inter atom layers",
+            change_callback=self._on_num_inter_atoms_layers_changed
+        )
         self.intercalation_params["num_of_inter_atoms_layers"].pack(pady=2, fill="x")
 
-        self.intercalation_params["inter_atoms_lattice_type"] = InputField(inter_left, "Inter atoms lattice type")
+        self.intercalation_params["inter_atoms_lattice_type"] = InputField(
+            inter_left, "Inter atoms lattice type",
+            change_callback=self._on_lattice_type_changed
+        )
         self.intercalation_params["inter_atoms_lattice_type"].pack(pady=2, fill="x")
 
         # Right column - Boolean flags
@@ -523,3 +547,51 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
         settings.update(self.get_coordinate_limits())
         
         return settings
+
+    # Auto-sync callback methods
+    def _on_bonds_num_changed(self, value: str) -> None:
+        """Handle bonds number input change."""
+        if hasattr(self, '_presenter_auto_sync_callback'):
+            self._presenter_auto_sync_callback('bonds_num_of_min_distances', value)
+
+    def _on_bonds_skip_changed(self, value: str) -> None:
+        """Handle bonds skip input change."""
+        if hasattr(self, '_presenter_auto_sync_callback'):
+            self._presenter_auto_sync_callback('bonds_skip_first_distances', value)
+
+    def _on_x_limits_changed(self, min_val: str, max_val: str) -> None:
+        """Handle X coordinate limits change."""
+        if hasattr(self, '_presenter_auto_sync_callback'):
+            self._presenter_auto_sync_callback('x_min', min_val)
+            self._presenter_auto_sync_callback('x_max', max_val)
+
+    def _on_y_limits_changed(self, min_val: str, max_val: str) -> None:
+        """Handle Y coordinate limits change."""
+        if hasattr(self, '_presenter_auto_sync_callback'):
+            self._presenter_auto_sync_callback('y_min', min_val)
+            self._presenter_auto_sync_callback('y_max', max_val)
+
+    def _on_z_limits_changed(self, min_val: str, max_val: str) -> None:
+        """Handle Z coordinate limits change."""
+        if hasattr(self, '_presenter_auto_sync_callback'):
+            self._presenter_auto_sync_callback('z_min', min_val)
+            self._presenter_auto_sync_callback('z_max', max_val)
+
+    def _on_number_of_planes_changed(self, value: str) -> None:
+        """Handle number of planes input change."""
+        if hasattr(self, '_presenter_auto_sync_callback'):
+            self._presenter_auto_sync_callback('number_of_planes', value)
+
+    def _on_num_inter_atoms_layers_changed(self, value: str) -> None:
+        """Handle number of inter atoms layers input change."""
+        if hasattr(self, '_presenter_auto_sync_callback'):
+            self._presenter_auto_sync_callback('num_of_inter_atoms_layers', value)
+
+    def _on_lattice_type_changed(self, value: str) -> None:
+        """Handle lattice type input change."""
+        if hasattr(self, '_presenter_auto_sync_callback'):
+            self._presenter_auto_sync_callback('inter_atoms_lattice_type', value)
+
+    def set_auto_sync_callback(self, callback: Callable[[str, str], None]) -> None:
+        """Set the auto-sync callback for parameter updates."""
+        self._presenter_auto_sync_callback = callback

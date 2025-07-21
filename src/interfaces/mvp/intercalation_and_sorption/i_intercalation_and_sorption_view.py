@@ -93,3 +93,8 @@ class IIntercalationAndSorptionView(IGeneralView):
     def reset_form(self) -> None:
         """Reset the form to default values."""
         ...
+
+    @abstractmethod
+    def set_auto_sync_callback(self, callback: Callable[[str, str], None]) -> None:
+        """Set the auto-sync callback for parameter updates."""
+        ...

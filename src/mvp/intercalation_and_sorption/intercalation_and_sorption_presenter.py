@@ -23,6 +23,7 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
         self.view: IIntercalationAndSorptionView = view
         self._current_context: dict[str, str] = {}
         self._initialize()
+        self._setup_auto_sync()
 
     def _initialize(self) -> None:
         """Initialize the presenter."""
@@ -618,3 +619,40 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
             
         except Exception as e:
             logger.error(f"Failed to load UI from params: {e}")
+
+    def _setup_auto_sync(self) -> None:
+        """Setup auto-sync callback for input field changes."""
+        self.view.set_auto_sync_callback(self._handle_auto_sync_parameter_change)
+
+    def _handle_auto_sync_parameter_change(self, param_name: str, value: str) -> None:
+        """Handle auto-sync parameter changes from UI."""
+        try:
+            params: PMvpParams = self.model.get_mvp_params()
+            
+            # Handle different parameter types
+            if param_name in ['bonds_num_of_min_distances', 'bonds_skip_first_distances', 'number_of_planes', 'num_of_inter_atoms_layers']:
+                try:
+                    int_value = int(value) if value else (6 if param_name == 'number_of_planes' else 2 if param_name == 'num_of_inter_atoms_layers' else 0)
+                    setattr(params, param_name, int_value)
+                except ValueError:
+                    return  # Ignore invalid values
+            
+            elif param_name in ['x_min', 'x_max', 'y_min', 'y_max', 'z_min', 'z_max']:
+                try:
+                    if value == "" or value.lower() in ['inf', '-inf']:
+                        float_value: float = -float('inf') if param_name.endswith('_min') else float('inf')
+                    else:
+                        float_value = float(value)
+                    setattr(params, param_name, float_value)
+                except ValueError:
+                    return  # Ignore invalid values
+            
+            elif param_name == 'inter_atoms_lattice_type':
+                str_value = value if value else "FCC"
+                setattr(params, param_name, str_value)
+            
+            # Save updated parameters
+            self.model.set_mvp_params(params)
+            
+        except Exception as e:
+            logger.error(f"Failed to handle auto-sync parameter change for {param_name}: {e}")
