@@ -1,4 +1,4 @@
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Literal, Optional
 import customtkinter as ctk
 import pandas as pd
 
@@ -18,7 +18,7 @@ logger = Logger("WindowGeneralTemplate")
 
 class WindowGeneralTemplate:
     """Template for creating consistent UI layouts across MVP views."""
-    
+
     def __init__(self) -> None:
         self.main_frame: Optional[ctk.CTkScrollableFrame] = None
         self.window: Optional[ctk.CTk | ctk.CTkToplevel] = None
@@ -33,17 +33,17 @@ class WindowGeneralTemplate:
     ) -> ctk.CTkScrollableFrame:
         """Create the main scrollable layout for MVP views."""
         self.window = parent
-        
+
         if geometry and hasattr(parent, 'geometry'):
             parent.geometry(f"{geometry[0]}x{geometry[1]}")
-        
+
         if title and hasattr(parent, 'title'):
             parent.title(title)
-            
+
         # Create main scrollable frame
         self.main_frame = ctk.CTkScrollableFrame(parent)
         self.main_frame.pack(fill="both", expand=True, padx=padx, pady=pady)
-        
+
         return self.main_frame
 
     def create_section_frame(
@@ -52,20 +52,20 @@ class WindowGeneralTemplate:
             title: str,
             pady: tuple[int, int] = (0, 10),
             font_size: int = 16,
-            font_weight: str = "bold"
+            font_weight: Literal["normal", "bold"] = "bold"
     ) -> ctk.CTkFrame:
         """Create a titled section frame."""
         section_frame = ctk.CTkFrame(parent)
         section_frame.pack(fill="x", pady=pady)
-        
+
         if title:
             title_label = ctk.CTkLabel(
-                section_frame, 
+                section_frame,
                 text=title,
                 font=ctk.CTkFont(size=font_size, weight=font_weight)
             )
             title_label.pack(pady=5)
-        
+
         return section_frame
 
     def create_columns_layout(
@@ -77,11 +77,11 @@ class WindowGeneralTemplate:
         """Create a multi-column layout within a frame."""
         columns_container = ctk.CTkFrame(parent, fg_color="transparent")
         columns_container.pack(fill="x", padx=10, pady=5)
-        
+
         columns = []
         for i in range(column_count):
             column = ctk.CTkFrame(columns_container)
-            
+
             # Pack columns side by side
             if i == 0:
                 column.pack(side="left", fill="both", expand=True, padx=(0, spacing))
@@ -89,9 +89,9 @@ class WindowGeneralTemplate:
                 column.pack(side="right", fill="both", expand=True, padx=(spacing, 0))
             else:
                 column.pack(side="left", fill="both", expand=True, padx=spacing)
-                
+
             columns.append(column)
-        
+
         return columns
 
     def create_coordinate_limits_section(
@@ -104,9 +104,9 @@ class WindowGeneralTemplate:
         """Create a coordinate limits section."""
         # Import locally to avoid circular import
         from src.ui.templates.coordinate_limits_template import CoordinateLimitsTemplate
-        
+
         coord_limits = CoordinateLimitsTemplate(
-            parent,
+            parent,  # type: ignore
             title=title,
             change_callback=change_callback
         )
@@ -125,8 +125,8 @@ class WindowGeneralTemplate:
         label_config = {"text": text}
         if font:
             label_config["font"] = font
-            
-        label: ctk.CTkLabel = ctk.CTkLabel(parent, **label_config)
+
+        label: ctk.CTkLabel = ctk.CTkLabel(parent, **label_config)  # type: ignore
         label.pack(pady=pady, padx=padx)
         return label
 

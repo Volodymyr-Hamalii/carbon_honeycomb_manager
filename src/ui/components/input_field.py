@@ -20,8 +20,8 @@ class InputField(ctk.CTkFrame):
         
         # Initialize the CTkEntry within the frame
         frame_config = {
-            "bg_color": get_color_safe("input_field", "bg_color"),
-            "fg_color": get_color_safe("input_field", "fg_color"),
+            # "bg_color": get_color_safe("input_field", "bg_color"),
+            # "fg_color": get_color_safe("input_field", "fg_color"),
         }
         final_frame_config = {**frame_config, **kwargs}
         
@@ -52,9 +52,9 @@ class InputField(ctk.CTkFrame):
 
         # Initialize the CTkEntry within the frame
         entry_config = {
-            "fg_color": get_color_safe("input_field", "fg_color"),
-            "text_color": get_color_safe("input_field", "text_color"),
-            "border_color": get_color_safe("input_field", "border_color"),
+            # "fg_color": get_color_safe("input_field", "fg_color"),
+            # "text_color": get_color_safe("input_field", "text_color"),
+            # "border_color": get_color_safe("input_field", "border_color"),
             "height": get_dimension_safe("input_field", "height"),
             "font": (style.font.get("family", "Arial"), style.font.get("size", 10)),
         }

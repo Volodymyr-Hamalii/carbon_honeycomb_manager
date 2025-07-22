@@ -78,13 +78,13 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
 
         # Visualization settings section with columns
         viz_frame = self.template.create_section_frame(main_frame, "Visualization Settings")
-        
+
         # Create two columns using template
         left_column, right_column = self.template.create_columns_layout(viz_frame, 2)
 
         # Left column - Structure display
-        self.template.pack_label(left_column, "Structure Display", pady=2, 
-                                font=ctk.CTkFont(size=12, weight="bold"))
+        self.template.pack_label(left_column, "Structure Display", pady=2,
+                                 font=ctk.CTkFont(size=12, weight="bold"))
 
         self.visualization_checkboxes["to_build_bonds"] = self.template.pack_check_box(
             left_column, "Build bonds"
@@ -101,7 +101,7 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
 
         # Right column - Channel analysis
         self.template.pack_label(right_column, "Channel Analysis", pady=2,
-                                font=ctk.CTkFont(size=12, weight="bold"))
+                                 font=ctk.CTkFont(size=12, weight="bold"))
 
         self.visualization_checkboxes["to_show_dists_to_plane"] = self.template.pack_check_box(
             right_column, "Show distances to plane"
@@ -121,7 +121,7 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
         bonds_frame.pack(fill="x", padx=10, pady=5)
 
         self.template.pack_label(bonds_frame, "Bond Parameters", pady=2,
-                                font=ctk.CTkFont(size=12, weight="bold"))
+                                 font=ctk.CTkFont(size=12, weight="bold"))
 
         # Create horizontal layout for bond inputs
         bonds_left, bonds_right = self.template.create_columns_layout(bonds_frame, 2)
@@ -181,8 +181,7 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
             inter_right, "Filter inter atoms"
         )
         self.visualization_checkboxes["to_remove_inter_atoms_with_min_and_max_x_coordinates"] = self.template.pack_check_box(
-            inter_right, "Remove atoms at X boundaries"
-        )
+            inter_right, "Remove atoms at X boundaries")
 
         # Operation buttons section
         operations_frame = self.template.create_section_frame(main_frame, "Operations")
@@ -230,7 +229,7 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
             operations_frame, "Generate All Channels Files",
             self._on_translate_inter_to_all_channels_generate
         )
-        
+
         # Call parent set_ui to refresh scrolling
         super().set_ui()
 
@@ -252,11 +251,11 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
         for key, value in settings.items():
             if key in self.visualization_checkboxes:
                 self.visualization_checkboxes[key].set_value(bool(value))
-        
+
         # Handle bond parameters
         if "bonds_num_of_min_distances" in settings and self.bonds_num_input:
             self.bonds_num_input.set_value(str(settings["bonds_num_of_min_distances"]))
-        
+
         if "bonds_skip_first_distances" in settings and self.bonds_skip_input:
             self.bonds_skip_input.set_value(str(settings["bonds_skip_first_distances"]))
 
@@ -265,28 +264,28 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
         settings = {}
         for key, checkbox in self.visualization_checkboxes.items():
             settings[key] = checkbox.get()
-        
+
         # Add bond parameters
         if self.bonds_num_input:
             try:
                 settings["bonds_num_of_min_distances"] = int(self.bonds_num_input.get_value())
             except ValueError:
                 settings["bonds_num_of_min_distances"] = 2
-        
+
         if self.bonds_skip_input:
             try:
                 settings["bonds_skip_first_distances"] = int(self.bonds_skip_input.get_value())
             except ValueError:
                 settings["bonds_skip_first_distances"] = 0
-        
+
         return settings
-    
+
     def set_intercalation_parameters(self, params: dict[str, Any]) -> None:
         """Set intercalation parameters in the UI."""
         for key, value in params.items():
             if key in self.intercalation_params:
                 self.intercalation_params[key].set_value(str(value))
-    
+
     def get_intercalation_parameters(self) -> dict[str, Any]:
         """Get intercalation parameters from the UI."""
         params = {}
@@ -299,7 +298,7 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
                     params[key] = 6 if key == "number_of_planes" else 2
             else:
                 params[key] = value if value else ("FCC" if key == "inter_atoms_lattice_type" else "")
-        
+
         return params
 
     def set_coordinate_limits(self, limits: dict[str, float]) -> None:
@@ -384,11 +383,6 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
         for checkbox in self.visualization_checkboxes.values():
             checkbox.set_value(False)
 
-        # Reset coordinate limits
-        for field in self.coordinate_limits.values():
-            field.set_min_value("0.0")
-            field.set_max_value("100.0")
-
     # Event handlers for buttons
     def _on_plot_inter_in_c_structure(self) -> None:
         """Handle plot inter in C structure button click."""
@@ -456,12 +450,12 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
     def get_operation_settings(self) -> dict[str, Any]:
         """Get operation settings from the UI."""
         settings = {}
-        
+
         # Combine all settings from different UI components
         settings.update(self.get_intercalation_parameters())
         settings.update(self.get_visualization_settings())
         settings.update(self.get_coordinate_limits())
-        
+
         return settings
 
     # Auto-sync callback methods

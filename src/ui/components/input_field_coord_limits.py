@@ -59,9 +59,9 @@ class InputFieldCoordLimits(ctk.CTkFrame):
 
         # Initialize the CTkEntry for min value
         entry_config = {
-            "fg_color": get_color_safe("input_field", "fg_color"),
-            "text_color": get_color_safe("input_field", "text_color"),
-            "border_color": get_color_safe("input_field", "border_color"),
+            # "fg_color": get_color_safe("input_field", "fg_color"),
+            # "text_color": get_color_safe("input_field", "text_color"),
+            # "border_color": get_color_safe("input_field", "border_color"),
             "height": get_dimension_safe("input_field", "height"),
             "font": (style.font.get("family", "Arial"), style.font.get("size", 10)),
             "placeholder_text": "Min",
