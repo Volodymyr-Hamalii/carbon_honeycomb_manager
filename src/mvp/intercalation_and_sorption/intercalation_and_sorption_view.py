@@ -8,7 +8,7 @@ import pandas as pd
 from src.interfaces import IIntercalationAndSorptionView
 from src.mvp.general import GeneralView
 from src.ui.components import Button, CheckBox, InputField, DropdownList, Table
-from src.ui.templates import ScrollableToplevel, CoordinateLimitsTemplate
+from src.ui.templates import ScrollableToplevel, CoordinateLimitsTemplate, WindowGeneralTemplate
 from src.services import Logger
 
 logger = Logger("IntercalationAndSorptionView")
@@ -26,6 +26,9 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
         self.project_dir = ""
         self.subproject_dir = ""
         self.structure_dir = ""
+
+        # UI template
+        self.template = WindowGeneralTemplate()
 
         # UI components
         self.visualization_checkboxes: dict[str, CheckBox] = {}
@@ -48,8 +51,8 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
 
     def set_ui(self) -> None:
         """Set up the UI components."""
-        main_frame = ctk.CTkScrollableFrame(self)
-        main_frame.pack(fill="both", expand=True, padx=10, pady=10)
+        # Create main layout using template
+        main_frame = self.template.create_main_layout(self)
 
         # # Intercalation parameters
         # params_frame = ctk.CTkFrame(main_frame)
@@ -67,226 +70,166 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
         # self.intercalation_params["temperature"] = InputField(params_frame, "Temperature (K)")
         # self.intercalation_params["temperature"].pack(pady=2)
 
-        # File selection
-        file_frame = ctk.CTkFrame(main_frame)
-        file_frame.pack(fill="x", pady=(0, 10))
-
-        ctk.CTkLabel(file_frame, text="File Selection",
-                     font=ctk.CTkFont(size=16, weight="bold")).pack(pady=5)
-
-        ctk.CTkLabel(file_frame, text="Select intercalated structure file:").pack(pady=2)
+        # File selection section
+        file_frame = self.template.create_section_frame(main_frame, "File Selection")
+        self.template.pack_label(file_frame, "Select intercalated structure file:", pady=2)
         self.file_selection_dropdown = DropdownList(file_frame, ["Loading..."], command=self._on_file_selected)
         self.file_selection_dropdown.pack(pady=2)
 
-        # Visualization settings - organized in columns
-        viz_frame = ctk.CTkFrame(main_frame)
-        viz_frame.pack(fill="x", pady=(0, 10))
-
-        ctk.CTkLabel(viz_frame, text="Visualization Settings",
-                     font=ctk.CTkFont(size=16, weight="bold")).pack(pady=5)
-
-        # Create two columns for better organization
-        columns_frame = ctk.CTkFrame(viz_frame, fg_color="transparent")
-        columns_frame.pack(fill="x", padx=10, pady=5)
+        # Visualization settings section with columns
+        viz_frame = self.template.create_section_frame(main_frame, "Visualization Settings")
+        
+        # Create two columns using template
+        left_column, right_column = self.template.create_columns_layout(viz_frame, 2)
 
         # Left column - Structure display
-        left_column = ctk.CTkFrame(columns_frame)
-        left_column.pack(side="left", fill="both", expand=True, padx=(0, 5))
+        self.template.pack_label(left_column, "Structure Display", pady=2, 
+                                font=ctk.CTkFont(size=12, weight="bold"))
 
-        ctk.CTkLabel(left_column, text="Structure Display", 
-                     font=ctk.CTkFont(size=12, weight="bold")).pack(pady=2)
-
-        self.visualization_checkboxes["to_build_bonds"] = CheckBox(left_column, text="Build bonds")
-        self.visualization_checkboxes["to_build_bonds"].pack(pady=1, anchor="w")
-
-        self.visualization_checkboxes["to_show_coordinates"] = CheckBox(left_column, text="Show coordinates")
-        self.visualization_checkboxes["to_show_coordinates"].pack(pady=1, anchor="w")
-
-        self.visualization_checkboxes["to_show_c_indexes"] = CheckBox(left_column, text="Show carbon atom indexes")
-        self.visualization_checkboxes["to_show_c_indexes"].pack(pady=1, anchor="w")
-
-        self.visualization_checkboxes["to_show_inter_atoms_indexes"] = CheckBox(left_column, text="Show intercalated atom indexes")
-        self.visualization_checkboxes["to_show_inter_atoms_indexes"].pack(pady=1, anchor="w")
+        self.visualization_checkboxes["to_build_bonds"] = self.template.pack_check_box(
+            left_column, "Build bonds"
+        )
+        self.visualization_checkboxes["to_show_coordinates"] = self.template.pack_check_box(
+            left_column, "Show coordinates"
+        )
+        self.visualization_checkboxes["to_show_c_indexes"] = self.template.pack_check_box(
+            left_column, "Show carbon atom indexes"
+        )
+        self.visualization_checkboxes["to_show_inter_atoms_indexes"] = self.template.pack_check_box(
+            left_column, "Show intercalated atom indexes"
+        )
 
         # Right column - Channel analysis
-        right_column = ctk.CTkFrame(columns_frame)
-        right_column.pack(side="right", fill="both", expand=True, padx=(5, 0))
+        self.template.pack_label(right_column, "Channel Analysis", pady=2,
+                                font=ctk.CTkFont(size=12, weight="bold"))
 
-        ctk.CTkLabel(right_column, text="Channel Analysis", 
-                     font=ctk.CTkFont(size=12, weight="bold")).pack(pady=2)
-
-        self.visualization_checkboxes["to_show_dists_to_plane"] = CheckBox(right_column, text="Show distances to plane")
-        self.visualization_checkboxes["to_show_dists_to_plane"].pack(pady=1, anchor="w")
-
-        self.visualization_checkboxes["to_show_dists_to_edges"] = CheckBox(right_column, text="Show distances to edges")
-        self.visualization_checkboxes["to_show_dists_to_edges"].pack(pady=1, anchor="w")
-
-        self.visualization_checkboxes["to_show_channel_angles"] = CheckBox(right_column, text="Show channel angles")
-        self.visualization_checkboxes["to_show_channel_angles"].pack(pady=1, anchor="w")
-
-        self.visualization_checkboxes["to_show_plane_lengths"] = CheckBox(right_column, text="Show plane lengths")
-        self.visualization_checkboxes["to_show_plane_lengths"].pack(pady=1, anchor="w")
+        self.visualization_checkboxes["to_show_dists_to_plane"] = self.template.pack_check_box(
+            right_column, "Show distances to plane"
+        )
+        self.visualization_checkboxes["to_show_dists_to_edges"] = self.template.pack_check_box(
+            right_column, "Show distances to edges"
+        )
+        self.visualization_checkboxes["to_show_channel_angles"] = self.template.pack_check_box(
+            right_column, "Show channel angles"
+        )
+        self.visualization_checkboxes["to_show_plane_lengths"] = self.template.pack_check_box(
+            right_column, "Show plane lengths"
+        )
 
         # Bonds parameters section
         bonds_frame = ctk.CTkFrame(viz_frame)
         bonds_frame.pack(fill="x", padx=10, pady=5)
 
-        ctk.CTkLabel(bonds_frame, text="Bond Parameters", 
-                     font=ctk.CTkFont(size=12, weight="bold")).pack(pady=2)
+        self.template.pack_label(bonds_frame, "Bond Parameters", pady=2,
+                                font=ctk.CTkFont(size=12, weight="bold"))
 
-        bonds_row = ctk.CTkFrame(bonds_frame, fg_color="transparent")
-        bonds_row.pack(fill="x", pady=2)
+        # Create horizontal layout for bond inputs
+        bonds_left, bonds_right = self.template.create_columns_layout(bonds_frame, 2)
 
-        self.bonds_num_input = InputField(
-            bonds_row, "Number of min distances",
+        self.bonds_num_input = self.template.pack_input_field(
+            bonds_left, "Number of min distances",
             change_callback=self._on_bonds_num_changed
         )
-        self.bonds_num_input.pack(side="left", padx=(0, 5), fill="x", expand=True)
-
-        self.bonds_skip_input = InputField(
-            bonds_row, "Skip first distances",
+        self.bonds_skip_input = self.template.pack_input_field(
+            bonds_right, "Skip first distances",
             change_callback=self._on_bonds_skip_changed
         )
-        self.bonds_skip_input.pack(side="right", padx=(5, 0), fill="x", expand=True)
 
         # Coordinate limits using template
-        self.coordinate_limits_template = CoordinateLimitsTemplate(
+        self.coordinate_limits_template = self.template.create_coordinate_limits_section(
             main_frame,
-            title="Plot coordinate limits"
+            change_callback=self._on_coordinate_limits_changed
         )
-        self.coordinate_limits_template.pack(fill="x", pady=(0, 10))
 
-        # Intercalation parameters
-        inter_frame = ctk.CTkFrame(main_frame)
-        inter_frame.pack(fill="x", pady=(0, 10))
+        # Intercalation parameters section
+        inter_frame = self.template.create_section_frame(main_frame, "Intercalation Parameters")
 
-        ctk.CTkLabel(inter_frame, text="Intercalation Parameters",
-                     font=ctk.CTkFont(size=16, weight="bold")).pack(pady=5)
-
-        # Organize intercalation params in columns
-        inter_columns = ctk.CTkFrame(inter_frame, fg_color="transparent")
-        inter_columns.pack(fill="x", padx=10, pady=5)
+        # Create columns for intercalation parameters
+        inter_left, inter_right = self.template.create_columns_layout(inter_frame, 2)
 
         # Left column - Basic parameters
-        inter_left = ctk.CTkFrame(inter_columns)
-        inter_left.pack(side="left", fill="both", expand=True, padx=(0, 5))
-
-        self.intercalation_params["number_of_planes"] = InputField(
+        self.intercalation_params["number_of_planes"] = self.template.pack_input_field(
             inter_left, "Number of planes",
             change_callback=self._on_number_of_planes_changed
         )
-        self.intercalation_params["number_of_planes"].pack(pady=2, fill="x")
-
-        self.intercalation_params["num_of_inter_atoms_layers"] = InputField(
+        self.intercalation_params["num_of_inter_atoms_layers"] = self.template.pack_input_field(
             inter_left, "Number of inter atom layers",
             change_callback=self._on_num_inter_atoms_layers_changed
         )
-        self.intercalation_params["num_of_inter_atoms_layers"].pack(pady=2, fill="x")
-
-        self.intercalation_params["inter_atoms_lattice_type"] = InputField(
+        self.intercalation_params["inter_atoms_lattice_type"] = self.template.pack_input_field(
             inter_left, "Inter atoms lattice type",
             change_callback=self._on_lattice_type_changed
         )
-        self.intercalation_params["inter_atoms_lattice_type"].pack(pady=2, fill="x")
 
         # Right column - Boolean flags
-        inter_right = ctk.CTkFrame(inter_columns)
-        inter_right.pack(side="right", fill="both", expand=True, padx=(5, 0))
-
-        self.visualization_checkboxes["to_translate_inter"] = CheckBox(inter_right, text="Translate intercalated atoms")
-        self.visualization_checkboxes["to_translate_inter"].pack(pady=1, anchor="w")
-
-        self.visualization_checkboxes["to_replace_nearby_atoms"] = CheckBox(inter_right, text="Replace nearby atoms")
-        self.visualization_checkboxes["to_replace_nearby_atoms"].pack(pady=1, anchor="w")
-
-        self.visualization_checkboxes["to_remove_too_close_atoms"] = CheckBox(inter_right, text="Remove too close atoms")
-        self.visualization_checkboxes["to_remove_too_close_atoms"].pack(pady=1, anchor="w")
-
-        self.visualization_checkboxes["to_to_try_to_reflect_inter_atoms"] = CheckBox(inter_right, text="Try to reflect inter atoms")
-        self.visualization_checkboxes["to_to_try_to_reflect_inter_atoms"].pack(pady=1, anchor="w")
-
-        self.visualization_checkboxes["to_equidistant_inter_points"] = CheckBox(inter_right, text="Equidistant inter points")
-        self.visualization_checkboxes["to_equidistant_inter_points"].pack(pady=1, anchor="w")
-
-        self.visualization_checkboxes["to_filter_inter_atoms"] = CheckBox(inter_right, text="Filter inter atoms")
-        self.visualization_checkboxes["to_filter_inter_atoms"].pack(pady=1, anchor="w")
-
-        self.visualization_checkboxes["to_remove_inter_atoms_with_min_and_max_x_coordinates"] = CheckBox(inter_right, text="Remove atoms at X boundaries")
-        self.visualization_checkboxes["to_remove_inter_atoms_with_min_and_max_x_coordinates"].pack(pady=1, anchor="w")
-
-        # Operation buttons
-        operations_frame = ctk.CTkFrame(main_frame)
-        operations_frame.pack(fill="x", pady=(0, 10))
-
-        ctk.CTkLabel(operations_frame, text="Operations",
-                     font=ctk.CTkFont(size=16, weight="bold")).pack(pady=5)
-
-        # Create operation buttons in groups
-        plot_frame = ctk.CTkFrame(operations_frame)
-        plot_frame.pack(fill="x", pady=5)
-
-        self.operation_buttons["plot_inter_in_c_structure"] = Button(
-            plot_frame, text="Plot Intercalated Atoms in C Structure",
-            command=self._on_plot_inter_in_c_structure
+        self.visualization_checkboxes["to_translate_inter"] = self.template.pack_check_box(
+            inter_right, "Translate intercalated atoms"
         )
-        self.operation_buttons["plot_inter_in_c_structure"].pack(pady=2)
-
-        coords_frame = ctk.CTkFrame(operations_frame)
-        coords_frame.pack(fill="x", pady=5)
-
-        self.operation_buttons["generate_inter_plane_coordinates"] = Button(
-            coords_frame, text="Generate Plane Coordinates",
-            command=self._on_generate_inter_plane_coordinates
+        self.visualization_checkboxes["to_replace_nearby_atoms"] = self.template.pack_check_box(
+            inter_right, "Replace nearby atoms"
         )
-        self.operation_buttons["generate_inter_plane_coordinates"].pack(pady=2)
-
-        self.operation_buttons["update_inter_plane_coordinates"] = Button(
-            coords_frame, text="Update Plane Coordinates",
-            command=self._on_update_inter_plane_coordinates
+        self.visualization_checkboxes["to_remove_too_close_atoms"] = self.template.pack_check_box(
+            inter_right, "Remove too close atoms"
         )
-        self.operation_buttons["update_inter_plane_coordinates"].pack(pady=2)
-
-        self.operation_buttons["translate_inter_atoms"] = Button(
-            coords_frame, text="Translate Atoms to Other Planes",
-            command=self._on_translate_inter_atoms
+        self.visualization_checkboxes["to_to_try_to_reflect_inter_atoms"] = self.template.pack_check_box(
+            inter_right, "Try to reflect inter atoms"
         )
-        self.operation_buttons["translate_inter_atoms"].pack(pady=2)
-
-        channel_frame = ctk.CTkFrame(operations_frame)
-        channel_frame.pack(fill="x", pady=5)
-
-        self.operation_buttons["update_inter_channel_coordinates"] = Button(
-            channel_frame, text="Update Channel Coordinates",
-            command=self._on_update_inter_channel_coordinates
+        self.visualization_checkboxes["to_equidistant_inter_points"] = self.template.pack_check_box(
+            inter_right, "Equidistant inter points"
         )
-        self.operation_buttons["update_inter_channel_coordinates"].pack(pady=2)
-
-        self.operation_buttons["save_inter_in_channel_details"] = Button(
-            channel_frame, text="Save Channel Details",
-            command=self._on_save_inter_in_channel_details
+        self.visualization_checkboxes["to_filter_inter_atoms"] = self.template.pack_check_box(
+            inter_right, "Filter inter atoms"
         )
-        self.operation_buttons["save_inter_in_channel_details"].pack(pady=2)
-
-        self.operation_buttons["get_inter_in_channel_details"] = Button(
-            channel_frame, text="Get Channel Details",
-            command=self._on_get_inter_in_channel_details
+        self.visualization_checkboxes["to_remove_inter_atoms_with_min_and_max_x_coordinates"] = self.template.pack_check_box(
+            inter_right, "Remove atoms at X boundaries"
         )
-        self.operation_buttons["get_inter_in_channel_details"].pack(pady=2)
 
-        all_channels_frame = ctk.CTkFrame(operations_frame)
-        all_channels_frame.pack(fill="x", pady=5)
+        # Operation buttons section
+        operations_frame = self.template.create_section_frame(main_frame, "Operations")
 
-        self.operation_buttons["translate_inter_to_all_channels_plot"] = Button(
-            all_channels_frame, text="Plot All Channels",
-            command=self._on_translate_inter_to_all_channels_plot
+        # Create operation buttons using template
+        self.operation_buttons["plot_inter_in_c_structure"] = self.template.pack_button(
+            operations_frame, "Plot Intercalated Atoms in C Structure",
+            self._on_plot_inter_in_c_structure
         )
-        self.operation_buttons["translate_inter_to_all_channels_plot"].pack(pady=2)
 
-        self.operation_buttons["translate_inter_to_all_channels_generate"] = Button(
-            all_channels_frame, text="Generate All Channels Files",
-            command=self._on_translate_inter_to_all_channels_generate
+        # Coordinates operations
+        self.operation_buttons["generate_inter_plane_coordinates"] = self.template.pack_button(
+            operations_frame, "Generate Plane Coordinates",
+            self._on_generate_inter_plane_coordinates
         )
-        self.operation_buttons["translate_inter_to_all_channels_generate"].pack(pady=2)
+        self.operation_buttons["update_inter_plane_coordinates"] = self.template.pack_button(
+            operations_frame, "Update Plane Coordinates",
+            self._on_update_inter_plane_coordinates
+        )
+        self.operation_buttons["translate_inter_atoms"] = self.template.pack_button(
+            operations_frame, "Translate Atoms to Other Planes",
+            self._on_translate_inter_atoms
+        )
+
+        # Channel operations
+        self.operation_buttons["update_inter_channel_coordinates"] = self.template.pack_button(
+            operations_frame, "Update Channel Coordinates",
+            self._on_update_inter_channel_coordinates
+        )
+        self.operation_buttons["save_inter_in_channel_details"] = self.template.pack_button(
+            operations_frame, "Save Channel Details",
+            self._on_save_inter_in_channel_details
+        )
+        self.operation_buttons["get_inter_in_channel_details"] = self.template.pack_button(
+            operations_frame, "Get Channel Details",
+            self._on_get_inter_in_channel_details
+        )
+
+        # All channels operations
+        self.operation_buttons["translate_inter_to_all_channels_plot"] = self.template.pack_button(
+            operations_frame, "Plot All Channels",
+            self._on_translate_inter_to_all_channels_plot
+        )
+        self.operation_buttons["translate_inter_to_all_channels_generate"] = self.template.pack_button(
+            operations_frame, "Generate All Channels Files",
+            self._on_translate_inter_to_all_channels_generate
+        )
         
         # Call parent set_ui to refresh scrolling
         super().set_ui()

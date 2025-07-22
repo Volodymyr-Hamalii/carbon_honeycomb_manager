@@ -12,7 +12,7 @@ from src.ui.components import (
     InputField,
     Table,
 )
-from src.ui.templates import ScrollableToplevel, CoordinateLimitsTemplate
+from src.ui.templates import ScrollableToplevel, CoordinateLimitsTemplate, WindowGeneralTemplate
 from src.services import Logger
 
 
@@ -31,6 +31,9 @@ class InitDataView(GeneralView, IShowInitDataView):
         self.project_dir = ""
         self.subproject_dir = ""
         self.structure_dir = ""
+
+        # UI template
+        self.template = WindowGeneralTemplate()
 
         # UI components
         self.file_names_dropdown: DropdownList | None = None
@@ -59,80 +62,61 @@ class InitDataView(GeneralView, IShowInitDataView):
 
     def set_ui(self) -> None:
         """Set up the UI components."""
-        main_frame = ctk.CTkScrollableFrame(self)
-        main_frame.pack(fill="both", expand=True, padx=10, pady=10)
+        # Create main layout using template
+        main_frame = self.template.create_main_layout(self)
 
-        # File selection
-        file_frame = ctk.CTkFrame(main_frame)
-        file_frame.pack(fill="x", pady=(0, 10))
-
-        ctk.CTkLabel(file_frame, text="File Selection").pack(pady=5)
+        # File selection section
+        file_frame = self.template.create_section_frame(main_frame, "File Selection")
         self.file_names_dropdown = DropdownList(file_frame, ["None"])
         self.file_names_dropdown.pack(pady=5)
 
-        # Visualization settings
-        viz_frame = ctk.CTkFrame(main_frame)
-        viz_frame.pack(fill="x", pady=(0, 10))
+        # Visualization settings section
+        viz_frame = self.template.create_section_frame(main_frame, "Visualization Settings")
 
-        ctk.CTkLabel(viz_frame, text="Visualization Settings").pack(pady=5)
+        # Create checkboxes using template helper
+        self.to_build_bonds_checkbox = self.template.pack_check_box(
+            viz_frame, "Build bonds"
+        )
+        self.to_show_coordinates_checkbox = self.template.pack_check_box(
+            viz_frame, "Show coordinates"
+        )
+        self.to_show_c_indexes_checkbox = self.template.pack_check_box(
+            viz_frame, "Show C atoms indexes"
+        )
 
-        self.to_build_bonds_checkbox = CheckBox(viz_frame, text="Build bonds")
-        self.to_build_bonds_checkbox.pack(pady=2)
-
-        self.to_show_coordinates_checkbox = CheckBox(viz_frame, text="Show coordinates")
-        self.to_show_coordinates_checkbox.pack(pady=2)
-
-        self.to_show_c_indexes_checkbox = CheckBox(viz_frame, text="Show C atoms indexes")
-        self.to_show_c_indexes_checkbox.pack(pady=2)
-
-        self.bonds_num_of_min_distances_input = InputField(
-            viz_frame, "Number of min distances for bonds",
+        # Create input fields using template helper
+        self.bonds_num_of_min_distances_input = self.template.pack_input_field(
+            viz_frame, 
+            "Number of min distances for bonds",
             change_callback=self._on_bonds_num_changed
         )
-        self.bonds_num_of_min_distances_input.pack(pady=2)
-
-        self.bonds_skip_first_distances_input = InputField(
-            viz_frame, "Skip first distances for bonds",
+        self.bonds_skip_first_distances_input = self.template.pack_input_field(
+            viz_frame, 
+            "Skip first distances for bonds",
             change_callback=self._on_bonds_skip_changed
         )
-        self.bonds_skip_first_distances_input.pack(pady=2)
 
         # Coordinate limits using template
-        self.coordinate_limits_template = CoordinateLimitsTemplate(
+        self.coordinate_limits_template = self.template.create_coordinate_limits_section(
             main_frame,
-            title="Plot coordinate limits"
+            change_callback=self._on_coordinate_limits_changed
         )
-        self.coordinate_limits_template.pack(fill="x", pady=(0, 10))
 
-        # Action buttons
-        button_frame = ctk.CTkFrame(main_frame)
-        button_frame.pack(fill="x", pady=(0, 10))
+        # Action buttons section
+        button_frame = self.template.create_section_frame(main_frame, "Visualizations")
 
-        ctk.CTkLabel(button_frame, text="Visualizations").pack(pady=5)
-
-        self.init_structure_btn = Button(
-            button_frame, text="Show Initial Structure",
-            command=self._on_show_init_structure,
+        self.init_structure_btn = self.template.pack_button(
+            button_frame, "Show Initial Structure", self._on_show_init_structure
         )
-        self.init_structure_btn.pack(pady=5)
-
-        self.one_channel_structure_btn = Button(
-            button_frame, text="Show One Channel",
-            command=self._on_show_one_channel,
+        self.one_channel_structure_btn = self.template.pack_button(
+            button_frame, "Show One Channel", self._on_show_one_channel
         )
-        self.one_channel_structure_btn.pack(pady=5)
-
-        self.channel_2d_scheme_btn = Button(
-            button_frame, text="Show 2D Channel Scheme",
-            command=self._on_show_2d_scheme,
+        self.channel_2d_scheme_btn = self.template.pack_button(
+            button_frame, "Show 2D Channel Scheme", self._on_show_2d_scheme
         )
-        self.channel_2d_scheme_btn.pack(pady=5)
-
-        self.channel_params_btn = Button(
-            button_frame, text="Get Channel Parameters",
-            command=self._on_get_channel_params,
+        self.channel_params_btn = self.template.pack_button(
+            button_frame, "Get Channel Parameters", self._on_get_channel_params
         )
-        self.channel_params_btn.pack(pady=5)
         
         # Call parent set_ui to refresh scrolling
         super().set_ui()
