@@ -11,19 +11,19 @@ def main() -> None:
         model = MainModel()
         view = MainView()
         presenter = MainPresenter(model, view)
-        
+
         # Initialize application
         presenter.initialize_application()
-        
+
         # Set up closing event
         def on_closing() -> None:
             presenter.on_application_closing()
             view.quit()
         view.protocol("WM_DELETE_WINDOW", on_closing)
-        
+
         # Start the application
         view.mainloop()
-        
+
     except Exception as e:
         logger.error(f"Application failed to start: {e}")
         raise
