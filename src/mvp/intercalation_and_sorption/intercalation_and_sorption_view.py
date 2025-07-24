@@ -23,9 +23,9 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
         self.geometry("700x900")
 
         # Context variables
-        self.project_dir = ""
-        self.subproject_dir = ""
-        self.structure_dir = ""
+        self.project_dir: str = ""
+        self.subproject_dir: str = ""
+        self.structure_dir: str = ""
 
         # UI template
         self.template = WindowGeneralTemplate()
@@ -52,7 +52,7 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
     def set_ui(self) -> None:
         """Set up the UI components."""
         # Create main layout using template
-        main_frame = self.template.create_main_layout(self)
+        main_frame: ctk.CTkScrollableFrame = self.template.create_main_layout(self)
 
         # # Intercalation parameters
         # params_frame = ctk.CTkFrame(main_frame)
@@ -368,7 +368,7 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
 
     def enable_controls(self, enabled: bool) -> None:
         """Enable or disable UI controls."""
-        state = "normal" if enabled else "disabled"
+        state: Literal["normal", "disabled"] = "normal" if enabled else "disabled"
 
         for button in self.operation_buttons.values():
             button.configure(state=state)
@@ -449,7 +449,7 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
 
     def get_operation_settings(self) -> dict[str, Any]:
         """Get operation settings from the UI."""
-        settings = {}
+        settings: dict[str, Any] = {}
 
         # Combine all settings from different UI components
         settings.update(self.get_intercalation_parameters())
@@ -491,7 +491,7 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
 
     def set_auto_sync_callback(self, callback: Callable[[str, str], None]) -> None:
         """Set the auto-sync callback for parameter updates."""
-        self._presenter_auto_sync_callback = callback
+        self._presenter_auto_sync_callback: Callable[[str, str], None] = callback
         # Set callback on coordinate limits template
         if self.coordinate_limits_template:
             self.coordinate_limits_template.set_change_callback(self._on_coordinate_limits_changed)
