@@ -1,7 +1,7 @@
 """View for intercalation and sorption functionality."""
 
 import customtkinter as ctk
-from typing import Any, Callable
+from typing import Any, Callable, Literal
 from pathlib import Path
 import pandas as pd
 
@@ -20,7 +20,7 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
     def __init__(self) -> None:
         super().__init__()
         self.title("Intercalation and Sorption")
-        self.geometry("700x900")
+        self.geometry("800x900")
 
         # Context variables
         self.project_dir: str = ""
@@ -186,47 +186,52 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
         # Operation buttons section
         operations_frame = self.template.create_section_frame(main_frame, "Operations")
 
-        # Create operation buttons using template
-        self.operation_buttons["plot_inter_in_c_structure"] = self.template.pack_button(
-            operations_frame, "Plot Intercalated Atoms in C Structure",
-            self._on_plot_inter_in_c_structure
-        )
+        # Create three columns for operation buttons
+        op_col1, op_col2, op_col3 = self.template.create_columns_layout(operations_frame, 3)
 
+        ##### FIRST COLUMN #####
         # Coordinates operations
         self.operation_buttons["generate_inter_plane_coordinates"] = self.template.pack_button(
-            operations_frame, "Generate Plane Coordinates",
+            op_col1, "Generate Plane Coordinates",
             self._on_generate_inter_plane_coordinates
         )
         self.operation_buttons["update_inter_plane_coordinates"] = self.template.pack_button(
-            operations_frame, "Update Plane Coordinates",
+            op_col1, "Update Plane Coordinates",
             self._on_update_inter_plane_coordinates
         )
         self.operation_buttons["translate_inter_atoms"] = self.template.pack_button(
-            operations_frame, "Translate Atoms to Other Planes",
+            op_col1, "Translate Atoms to Other Planes",
             self._on_translate_inter_atoms
         )
 
+        ##### SECOND COLUMN #####
         # Channel operations
         self.operation_buttons["update_inter_channel_coordinates"] = self.template.pack_button(
-            operations_frame, "Update Channel Coordinates",
+            op_col2, "Update Channel Coordinates",
             self._on_update_inter_channel_coordinates
         )
-        self.operation_buttons["save_inter_in_channel_details"] = self.template.pack_button(
-            operations_frame, "Save Channel Details",
-            self._on_save_inter_in_channel_details
-        )
         self.operation_buttons["get_inter_in_channel_details"] = self.template.pack_button(
-            operations_frame, "Get Channel Details",
+            op_col2, "Get Channel Details",
             self._on_get_inter_in_channel_details
         )
+        self.operation_buttons["save_inter_in_channel_details"] = self.template.pack_button(
+            op_col2, "Save Channel Details",
+            self._on_save_inter_in_channel_details
+        )
 
+        ##### THIRD COLUMN #####
+        # Create operation buttons using template
+        self.operation_buttons["plot_inter_in_c_structure"] = self.template.pack_button(
+            op_col3, "Plot Intercalated Atoms in C Structure",
+            self._on_plot_inter_in_c_structure
+        )
         # All channels operations
         self.operation_buttons["translate_inter_to_all_channels_plot"] = self.template.pack_button(
-            operations_frame, "Plot All Channels",
+            op_col3, "Plot All Channels",
             self._on_translate_inter_to_all_channels_plot
         )
         self.operation_buttons["translate_inter_to_all_channels_generate"] = self.template.pack_button(
-            operations_frame, "Generate All Channels Files",
+            op_col3, "Generate All Channels Files",
             self._on_translate_inter_to_all_channels_generate
         )
 
