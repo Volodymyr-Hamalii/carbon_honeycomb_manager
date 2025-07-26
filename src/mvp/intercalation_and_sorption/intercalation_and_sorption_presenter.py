@@ -39,6 +39,7 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
             "translate_inter_to_all_channels_plot": self._handle_translate_inter_to_all_channels_plot,
             "translate_inter_to_all_channels_generate": self._handle_translate_inter_to_all_channels_generate,
             "file_selected": self._handle_file_selected,
+            "refresh_files": self._handle_refresh_files,
         }
         self.view.set_operation_callbacks(callbacks)
 
@@ -528,6 +529,20 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
         # TODO: Store selected file name and use it in operations
         # For now, just log the selection
 
+    def _handle_refresh_files(self) -> None:
+        """Handle refresh files callback."""
+        if self._current_context:
+            try:
+                files = self.model.get_available_files(
+                    self._current_context["project_dir"],
+                    self._current_context["subproject_dir"],
+                    self._current_context["structure_dir"]
+                )
+                self.view.set_available_files(files)
+            except Exception as e:
+                logger.error(f"Failed to refresh files: {e}")
+                self.view.set_available_files(["No files found"])
+
     def load_available_files(self, project_dir: str, subproject_dir: str, structure_dir: str) -> None:
         """Load available files for the given context."""
         try:
@@ -543,6 +558,9 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
             
             # Load UI from current MVP parameters
             self.load_ui_from_params()
+            
+            # Start periodic file refresh
+            self.view.start_file_list_refresh()
             
             logger.info(f"Loaded {len(files)} files for {project_dir}/{subproject_dir}/{structure_dir}")
         except Exception as e:

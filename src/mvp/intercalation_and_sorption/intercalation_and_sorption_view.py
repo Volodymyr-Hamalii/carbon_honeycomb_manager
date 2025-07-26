@@ -41,6 +41,10 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
 
         # Callbacks
         self.callbacks: dict[str, Callable] = {}
+        
+        # File refresh management
+        self._refresh_job_id: str | None = None
+        self._last_files_list: list[str] = []
 
     def set_context(self, project_dir: str, subproject_dir: str, structure_dir: str) -> None:
         """Set the context for this view."""
@@ -71,13 +75,13 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
         # self.intercalation_params["temperature"].pack(pady=2)
 
         # File selection section
-        file_frame = self.template.create_section_frame(main_frame, "File Selection")
+        file_frame: ctk.CTkFrame = self.template.create_section_frame(main_frame, "File Selection")
         self.template.pack_label(file_frame, "Select intercalated structure file:", pady=2)
         self.file_selection_dropdown = DropdownList(file_frame, ["Loading..."], command=self._on_file_selected)
         self.file_selection_dropdown.pack(pady=2)
 
         # Visualization settings section with columns
-        viz_frame = self.template.create_section_frame(main_frame, "Visualization Settings")
+        viz_frame: ctk.CTkFrame = self.template.create_section_frame(main_frame, "Visualization Settings")
 
         # Create two columns using template
         left_column, right_column = self.template.create_columns_layout(viz_frame, 2)
@@ -393,58 +397,61 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
         """Handle plot inter in C structure button click."""
         if "plot_inter_in_c_structure" in self.callbacks:
             self.callbacks["plot_inter_in_c_structure"]()
+            self.refresh_files_after_action()
 
     def _on_generate_inter_plane_coordinates(self) -> None:
         """Handle generate inter plane coordinates button click."""
         if "generate_inter_plane_coordinates" in self.callbacks:
             self.callbacks["generate_inter_plane_coordinates"]()
+            self.refresh_files_after_action()
 
     def _on_update_inter_plane_coordinates(self) -> None:
         """Handle update inter plane coordinates button click."""
         if "update_inter_plane_coordinates" in self.callbacks:
             self.callbacks["update_inter_plane_coordinates"]()
+            self.refresh_files_after_action()
 
     def _on_translate_inter_atoms(self) -> None:
         """Handle translate inter atoms button click."""
         if "translate_inter_atoms" in self.callbacks:
             self.callbacks["translate_inter_atoms"]()
+            self.refresh_files_after_action()
 
     def _on_update_inter_channel_coordinates(self) -> None:
         """Handle update inter channel coordinates button click."""
         if "update_inter_channel_coordinates" in self.callbacks:
             self.callbacks["update_inter_channel_coordinates"]()
+            self.refresh_files_after_action()
 
     def _on_save_inter_in_channel_details(self) -> None:
         """Handle save inter in channel details button click."""
         if "save_inter_in_channel_details" in self.callbacks:
             self.callbacks["save_inter_in_channel_details"]()
+            self.refresh_files_after_action()
 
     def _on_get_inter_in_channel_details(self) -> None:
         """Handle get inter in channel details button click."""
         if "get_inter_in_channel_details" in self.callbacks:
             self.callbacks["get_inter_in_channel_details"]()
+            self.refresh_files_after_action()
 
     def _on_translate_inter_to_all_channels_plot(self) -> None:
         """Handle translate inter to all channels plot button click."""
         if "translate_inter_to_all_channels_plot" in self.callbacks:
             self.callbacks["translate_inter_to_all_channels_plot"]()
+            self.refresh_files_after_action()
 
     def _on_translate_inter_to_all_channels_generate(self) -> None:
         """Handle translate inter to all channels generate button click."""
         if "translate_inter_to_all_channels_generate" in self.callbacks:
             self.callbacks["translate_inter_to_all_channels_generate"]()
+            self.refresh_files_after_action()
 
     def _on_file_selected(self, file_name: str) -> None:
         """Handle file selection from dropdown."""
         if "file_selected" in self.callbacks:
             self.callbacks["file_selected"](file_name)
 
-    def set_available_files(self, files: list[str]) -> None:
-        """Set available files for selection."""
-        if self.file_selection_dropdown:
-            self.file_selection_dropdown.configure(values=files)
-            if files and files[0] != "Loading...":
-                self.file_selection_dropdown.set(files[0])
 
     def get_selected_file(self) -> str:
         """Get selected file from the dropdown."""
@@ -500,3 +507,65 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
         # Set callback on coordinate limits template
         if self.coordinate_limits_template:
             self.coordinate_limits_template.set_change_callback(self._on_coordinate_limits_changed)
+
+    def start_file_list_refresh(self) -> None:
+        """Start periodic refresh of file list every 1 second."""
+        self._schedule_file_refresh()
+
+    def stop_file_list_refresh(self) -> None:
+        """Stop periodic refresh of file list."""
+        if self._refresh_job_id:
+            self.after_cancel(self._refresh_job_id)
+            self._refresh_job_id = None
+
+    def _schedule_file_refresh(self) -> None:
+        """Schedule the next file refresh."""
+        if self._refresh_job_id:
+            self.after_cancel(self._refresh_job_id)
+        self._refresh_job_id = self.after(1000, self._refresh_file_list)
+
+    def _refresh_file_list(self) -> None:
+        """Refresh the file list by calling the presenter to update available files."""
+        if "refresh_files" in self.callbacks:
+            self.callbacks["refresh_files"]()
+        # Schedule next refresh
+        self._schedule_file_refresh()
+
+    def refresh_files_after_action(self) -> None:
+        """Refresh file list immediately after any action is performed."""
+        if "refresh_files" in self.callbacks:
+            self.callbacks["refresh_files"]()
+
+    def set_available_files(self, files: list[str]) -> None:
+        """Set available files for selection with auto-selection logic."""
+        if not self.file_selection_dropdown:
+            return
+
+        # Store current selection
+        current_selection = self.file_selection_dropdown.get()
+        
+        # Check if files list has changed
+        if files == self._last_files_list:
+            return
+        
+        self._last_files_list = files.copy()
+
+        # Handle different file list scenarios
+        if not files or files == ["No files found"]:
+            # No files available
+            self.file_selection_dropdown.configure(values=["None"])
+            self.file_selection_dropdown.set("None")
+        else:
+            # Files are available
+            self.file_selection_dropdown.configure(values=files)
+            
+            # Auto-selection logic
+            if current_selection in files:
+                # Keep current selection if it's still valid
+                self.file_selection_dropdown.set(current_selection)
+            else:
+                # Select first file if current selection is invalid or doesn't exist
+                self.file_selection_dropdown.set(files[0])
+                # Notify presenter about the file change
+                if "file_selected" in self.callbacks:
+                    self.callbacks["file_selected"](files[0])

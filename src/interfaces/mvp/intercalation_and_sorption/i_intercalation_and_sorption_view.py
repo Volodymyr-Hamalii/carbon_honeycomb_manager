@@ -98,3 +98,18 @@ class IIntercalationAndSorptionView(IGeneralView):
     def set_auto_sync_callback(self, callback: Callable[[str, str], None]) -> None:
         """Set the auto-sync callback for parameter updates."""
         ...
+
+    @abstractmethod
+    def start_file_list_refresh(self) -> None:
+        """Start periodic refresh of file list every 1 second."""
+        ...
+
+    @abstractmethod
+    def stop_file_list_refresh(self) -> None:
+        """Stop periodic refresh of file list."""
+        ...
+
+    @abstractmethod
+    def refresh_files_after_action(self) -> None:
+        """Refresh file list immediately after any action is performed."""
+        ...
