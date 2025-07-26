@@ -41,13 +41,29 @@ class ConstantsAtomParams(ABC):
     ATOMS_NAME: str
     ATOM_SYMBOL: str
 
-    LATTICE_PARAM: float
-    DIST_BETWEEN_ATOMS: float
-    DIST_BETWEEN_LAYERS: float
+    @property
+    def LATTICE_PARAM(self) -> float:
+        return _phys_constants["lattice_params"][self.ATOM_SYMBOL.lower()]
 
-    MIN_RECOMENDED_DIST_BETWEEN_ATOMS: float
-    MIN_ALLOWED_DIST_BETWEEN_ATOMS: float
-    DIST_TO_REPLACE_NEARBY_ATOMS: float
+    @property
+    def DIST_BETWEEN_ATOMS(self) -> float:
+        return self.LATTICE_PARAM / sqrt(2)
+
+    @property
+    def DIST_BETWEEN_LAYERS(self) -> float:
+        return self.LATTICE_PARAM / sqrt(3)
+
+    @property
+    def MIN_RECOMENDED_DIST_BETWEEN_ATOMS(self) -> float:
+        return self.DIST_BETWEEN_ATOMS * 0.92
+
+    @property
+    def MIN_ALLOWED_DIST_BETWEEN_ATOMS(self) -> float:
+        return self.DIST_BETWEEN_ATOMS * 0.7
+
+    @property
+    def DIST_TO_REPLACE_NEARBY_ATOMS(self) -> float:
+        return self.DIST_BETWEEN_ATOMS / 3
 
 
 class ConstantsAlParams(ConstantsAtomParams):
@@ -55,30 +71,21 @@ class ConstantsAlParams(ConstantsAtomParams):
     ATOMS_NAME: str = "Aluminium"
     ATOM_SYMBOL: str = "Al"
 
-    LATTICE_PARAM: float = _phys_constants["lattice_params"]["al"]
-    DIST_BETWEEN_ATOMS: float = LATTICE_PARAM / sqrt(2)
-    DIST_BETWEEN_LAYERS: float = LATTICE_PARAM / sqrt(3)
-
-    MIN_RECOMENDED_DIST_BETWEEN_ATOMS: float = DIST_BETWEEN_ATOMS * 0.92
-    MIN_ALLOWED_DIST_BETWEEN_ATOMS: float = DIST_BETWEEN_ATOMS * 0.7
-    DIST_TO_REPLACE_NEARBY_ATOMS: float = DIST_BETWEEN_ATOMS / 3
-
 
 class ConstantsArParams(ConstantsAtomParams):
     """ Argon params """
     ATOMS_NAME: str = "Argon"
     ATOM_SYMBOL: str = "Ar"
 
-    LATTICE_PARAM: float = _phys_constants["lattice_params"]["ar"]
-    DIST_BETWEEN_ATOMS: float = LATTICE_PARAM / sqrt(2)
-    DIST_BETWEEN_LAYERS: float = LATTICE_PARAM / sqrt(3)
 
-    MIN_RECOMENDED_DIST_BETWEEN_ATOMS: float = DIST_BETWEEN_ATOMS * 0.92
-    MIN_ALLOWED_DIST_BETWEEN_ATOMS: float = DIST_BETWEEN_ATOMS * 0.7
-    DIST_TO_REPLACE_NEARBY_ATOMS: float = DIST_BETWEEN_ATOMS / 3
+class ConstantsXeParams(ConstantsAtomParams):
+    """ Xenon params """
+    ATOMS_NAME: str = "Xenon"
+    ATOM_SYMBOL: str = "Xe"
 
 
 ATOM_PARAMS_MAP: dict = {
-    "al": ConstantsAlParams,  # Aluminium
-    "ar": ConstantsArParams,  # Argon
+    ConstantsAlParams.ATOM_SYMBOL.lower(): ConstantsAlParams(),  # Aluminium
+    ConstantsArParams.ATOM_SYMBOL.lower(): ConstantsArParams(),  # Argon
+    ConstantsXeParams.ATOM_SYMBOL.lower(): ConstantsXeParams(),  # Xenon
 }
