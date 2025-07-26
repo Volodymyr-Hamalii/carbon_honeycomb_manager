@@ -81,7 +81,6 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
         op_col1, op_col2, op_col3 = self.template.create_columns_layout(operations_frame, 3)
 
         ##### FIRST COLUMN #####
-        # Coordinates operations
         self.operation_buttons["generate_inter_plane_coordinates"] = self.template.pack_button(
             op_col1, "Generate Plane Coordinates",
             self._on_generate_inter_plane_coordinates
@@ -90,16 +89,15 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
             op_col1, "Update Plane Coordinates",
             self._on_update_inter_plane_coordinates
         )
-        self.operation_buttons["translate_inter_atoms"] = self.template.pack_button(
-            op_col1, "Translate Atoms to Other Planes",
-            self._on_translate_inter_atoms
+        self.operation_buttons["get_inter_chc_constants"] = self.template.pack_button(
+            op_col1, "Get intercalation constants",
+            self._on_get_inter_chc_constants
         )
 
         ##### SECOND COLUMN #####
-        # Channel operations
-        self.operation_buttons["update_inter_channel_coordinates"] = self.template.pack_button(
-            op_col2, "Update Channel Coordinates",
-            self._on_update_inter_channel_coordinates
+        self.operation_buttons["plot_inter_in_c_structure"] = self.template.pack_button(
+            op_col2, "Plot Intercalated Atoms in C Structure",
+            self._on_plot_inter_in_c_structure
         )
         self.operation_buttons["get_inter_in_channel_details"] = self.template.pack_button(
             op_col2, "Get Channel Details",
@@ -109,21 +107,23 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
             op_col2, "Save Channel Details",
             self._on_save_inter_in_channel_details
         )
+        self.operation_buttons["translate_inter_atoms"] = self.template.pack_button(
+            op_col2, "Translate Atoms to Other Planes",
+            self._on_translate_inter_atoms
+        )
 
         ##### THIRD COLUMN #####
-        # Create operation buttons using template
-        self.operation_buttons["plot_inter_in_c_structure"] = self.template.pack_button(
-            op_col3, "Plot Intercalated Atoms in C Structure",
-            self._on_plot_inter_in_c_structure
-        )
-        # All channels operations
-        self.operation_buttons["translate_inter_to_all_channels_plot"] = self.template.pack_button(
-            op_col3, "Plot All Channels",
-            self._on_translate_inter_to_all_channels_plot
+        self.operation_buttons["update_inter_channel_coordinates"] = self.template.pack_button(
+            op_col3, "Update Channel Coordinates",
+            self._on_update_inter_channel_coordinates
         )
         self.operation_buttons["translate_inter_to_all_channels_generate"] = self.template.pack_button(
             op_col3, "Generate All Channels Files",
             self._on_translate_inter_to_all_channels_generate
+        )
+        self.operation_buttons["translate_inter_to_all_channels_plot"] = self.template.pack_button(
+            op_col3, "Plot All Channels",
+            self._on_translate_inter_to_all_channels_plot
         )
 
         # File selection section
@@ -342,8 +342,8 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
         details_window = ScrollableToplevel(self)
         details_window.title("Channel Details")
 
-        width: int = min(len(details.columns) * 50 + 100, 1000)
-        height: int = min(len(details) * 20 + 100, 1000)
+        width: int = min(len(details.columns) * 60 + 120, 1000)
+        height: int = min(len(details) * 25 + 110, 1000)
         details_window.geometry(f"{width}x{height}")
 
         # Create and display the table
@@ -360,7 +360,7 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
         # Create a new window with touchpad scrolling support
         constants_window = ScrollableToplevel(self)
         constants_window.title("Channel Constants")
-        constants_window.geometry("450x200")
+        constants_window.geometry("500x250")
 
         # Create and display the table
         table = Table(
@@ -433,6 +433,12 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
         """Handle get inter in channel details button click."""
         if "get_inter_in_channel_details" in self.callbacks:
             self.callbacks["get_inter_in_channel_details"]()
+            self.refresh_files_after_action()
+
+    def _on_get_inter_chc_constants(self) -> None:
+        """Handle get intercalation constants button click."""
+        if "get_inter_chc_constants" in self.callbacks:
+            self.callbacks["get_inter_chc_constants"]()
             self.refresh_files_after_action()
 
     def _on_translate_inter_to_all_channels_plot(self) -> None:

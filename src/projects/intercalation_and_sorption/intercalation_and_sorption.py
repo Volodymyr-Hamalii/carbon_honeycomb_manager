@@ -457,8 +457,8 @@ class IntercalationAndSorption:
 
         # Read the selected file
         path_to_file: Path = PathBuilder.build_path_to_result_data_file(
-            project_dir, subproject_dir, structure_dir, file_name=params.file_name or "intercalated-channel-coordinates.xlsx"
-        )
+            project_dir, subproject_dir, structure_dir,
+            file_name=params.file_name or "intercalated-channel-coordinates.xlsx")
 
         inter_atoms_full_channel_coordinates_df: pd.DataFrame | None = FileReader.read_excel_file(
             path_to_file=path_to_file,
@@ -499,7 +499,8 @@ class IntercalationAndSorption:
             project_dir, subproject_dir, structure_dir, params
         )
 
-        result_file_name: str = (params.file_name or "intercalated-channel-coordinates").split(".")[0] + "_" + Constants.file_names.CHANNEL_DETAILS_XLSX_FILE
+        result_file_name: str = (params.file_name or "intercalated-channel-coordinates").split(".")[
+            0] + "_" + Constants.file_names.CHANNEL_DETAILS_XLSX_FILE
 
         # Write DataFrame to Excel file
         path_to_file: Path = PathBuilder.build_path_to_result_data_file(
@@ -527,8 +528,8 @@ class IntercalationAndSorption:
         )
 
         path_to_file: Path = PathBuilder.build_path_to_result_data_file(
-            project_dir, subproject_dir, structure_dir, file_name=params.file_name or "intercalated-channel-coordinates.xlsx"
-        )
+            project_dir, subproject_dir, structure_dir,
+            file_name=params.file_name or "intercalated-channel-coordinates.xlsx")
 
         intercalated_coordinates_df: pd.DataFrame | None = FileReader.read_excel_file(
             path_to_file=path_to_file,
@@ -574,7 +575,7 @@ class IntercalationAndSorption:
                 ("Min distance to", "plane"): round(min_dist_to_plane, 2),
                 ("Min distance to", "C"): round(min_dist_to_carbon, 2),
                 ("Min distance to", "inter"): round(min_dist_to_inter, 2),
-                **{("Dists to other intercalated atoms", f"{i}"): round(float(dist), 2) 
+                **{("Dists to other intercalated atoms", f"{i}"): round(float(dist), 2)
                    for i, dist in enumerate(dists_to_inter)}
             })
 
@@ -610,15 +611,15 @@ class IntercalationAndSorption:
         """Generate files for intercalated atoms in all channels."""
         # This would generate multiple files - for now, we'll create basic outputs
         atom_params: ConstantsAtomParams = ATOM_PARAMS_MAP[subproject_dir.lower()]
-        
+
         # Generate the main coordinates file
         coords_path: Path = IntercalationAndSorption.generate_inter_plane_coordinates_file(
             project_dir, subproject_dir, structure_dir, params
         )
-        
+
         # Generate the details file
         details_path = IntercalationAndSorption.save_inter_in_channel_details(
             project_dir, subproject_dir, structure_dir, params
         )
-        
+
         return coords_path, details_path

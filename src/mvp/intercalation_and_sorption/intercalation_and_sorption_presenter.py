@@ -36,6 +36,7 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
             "update_inter_channel_coordinates": self._handle_update_inter_channel_coordinates,
             "save_inter_in_channel_details": self._handle_save_inter_in_channel_details,
             "get_inter_in_channel_details": self._handle_get_inter_in_channel_details,
+            "get_inter_chc_constants": self._handle_get_inter_chc_constants,
             "translate_inter_to_all_channels_plot": self._handle_translate_inter_to_all_channels_plot,
             "translate_inter_to_all_channels_generate": self._handle_translate_inter_to_all_channels_generate,
             "file_selected": self._handle_file_selected,
@@ -452,6 +453,25 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
 
         except Exception as e:
             self.on_operation_failed("get_inter_in_channel_details", e)
+
+    def _handle_get_inter_chc_constants(self) -> None:
+        """Handle get intercalation constants callback."""
+        try:
+            if not self._current_context:
+                self.view.show_operation_error("No context available. Please reload the window.")
+                return
+
+            constants: pd.DataFrame = IntercalationAndSorption.get_inter_chc_constants(
+                project_dir=self._current_context["project_dir"],
+                subproject_dir=self._current_context["subproject_dir"],
+                structure_dir=self._current_context["structure_dir"],
+            )
+
+            self.view.display_channel_constants(constants)
+            self.on_operation_completed("get_inter_chc_constants", "Intercalation constants retrieved")
+
+        except Exception as e:
+            self.on_operation_failed("get_inter_chc_constants", e)
 
     def _handle_translate_inter_to_all_channels_plot(self) -> None:
         """Handle translate inter to all channels plot callback."""
