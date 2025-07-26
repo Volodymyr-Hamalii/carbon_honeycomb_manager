@@ -63,15 +63,31 @@ class InitDataView(GeneralView, IShowInitDataView):
     def set_ui(self) -> None:
         """Set up the UI components."""
         # Create main layout using template
-        main_frame = self.template.create_main_layout(self)
+        main_frame: ctk.CTkScrollableFrame = self.template.create_main_layout(self)
+
+        # Action buttons section
+        button_frame: ctk.CTkFrame = self.template.create_section_frame(main_frame, "Visualizations")
+
+        self.init_structure_btn = self.template.pack_button(
+            button_frame, "Show Initial Structure", self._on_show_init_structure
+        )
+        self.one_channel_structure_btn = self.template.pack_button(
+            button_frame, "Show One Channel", self._on_show_one_channel
+        )
+        self.channel_2d_scheme_btn = self.template.pack_button(
+            button_frame, "Show 2D Channel Scheme", self._on_show_2d_scheme
+        )
+        self.channel_params_btn = self.template.pack_button(
+            button_frame, "Get Channel Parameters", self._on_get_channel_params
+        )
 
         # File selection section
-        file_frame = self.template.create_section_frame(main_frame, "File Selection")
+        file_frame: ctk.CTkFrame = self.template.create_section_frame(main_frame, "File Selection")
         self.file_names_dropdown = DropdownList(file_frame, ["None"])
         self.file_names_dropdown.pack(pady=5)
 
         # Visualization settings section
-        viz_frame = self.template.create_section_frame(main_frame, "Visualization Settings")
+        viz_frame: ctk.CTkFrame = self.template.create_section_frame(main_frame, "Visualization Settings")
 
         # Create checkboxes using template helper
         self.to_build_bonds_checkbox = self.template.pack_check_box(
@@ -100,22 +116,6 @@ class InitDataView(GeneralView, IShowInitDataView):
         self.coordinate_limits_template = self.template.create_coordinate_limits_section(
             main_frame,
             change_callback=self._on_coordinate_limits_changed
-        )
-
-        # Action buttons section
-        button_frame = self.template.create_section_frame(main_frame, "Visualizations")
-
-        self.init_structure_btn = self.template.pack_button(
-            button_frame, "Show Initial Structure", self._on_show_init_structure
-        )
-        self.one_channel_structure_btn = self.template.pack_button(
-            button_frame, "Show One Channel", self._on_show_one_channel
-        )
-        self.channel_2d_scheme_btn = self.template.pack_button(
-            button_frame, "Show 2D Channel Scheme", self._on_show_2d_scheme
-        )
-        self.channel_params_btn = self.template.pack_button(
-            button_frame, "Get Channel Parameters", self._on_get_channel_params
         )
         
         # Call parent set_ui to refresh scrolling

@@ -41,7 +41,7 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
 
         # Callbacks
         self.callbacks: dict[str, Callable] = {}
-        
+
         # File refresh management
         self._refresh_job_id: str | None = None
         self._last_files_list: list[str] = []
@@ -73,6 +73,58 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
 
         # self.intercalation_params["temperature"] = InputField(params_frame, "Temperature (K)")
         # self.intercalation_params["temperature"].pack(pady=2)
+
+        # Operation buttons section
+        operations_frame: ctk.CTkFrame = self.template.create_section_frame(main_frame, "Operations")
+
+        # Create three columns for operation buttons
+        op_col1, op_col2, op_col3 = self.template.create_columns_layout(operations_frame, 3)
+
+        ##### FIRST COLUMN #####
+        # Coordinates operations
+        self.operation_buttons["generate_inter_plane_coordinates"] = self.template.pack_button(
+            op_col1, "Generate Plane Coordinates",
+            self._on_generate_inter_plane_coordinates
+        )
+        self.operation_buttons["update_inter_plane_coordinates"] = self.template.pack_button(
+            op_col1, "Update Plane Coordinates",
+            self._on_update_inter_plane_coordinates
+        )
+        self.operation_buttons["translate_inter_atoms"] = self.template.pack_button(
+            op_col1, "Translate Atoms to Other Planes",
+            self._on_translate_inter_atoms
+        )
+
+        ##### SECOND COLUMN #####
+        # Channel operations
+        self.operation_buttons["update_inter_channel_coordinates"] = self.template.pack_button(
+            op_col2, "Update Channel Coordinates",
+            self._on_update_inter_channel_coordinates
+        )
+        self.operation_buttons["get_inter_in_channel_details"] = self.template.pack_button(
+            op_col2, "Get Channel Details",
+            self._on_get_inter_in_channel_details
+        )
+        self.operation_buttons["save_inter_in_channel_details"] = self.template.pack_button(
+            op_col2, "Save Channel Details",
+            self._on_save_inter_in_channel_details
+        )
+
+        ##### THIRD COLUMN #####
+        # Create operation buttons using template
+        self.operation_buttons["plot_inter_in_c_structure"] = self.template.pack_button(
+            op_col3, "Plot Intercalated Atoms in C Structure",
+            self._on_plot_inter_in_c_structure
+        )
+        # All channels operations
+        self.operation_buttons["translate_inter_to_all_channels_plot"] = self.template.pack_button(
+            op_col3, "Plot All Channels",
+            self._on_translate_inter_to_all_channels_plot
+        )
+        self.operation_buttons["translate_inter_to_all_channels_generate"] = self.template.pack_button(
+            op_col3, "Generate All Channels Files",
+            self._on_translate_inter_to_all_channels_generate
+        )
 
         # File selection section
         file_frame: ctk.CTkFrame = self.template.create_section_frame(main_frame, "File Selection")
@@ -146,7 +198,7 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
         )
 
         # Intercalation parameters section
-        inter_frame = self.template.create_section_frame(main_frame, "Intercalation Parameters")
+        inter_frame: ctk.CTkFrame = self.template.create_section_frame(main_frame, "Intercalation Parameters")
 
         # Create columns for intercalation parameters
         inter_left, inter_right = self.template.create_columns_layout(inter_frame, 2)
@@ -186,58 +238,6 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
         )
         self.visualization_checkboxes["to_remove_inter_atoms_with_min_and_max_x_coordinates"] = self.template.pack_check_box(
             inter_right, "Remove atoms at X boundaries")
-
-        # Operation buttons section
-        operations_frame = self.template.create_section_frame(main_frame, "Operations")
-
-        # Create three columns for operation buttons
-        op_col1, op_col2, op_col3 = self.template.create_columns_layout(operations_frame, 3)
-
-        ##### FIRST COLUMN #####
-        # Coordinates operations
-        self.operation_buttons["generate_inter_plane_coordinates"] = self.template.pack_button(
-            op_col1, "Generate Plane Coordinates",
-            self._on_generate_inter_plane_coordinates
-        )
-        self.operation_buttons["update_inter_plane_coordinates"] = self.template.pack_button(
-            op_col1, "Update Plane Coordinates",
-            self._on_update_inter_plane_coordinates
-        )
-        self.operation_buttons["translate_inter_atoms"] = self.template.pack_button(
-            op_col1, "Translate Atoms to Other Planes",
-            self._on_translate_inter_atoms
-        )
-
-        ##### SECOND COLUMN #####
-        # Channel operations
-        self.operation_buttons["update_inter_channel_coordinates"] = self.template.pack_button(
-            op_col2, "Update Channel Coordinates",
-            self._on_update_inter_channel_coordinates
-        )
-        self.operation_buttons["get_inter_in_channel_details"] = self.template.pack_button(
-            op_col2, "Get Channel Details",
-            self._on_get_inter_in_channel_details
-        )
-        self.operation_buttons["save_inter_in_channel_details"] = self.template.pack_button(
-            op_col2, "Save Channel Details",
-            self._on_save_inter_in_channel_details
-        )
-
-        ##### THIRD COLUMN #####
-        # Create operation buttons using template
-        self.operation_buttons["plot_inter_in_c_structure"] = self.template.pack_button(
-            op_col3, "Plot Intercalated Atoms in C Structure",
-            self._on_plot_inter_in_c_structure
-        )
-        # All channels operations
-        self.operation_buttons["translate_inter_to_all_channels_plot"] = self.template.pack_button(
-            op_col3, "Plot All Channels",
-            self._on_translate_inter_to_all_channels_plot
-        )
-        self.operation_buttons["translate_inter_to_all_channels_generate"] = self.template.pack_button(
-            op_col3, "Generate All Channels Files",
-            self._on_translate_inter_to_all_channels_generate
-        )
 
         # Call parent set_ui to refresh scrolling
         super().set_ui()
@@ -452,7 +452,6 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
         if "file_selected" in self.callbacks:
             self.callbacks["file_selected"](file_name)
 
-
     def get_selected_file(self) -> str:
         """Get selected file from the dropdown."""
         if self.file_selection_dropdown:
@@ -543,11 +542,11 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
 
         # Store current selection
         current_selection = self.file_selection_dropdown.get()
-        
+
         # Check if files list has changed
         if files == self._last_files_list:
             return
-        
+
         self._last_files_list = files.copy()
 
         # Handle different file list scenarios
@@ -558,7 +557,7 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
         else:
             # Files are available
             self.file_selection_dropdown.configure(values=files)
-            
+
             # Auto-selection logic
             if current_selection in files:
                 # Keep current selection if it's still valid
