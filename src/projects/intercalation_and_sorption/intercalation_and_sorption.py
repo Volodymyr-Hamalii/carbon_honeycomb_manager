@@ -296,10 +296,15 @@ class IntercalationAndSorption:
 
         inter_atoms_visual_params_map: dict[str, list[StructureVisualParams]] = {
             "al": [VisualizationParams.al_1, VisualizationParams.al_2, VisualizationParams.al_3],
-            "ar": [VisualizationParams.ar_1, VisualizationParams.ar_2, VisualizationParams.ar_3],
+            "default": [VisualizationParams.al_1, VisualizationParams.al_2, VisualizationParams.al_3],
+            # "ar": [VisualizationParams.ar_1, VisualizationParams.ar_2, VisualizationParams.ar_3],
         }
+
+        visual_params_key: str = subproject_dir.lower()
+        if visual_params_key not in inter_atoms_visual_params_map:
+            visual_params_key = "default"
         inter_atoms_visual_params: list[StructureVisualParams] = inter_atoms_visual_params_map[
-            subproject_dir.lower()
+            visual_params_key
         ]
 
         if params.num_of_inter_atoms_layers == 1:
