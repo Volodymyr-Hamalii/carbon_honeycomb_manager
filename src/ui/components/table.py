@@ -9,7 +9,7 @@ class Table(ctk.CTkFrame):
     def __init__(
             self,
             data: pd.DataFrame,
-            master: ctk.CTk | ctk.CTkToplevel,
+            master: ctk.CTk | ctk.CTkToplevel | ctk.CTkFrame,
             title: str = "",
             to_show_index: bool = True,
             **kwargs,
@@ -219,3 +219,8 @@ class Table(ctk.CTkFrame):
         # Update scroll region
         table_frame.update_idletasks()
         self.canvas.config(scrollregion=self.canvas.bbox("all"))
+        
+        # Bind mousewheel to canvas for scrolling
+        def _on_mousewheel(event) -> None:
+            self.canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+        self.canvas.bind("<MouseWheel>", _on_mousewheel)

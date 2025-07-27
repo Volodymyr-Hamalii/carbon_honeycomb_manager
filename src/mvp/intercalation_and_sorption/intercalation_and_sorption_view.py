@@ -339,41 +339,59 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
         details_window.title("Channel Details")
 
         width: int = min(len(details.columns) * 60 + 120, 1000)
-        height: int = min(len(details) * 25 + 110, 1000)
+        height: int = min(len(details) * 35 + 120, 1000)
         details_window.geometry(f"{width}x{height}")
 
-        # Create and display the table
+        # Create a simple container frame
+        container = ctk.CTkFrame(details_window)
+        container.pack(fill="both", expand=True, padx=10, pady=10)
+
+        # Add save button FIRST (at the bottom)
+        button_frame = ctk.CTkFrame(container)
+        button_frame.pack(side="bottom", fill="x", pady=(5, 0))
+
+        save_button: Button = Button(
+            button_frame,
+            text="Save the table",
+            command=self._on_save_inter_in_channel_details
+        )
+        save_button.pack(pady=10)
+
+        # Create table frame (fills remaining space)
+        table_frame = ctk.CTkFrame(container)
+        table_frame.pack(fill="both", expand=True, pady=(0, 5))
+
+        # Create and display the table with height constraint
         table = Table(
             data=details,
-            master=details_window,
+            master=table_frame,
             title="Channel Details",
             to_show_index=True
         )
-        table.pack(fill="both", expand=True, padx=10, pady=10)
 
-        # Add save button to the table
-        save_button: Button = self.template.pack_button(
-            details_window,
-            "Save",
-            self._on_save_inter_in_channel_details
-        )
-        save_button.pack(pady=10)
+        table.pack(fill="both", expand=True, padx=2, pady=2)  # Reduced padding
 
     def display_channel_constants(self, constants: pd.DataFrame) -> None:
         """Display channel constants in the UI."""
         # Create a new window with touchpad scrolling support
         constants_window = ScrollableToplevel(self)
         constants_window.title("Channel Constants")
+
+        # Calculate optimal window size based on content
         constants_window.geometry("500x250")
 
-        # Create and display the table
+        # Create main frame to hold table
+        main_frame = ctk.CTkFrame(constants_window)
+        main_frame.pack(fill="both", expand=True, padx=5, pady=5)
+
+        # Create and display the table with minimal padding
         table = Table(
             data=constants,
-            master=constants_window,
+            master=main_frame,
             title="Channel Constants",
             to_show_index=True
         )
-        table.pack(fill="both", expand=True, padx=10, pady=10)
+        table.pack(fill="both", expand=True, padx=5, pady=5)
 
     def set_operation_callbacks(self, callbacks: dict[str, Callable]) -> None:
         """Set callbacks for operation buttons."""
