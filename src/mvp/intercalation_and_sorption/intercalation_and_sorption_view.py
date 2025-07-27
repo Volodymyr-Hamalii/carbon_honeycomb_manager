@@ -82,47 +82,43 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
 
         ##### FIRST COLUMN #####
         self.operation_buttons["generate_inter_plane_coordinates"] = self.template.pack_button(
-            op_col1, "Generate Plane Coordinates",
+            op_col1, "Generate plane coordinates",
             self._on_generate_inter_plane_coordinates
         )
-        self.operation_buttons["update_inter_plane_coordinates"] = self.template.pack_button(
-            op_col1, "Update Plane Coordinates",
-            self._on_update_inter_plane_coordinates
-        )
+        # self.operation_buttons["update_inter_plane_coordinates"] = self.template.pack_button(
+        #     op_col1, "Update plane coordinates",
+        #     self._on_update_inter_plane_coordinates
+        # )
         self.operation_buttons["get_inter_chc_constants"] = self.template.pack_button(
             op_col1, "Get intercalation constants",
             self._on_get_inter_chc_constants
         )
-
-        ##### SECOND COLUMN #####
-        self.operation_buttons["plot_inter_in_c_structure"] = self.template.pack_button(
-            op_col2, "Plot Intercalated Atoms in C Structure",
-            self._on_plot_inter_in_c_structure
-        )
-        self.operation_buttons["get_inter_in_channel_details"] = self.template.pack_button(
-            op_col2, "Get Channel Details",
-            self._on_get_inter_in_channel_details
-        )
-        self.operation_buttons["save_inter_in_channel_details"] = self.template.pack_button(
-            op_col2, "Save Channel Details",
-            self._on_save_inter_in_channel_details
-        )
         self.operation_buttons["translate_inter_atoms"] = self.template.pack_button(
-            op_col2, "Translate Atoms to Other Planes",
+            op_col1, "Translate atoms to other planes",
             self._on_translate_inter_atoms
         )
 
-        ##### THIRD COLUMN #####
+        ##### SECOND COLUMN #####
+        self.operation_buttons["plot_inter_in_c_structure"] = self.template.pack_button(
+            op_col2, "Plot channel with intercalated atoms",
+            self._on_plot_inter_in_c_structure
+        )
+        self.operation_buttons["get_inter_in_channel_details"] = self.template.pack_button(
+            op_col2, "Get channel details",
+            self._on_get_inter_in_channel_details
+        )
         self.operation_buttons["update_inter_channel_coordinates"] = self.template.pack_button(
-            op_col3, "Update Channel Coordinates",
+            op_col2, "Update channel coordinates",
             self._on_update_inter_channel_coordinates
         )
+
+        ##### THIRD COLUMN #####
         self.operation_buttons["translate_inter_to_all_channels_generate"] = self.template.pack_button(
-            op_col3, "Generate All Channels Files",
+            op_col3, "Generate all channels files",
             self._on_translate_inter_to_all_channels_generate
         )
         self.operation_buttons["translate_inter_to_all_channels_plot"] = self.template.pack_button(
-            op_col3, "Plot All Channels",
+            op_col3, "Plot all channels",
             self._on_translate_inter_to_all_channels_plot
         )
 
@@ -354,6 +350,14 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
             to_show_index=True
         )
         table.pack(fill="both", expand=True, padx=10, pady=10)
+
+        # Add save button to the table
+        save_button: Button = self.template.pack_button(
+            details_window,
+            "Save",
+            self._on_save_inter_in_channel_details
+        )
+        save_button.pack(pady=10)
 
     def display_channel_constants(self, constants: pd.DataFrame) -> None:
         """Display channel constants in the UI."""

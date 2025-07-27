@@ -246,12 +246,13 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
 
     def on_operation_completed(self, operation_type: str, result: Any) -> None:
         """Handle operation completion."""
-        operation_info = {
+        operation_info: dict[str, str] = {
             "operation": operation_type,
             "result": str(result),
             "timestamp": pd.Timestamp.now().isoformat(),
             "status": "completed"
         }
+        logger.info(f"Operation completed: {operation_info}")
         self.model.save_operation_history(operation_info)
 
     def on_operation_failed(self, operation_type: str, error: Exception) -> None:
@@ -383,18 +384,18 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
                 return
 
             # Get current MVP params with file selection
-            params = self.model.get_mvp_params()
-            selected_file = self.view.get_selected_file()
+            params: PMvpParams = self.model.get_mvp_params()
+            selected_file: str = self.view.get_selected_file()
             if selected_file and selected_file != "No files found":
                 params.file_name = selected_file
 
-            output_path = IntercalationAndSorption.update_inter_channel_coordinates(
+            output_path: Path = IntercalationAndSorption.update_inter_channel_coordinates(
                 project_dir=self._current_context["project_dir"],
                 subproject_dir=self._current_context["subproject_dir"],
                 structure_dir=self._current_context["structure_dir"],
                 params=params,
             )
-
+        
             self.on_operation_completed(
                 "update_inter_channel_coordinates",
                 f"Channel coordinates updated: {output_path}",
@@ -411,12 +412,12 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
                 return
 
             # Get current MVP params with file selection
-            params = self.model.get_mvp_params()
-            selected_file = self.view.get_selected_file()
+            params: PMvpParams = self.model.get_mvp_params()
+            selected_file: str = self.view.get_selected_file()
             if selected_file and selected_file != "No files found":
                 params.file_name = selected_file
 
-            output_path = IntercalationAndSorption.save_inter_in_channel_details(
+            output_path: Path = IntercalationAndSorption.save_inter_in_channel_details(
                 project_dir=self._current_context["project_dir"],
                 subproject_dir=self._current_context["subproject_dir"],
                 structure_dir=self._current_context["structure_dir"],
@@ -436,12 +437,12 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
                 return
 
             # Get current MVP params with file selection
-            params = self.model.get_mvp_params()
-            selected_file = self.view.get_selected_file()
+            params: PMvpParams = self.model.get_mvp_params()
+            selected_file: str = self.view.get_selected_file()
             if selected_file and selected_file != "No files found":
                 params.file_name = selected_file
 
-            details = IntercalationAndSorption.get_inter_in_channel_details(
+            details: pd.DataFrame = IntercalationAndSorption.get_inter_in_channel_details(
                 project_dir=self._current_context["project_dir"],
                 subproject_dir=self._current_context["subproject_dir"],
                 structure_dir=self._current_context["structure_dir"],
