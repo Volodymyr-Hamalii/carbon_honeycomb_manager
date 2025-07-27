@@ -36,6 +36,7 @@ class InterAtomsBuilder:
         # Calculate the average distance between intercalated and C atoms
         dist_between_carbon_atoms: float = float(carbon_channel.ave_dist_between_closest_atoms)
         distance_from_carbon_atoms: float = (atom_params.DIST_BETWEEN_ATOMS + dist_between_carbon_atoms) / 2
+        logger.info(f"Distance from carbon atoms: {distance_from_carbon_atoms}")
 
         for i, plane in enumerate(carbon_channel.planes):  # To build only part of the planes
 
@@ -104,7 +105,7 @@ class InterAtomsBuilder:
 
         # Calculate the average dist from center to vertex
         dists_from_center_to_vertex: np.ndarray = cdist(polygon.points, [polygon_center])
-        dist_from_center_to_point: np.floating = np.average(dists_from_center_to_vertex)
+        dist_from_center_to_point: np.floating = np.min(dists_from_center_to_vertex)
 
         # Calculate dist_from_polygon_center by Pythagorean theorem
         dist_from_polygon_center: float = np.sqrt(distance_from_carbon_atoms**2 - dist_from_center_to_point**2)
