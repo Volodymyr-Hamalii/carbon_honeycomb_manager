@@ -1,7 +1,7 @@
 import numpy as np
 
+from src.interfaces import ICarbonHoneycombChannel, IPoints
 from src.services.utils import (
-    Constants,
     ConstantsAtomParams,
     Logger,
     FileReader,
@@ -85,12 +85,12 @@ class IntercalatedChannelBuilder:
     @classmethod
     def build_inter_in_carbon(
         cls,
-        carbon_channel: CarbonHoneycombChannel,
+        carbon_channel: ICarbonHoneycombChannel,
         inter_points: Points,
         atom_params: ConstantsAtomParams,
         to_filter_inter_atoms: bool = True,
         equidistant_inter_points: bool = True,
-    ) -> Points:
+    ) -> IPoints:
         # return InterChannelBuilderByVariance.build_inter_atoms_in_carbon(
         #     carbon_channel,
         #     inter_points,
