@@ -332,7 +332,7 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
         """Show operation error to user."""
         self.show_error_message(error_message)
 
-    def display_distance_matrix(self, matrix: pd.DataFrame) -> None:
+    def display_distance_matrix(self, matrix: pd.DataFrame, selected_file: str) -> None:
         """Display distance matrix in the UI."""
         # Create a new window with touchpad scrolling support
         details_window = ScrollableToplevel(self)
@@ -365,7 +365,7 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
         table = Table(
             data=matrix,
             master=table_frame,
-            title="Distance Matrix",
+            title=selected_file,
             to_show_index=True
         )
 

@@ -424,7 +424,7 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
                 params=params,
             )
 
-            self.view.display_distance_matrix(details)
+            self.view.display_distance_matrix(details, selected_file)
             self.on_operation_completed("get_distance_matrix", "Channel details retrieved")
 
         except Exception as e:

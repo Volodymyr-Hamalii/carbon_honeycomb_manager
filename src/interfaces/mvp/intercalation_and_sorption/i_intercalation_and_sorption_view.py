@@ -55,7 +55,7 @@ class IIntercalationAndSorptionView(IGeneralView):
         ...
 
     @abstractmethod
-    def display_distance_matrix(self, matrix: pd.DataFrame) -> None:
+    def display_distance_matrix(self, matrix: pd.DataFrame, selected_file: str) -> None:
         """Display distance matrix in the UI."""
         ...
 
