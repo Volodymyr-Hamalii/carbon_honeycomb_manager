@@ -60,23 +60,23 @@ class IIntercalationAndSorptionPresenter(IGeneralPresenter):
         ...
 
     @abstractmethod
-    def save_inter_in_channel_details(
+    def save_distance_matrix(
         self,
         project_dir: str,
         subproject_dir: str,
         structure_dir: str,
     ) -> Path:
-        """Save intercalated atoms in channel details."""
+        """Save distance matrix."""
         ...
 
     @abstractmethod
-    def get_inter_in_channel_details(
+    def get_distance_matrix(
         self,
         project_dir: str,
         subproject_dir: str,
         structure_dir: str,
     ) -> pd.DataFrame:
-        """Get intercalated atoms in channel details."""
+        """Get distance matrix."""
         ...
 
     @abstractmethod

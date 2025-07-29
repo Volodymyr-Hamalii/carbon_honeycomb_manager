@@ -93,19 +93,15 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
             op_col1, "Get intercalation constants",
             self._on_get_inter_chc_constants
         )
-        self.operation_buttons["translate_inter_atoms"] = self.template.pack_button(
-            op_col1, "Translate atoms to other planes",
-            self._on_translate_inter_atoms
-        )
 
         ##### SECOND COLUMN #####
         self.operation_buttons["plot_inter_in_c_structure"] = self.template.pack_button(
             op_col2, "Plot channel with intercalated atoms",
             self._on_plot_inter_in_c_structure
         )
-        self.operation_buttons["get_inter_in_channel_details"] = self.template.pack_button(
-            op_col2, "Get channel details",
-            self._on_get_inter_in_channel_details
+        self.operation_buttons["get_distance_matrix"] = self.template.pack_button(
+            op_col2, "Get distance matrix",
+            self._on_get_distance_matrix
         )
         self.operation_buttons["update_inter_channel_coordinates"] = self.template.pack_button(
             op_col2, "Update channel coordinates",
@@ -113,6 +109,10 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
         )
 
         ##### THIRD COLUMN #####
+        self.operation_buttons["translate_inter_atoms"] = self.template.pack_button(
+            op_col3, "Translate atoms to other planes",
+            self._on_translate_inter_atoms
+        )
         self.operation_buttons["translate_inter_to_all_channels_generate"] = self.template.pack_button(
             op_col3, "Generate all channels files",
             self._on_translate_inter_to_all_channels_generate
@@ -332,11 +332,11 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
         """Show operation error to user."""
         self.show_error_message(error_message)
 
-    def display_channel_details(self, details: pd.DataFrame) -> None:
-        """Display channel details in the UI."""
+    def display_distance_matrix(self, matrix: pd.DataFrame) -> None:
+        """Display distance matrix in the UI."""
         # Create a new window with touchpad scrolling support
         details_window = ScrollableToplevel(self)
-        details_window.title("Channel Details")
+        details_window.title("Intercalated atoms distance matrix")
 
         width: int = min(len(matrix.columns) * 65 + 100, 1000)
         height: int = min(len(matrix) * 27 + 150, 1000)
@@ -353,7 +353,7 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
         save_button: Button = Button(
             button_frame,
             text="Save the table",
-            command=self._on_save_inter_in_channel_details
+            command=self._on_save_distance_matrix
         )
         save_button.pack(pady=10)
 
@@ -363,9 +363,9 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
 
         # Create and display the table with height constraint
         table = Table(
-            data=details,
+            data=matrix,
             master=table_frame,
-            title="Channel Details",
+            title="Distance Matrix",
             to_show_index=True
         )
 
@@ -445,16 +445,16 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
             self.callbacks["update_inter_channel_coordinates"]()
             self.refresh_files_after_action()
 
-    def _on_save_inter_in_channel_details(self) -> None:
+    def _on_save_distance_matrix(self) -> None:
         """Handle save inter in channel details button click."""
-        if "save_inter_in_channel_details" in self.callbacks:
-            self.callbacks["save_inter_in_channel_details"]()
+        if "save_distance_matrix" in self.callbacks:
+            self.callbacks["save_distance_matrix"]()
             self.refresh_files_after_action()
 
-    def _on_get_inter_in_channel_details(self) -> None:
-        """Handle get inter in channel details button click."""
-        if "get_inter_in_channel_details" in self.callbacks:
-            self.callbacks["get_inter_in_channel_details"]()
+    def _on_get_distance_matrix(self) -> None:
+        """Handle get distance matrix button click."""
+        if "get_distance_matrix" in self.callbacks:
+            self.callbacks["get_distance_matrix"]()
             self.refresh_files_after_action()
 
     def _on_get_inter_chc_constants(self) -> None:

@@ -34,8 +34,8 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
             "update_inter_plane_coordinates": self._handle_update_inter_plane_coordinates,
             "translate_inter_atoms": self._handle_translate_inter_atoms,
             "update_inter_channel_coordinates": self._handle_update_inter_channel_coordinates,
-            "save_inter_in_channel_details": self._handle_save_inter_in_channel_details,
-            "get_inter_in_channel_details": self._handle_get_inter_in_channel_details,
+            "save_distance_matrix": self._handle_save_distance_matrix,
+            "get_distance_matrix": self._handle_get_distance_matrix,
             "get_inter_chc_constants": self._handle_get_inter_chc_constants,
             "translate_inter_to_all_channels_plot": self._handle_translate_inter_to_all_channels_plot,
             "translate_inter_to_all_channels_generate": self._handle_translate_inter_to_all_channels_generate,
@@ -147,28 +147,28 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
             self.on_operation_failed("update_inter_channel_coordinates", e)
             raise
 
-    def save_inter_in_channel_details(
+    def save_distance_matrix(
         self,
         project_dir: str,
         subproject_dir: str,
         structure_dir: str,
     ) -> Path:
-        """Save intercalated atoms in channel details."""
+        """Save distance matrix."""
         try:
-            self.view.show_operation_progress("Saving intercalated atoms channel details...")
+            self.view.show_operation_progress("Saving distance matrix...")
 
             # TODO: Implement actual details saving
-            output_path = Path(f"{project_dir}/{subproject_dir}/{structure_dir}/inter_channel_details.xlsx")
+            output_path = Path(f"{project_dir}/{subproject_dir}/{structure_dir}/distance_matrix.xlsx")
 
-            self.view.show_operation_success("Channel details saved", output_path)
-            logger.info(f"Saved channel details: {output_path}")
+            self.view.show_operation_success("Distance matrix saved", output_path)
+            logger.info(f"Saved distance matrix: {output_path}")
             return output_path
 
         except Exception as e:
-            self.on_operation_failed("save_inter_in_channel_details", e)
+            self.on_operation_failed("save_distance_matrix", e)
             raise
 
-    def get_inter_in_channel_details(
+    def get_distance_matrix(
         self,
         project_dir: str,
         subproject_dir: str,
@@ -185,12 +185,12 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
                 "Average_Distance": [2.1, 2.3, 2.0]
             })
 
-            self.view.display_channel_details(details)
+            self.view.display_distance_matrix(details)
             logger.info(f"Loaded channel details for {project_dir}/{subproject_dir}/{structure_dir}")
             return details
 
         except Exception as e:
-            self.on_operation_failed("get_inter_in_channel_details", e)
+            self.on_operation_failed("get_distance_matrix", e)
             raise
 
     def translate_inter_to_all_channels_plot(
@@ -404,8 +404,8 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
         except Exception as e:
             self.on_operation_failed("update_inter_channel_coordinates", e)
 
-    def _handle_save_inter_in_channel_details(self) -> None:
-        """Handle save inter in channel details callback."""
+    def _handle_save_distance_matrix(self) -> None:
+        """Handle save distance matrix callback."""
         try:
             if not self._current_context:
                 self.view.show_operation_error("No context available. Please reload the window.")
@@ -417,20 +417,20 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
             if selected_file and selected_file != "No files found":
                 params.file_name = selected_file
 
-            output_path: Path = IntercalationAndSorption.save_inter_in_channel_details(
+            output_path: Path = IntercalationAndSorption.save_distance_matrix(
                 project_dir=self._current_context["project_dir"],
                 subproject_dir=self._current_context["subproject_dir"],
                 structure_dir=self._current_context["structure_dir"],
                 params=params,
             )
 
-            self.on_operation_completed("save_inter_in_channel_details", f"Channel details saved: {output_path}")
+            self.on_operation_completed("save_distance_matrix", f"Distance matrix saved: {output_path}")
 
         except Exception as e:
-            self.on_operation_failed("save_inter_in_channel_details", e)
+            self.on_operation_failed("save_distance_matrix", e)
 
-    def _handle_get_inter_in_channel_details(self) -> None:
-        """Handle get inter in channel details callback."""
+    def _handle_get_distance_matrix(self) -> None:
+        """Handle get distance matrix callback."""
         try:
             if not self._current_context:
                 self.view.show_operation_error("No context available. Please reload the window.")
@@ -442,18 +442,18 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
             if selected_file and selected_file != "No files found":
                 params.file_name = selected_file
 
-            details: pd.DataFrame = IntercalationAndSorption.get_inter_in_channel_details(
+            details: pd.DataFrame = IntercalationAndSorption.get_distance_matrix(
                 project_dir=self._current_context["project_dir"],
                 subproject_dir=self._current_context["subproject_dir"],
                 structure_dir=self._current_context["structure_dir"],
                 params=params,
             )
 
-            self.view.display_channel_details(details)
-            self.on_operation_completed("get_inter_in_channel_details", "Channel details retrieved")
+            self.view.display_distance_matrix(details)
+            self.on_operation_completed("get_distance_matrix", "Channel details retrieved")
 
         except Exception as e:
-            self.on_operation_failed("get_inter_in_channel_details", e)
+            self.on_operation_failed("get_distance_matrix", e)
 
     def _handle_get_inter_chc_constants(self) -> None:
         """Handle get intercalation constants callback."""

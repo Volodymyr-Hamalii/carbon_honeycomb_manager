@@ -55,8 +55,8 @@ class IIntercalationAndSorptionView(IGeneralView):
         ...
 
     @abstractmethod
-    def display_channel_details(self, details: pd.DataFrame) -> None:
-        """Display channel details in the UI."""
+    def display_distance_matrix(self, matrix: pd.DataFrame) -> None:
+        """Display distance matrix in the UI."""
         ...
 
     @abstractmethod

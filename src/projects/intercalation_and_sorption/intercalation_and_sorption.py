@@ -114,14 +114,15 @@ class IntercalationAndSorption:
 
         # Sort by z coordinate
         coordinates_filtered = coordinates_filtered[
-            np.lexsort((coordinates_filtered[:, 2],
-                        coordinates_filtered[:, 1],
-                        coordinates_filtered[:, 0],
-                        ))]
+            np.lexsort((
+                coordinates_filtered[:, 0],
+                coordinates_filtered[:, 1],
+                coordinates_filtered[:, 2],
+            ))]
 
         inter_atoms_plane_coordinates = Points(points=coordinates_filtered)
 
-        path_to_file = PathBuilder.build_path_to_result_data_file(
+        path_to_file: Path = PathBuilder.build_path_to_result_data_file(
             project_dir, subproject_dir, structure_dir,
             file_name=Constants.file_names.PLANE_COORDINATES_XLSX_FILE,
         )
@@ -488,14 +489,14 @@ class IntercalationAndSorption:
         return path_to_file
 
     @staticmethod
-    def save_inter_in_channel_details(
+    def save_distance_matrix(
         project_dir: str,
         subproject_dir: str,
         structure_dir: str,
         params: PMvpParams,
     ) -> Path:
         """Save intercalated in channel details to an Excel file."""
-        data: pd.DataFrame = IntercalationAndSorption.get_inter_in_channel_details(
+        data: pd.DataFrame = IntercalationAndSorption.get_distance_matrix(
             project_dir, subproject_dir, structure_dir, params
         )
 
@@ -516,7 +517,7 @@ class IntercalationAndSorption:
         return path_to_file
 
     @staticmethod
-    def get_inter_in_channel_details(
+    def get_distance_matrix(
         project_dir: str,
         subproject_dir: str,
         structure_dir: str,
@@ -618,7 +619,7 @@ class IntercalationAndSorption:
         )
 
         # Generate the details file
-        details_path = IntercalationAndSorption.save_inter_in_channel_details(
+        details_path: Path = IntercalationAndSorption.save_distance_matrix(
             project_dir, subproject_dir, structure_dir, params
         )
 
