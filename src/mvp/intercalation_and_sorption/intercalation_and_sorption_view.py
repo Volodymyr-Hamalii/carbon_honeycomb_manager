@@ -338,8 +338,8 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
         details_window = ScrollableToplevel(self)
         details_window.title("Channel Details")
 
-        width: int = min(len(details.columns) * 60 + 120, 1000)
-        height: int = min(len(details) * 35 + 120, 1000)
+        width: int = min(len(matrix.columns) * 65 + 100, 1000)
+        height: int = min(len(matrix) * 27 + 150, 1000)
         details_window.geometry(f"{width}x{height}")
 
         # Create a simple container frame
