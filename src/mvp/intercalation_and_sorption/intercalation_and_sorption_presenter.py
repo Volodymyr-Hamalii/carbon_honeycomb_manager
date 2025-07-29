@@ -168,31 +168,6 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
             self.on_operation_failed("save_distance_matrix", e)
             raise
 
-    def get_distance_matrix(
-        self,
-        project_dir: str,
-        subproject_dir: str,
-        structure_dir: str,
-    ) -> pd.DataFrame:
-        """Get intercalated atoms in channel details."""
-        try:
-            self.view.show_operation_progress("Loading intercalated atoms channel details...")
-
-            # TODO: Implement actual details loading
-            details = pd.DataFrame({
-                "Channel": [1, 2, 3],
-                "Atom_Count": [5, 8, 3],
-                "Average_Distance": [2.1, 2.3, 2.0]
-            })
-
-            self.view.display_distance_matrix(details)
-            logger.info(f"Loaded channel details for {project_dir}/{subproject_dir}/{structure_dir}")
-            return details
-
-        except Exception as e:
-            self.on_operation_failed("get_distance_matrix", e)
-            raise
-
     def translate_inter_to_all_channels_plot(
         self,
         project_dir: str,

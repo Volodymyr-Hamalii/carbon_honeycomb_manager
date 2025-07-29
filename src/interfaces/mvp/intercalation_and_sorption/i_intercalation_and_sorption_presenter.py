@@ -70,16 +70,6 @@ class IIntercalationAndSorptionPresenter(IGeneralPresenter):
         ...
 
     @abstractmethod
-    def get_distance_matrix(
-        self,
-        project_dir: str,
-        subproject_dir: str,
-        structure_dir: str,
-    ) -> pd.DataFrame:
-        """Get distance matrix."""
-        ...
-
-    @abstractmethod
     def translate_inter_to_all_channels_plot(
         self,
         project_dir: str,
