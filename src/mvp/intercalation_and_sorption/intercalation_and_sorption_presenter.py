@@ -370,7 +370,7 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
                 structure_dir=self._current_context["structure_dir"],
                 params=params,
             )
-        
+
             self.on_operation_completed(
                 "update_inter_channel_coordinates",
                 f"Channel coordinates updated: {output_path}",
@@ -457,8 +457,8 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
                 return
 
             # Get current MVP params with file selection
-            params = self.model.get_mvp_params()
-            selected_file = self.view.get_selected_file()
+            params: PMvpParams = self.model.get_mvp_params()
+            selected_file: str = self.view.get_selected_file()
             if selected_file and selected_file != "No files found":
                 params.file_name = selected_file
 
@@ -494,11 +494,11 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
 
             # Get UI settings and update params
             if hasattr(self.view, 'get_operation_settings'):
-                ui_settings = self.view.get_operation_settings()
-                
+                ui_settings: dict[str, Any] = self.view.get_operation_settings()
+
                 # Update MVP params with all UI settings
                 self._update_params_from_ui_settings(params, ui_settings)
-                
+
                 # Save updated params to model
                 self.model.set_mvp_params(params)
 
@@ -529,7 +529,7 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
         """Handle refresh files callback."""
         if self._current_context:
             try:
-                files = self.model.get_available_files(
+                files: list[str] = self.model.get_available_files(
                     self._current_context["project_dir"],
                     self._current_context["subproject_dir"],
                     self._current_context["structure_dir"]
@@ -549,15 +549,15 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
                 "structure_dir": structure_dir
             }
 
-            files = self.model.get_available_files(project_dir, subproject_dir, structure_dir)
+            files: list[str] = self.model.get_available_files(project_dir, subproject_dir, structure_dir)
             self.view.set_available_files(files)
-            
+
             # Load UI from current MVP parameters
             self.load_ui_from_params()
-            
+
             # Start periodic file refresh
             self.view.start_file_list_refresh()
-            
+
             logger.info(f"Loaded {len(files)} files for {project_dir}/{subproject_dir}/{structure_dir}")
         except Exception as e:
             logger.error(f"Failed to load available files: {e}")
@@ -569,7 +569,7 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
         for key, value in ui_settings.items():
             if hasattr(params, key):
                 setattr(params, key, value)
-        
+
         # Specifically handle coordinate limits
         if "x_min" in ui_settings:
             params.x_min = ui_settings["x_min"]
@@ -587,10 +587,10 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
     def load_ui_from_params(self) -> None:
         """Load UI components from current MVP parameters."""
         try:
-            params = self.model.get_mvp_params()
-            
+            params: PMvpParams = self.model.get_mvp_params()
+
             # Load visualization settings
-            viz_settings = {
+            viz_settings: dict[str, Any] = {
                 "to_build_bonds": params.to_build_bonds,
                 "to_show_coordinates": params.to_show_coordinates,
                 "to_show_c_indexes": params.to_show_c_indexes,
@@ -610,18 +610,18 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
                 "bonds_skip_first_distances": params.bonds_skip_first_distances,
             }
             self.view.set_visualization_settings(viz_settings)
-            
+
             # Load intercalation parameters
-            inter_params = {
+            inter_params: dict[str, Any] = {
                 "number_of_planes": params.number_of_planes,
                 "num_of_inter_atoms_layers": params.num_of_inter_atoms_layers,
                 "inter_atoms_lattice_type": params.inter_atoms_lattice_type,
             }
             if hasattr(self.view, 'set_intercalation_parameters'):
                 self.view.set_intercalation_parameters(inter_params)
-            
+
             # Load coordinate limits
-            coord_limits = {
+            coord_limits: dict[str, float] = {
                 "x_min": params.x_min,
                 "x_max": params.x_max,
                 "y_min": params.y_min,
@@ -630,7 +630,7 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
                 "z_max": params.z_max,
             }
             self.view.set_coordinate_limits(coord_limits)
-            
+
         except Exception as e:
             logger.error(f"Failed to load UI from params: {e}")
 
@@ -642,15 +642,22 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
         """Handle auto-sync parameter changes from UI."""
         try:
             params: PMvpParams = self.model.get_mvp_params()
-            
+
             # Handle different parameter types
-            if param_name in ['bonds_num_of_min_distances', 'bonds_skip_first_distances', 'number_of_planes', 'num_of_inter_atoms_layers']:
+            if param_name in [
+                'bonds_num_of_min_distances',
+                'bonds_skip_first_distances',
+                'number_of_planes',
+                'num_of_inter_atoms_layers',
+            ]:
                 try:
-                    int_value = int(value) if value else (6 if param_name == 'number_of_planes' else 2 if param_name == 'num_of_inter_atoms_layers' else 0)
+                    int_value: int = int(value) if value else (
+                        6 if param_name == 'number_of_planes' else 2 if (
+                            param_name == 'num_of_inter_atoms_layers') else 0)
                     setattr(params, param_name, int_value)
                 except ValueError:
                     return  # Ignore invalid values
-            
+
             elif param_name in ['x_min', 'x_max', 'y_min', 'y_max', 'z_min', 'z_max']:
                 try:
                     if value == "" or value.lower() in ['inf', '-inf']:
@@ -660,13 +667,13 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
                     setattr(params, param_name, float_value)
                 except ValueError:
                     return  # Ignore invalid values
-            
+
             elif param_name == 'inter_atoms_lattice_type':
-                str_value = value if value else "FCC"
+                str_value: str = value if value else "FCC"
                 setattr(params, param_name, str_value)
-            
+
             # Save updated parameters
             self.model.set_mvp_params(params)
-            
+
         except Exception as e:
             logger.error(f"Failed to handle auto-sync parameter change for {param_name}: {e}")
