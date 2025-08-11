@@ -4,6 +4,13 @@ from dataclasses import dataclass
 import customtkinter as ctk
 
 
+BLACK: str = "#000000"
+GRAY100: str = "#454545"
+GRAY200: str = "#6a6a6a"
+GRAY300: str = "#919191"
+GRAY400: str = "#afafaf"
+
+
 @dataclass(frozen=True)
 class StatusColors:
     """Status message colors."""
@@ -43,7 +50,7 @@ STATUS_COLORS = StatusColors(
     success="#2d5a27",   # Green
     warning="#8b5a00",   # Orange
     error="#8b0000",     # Red
-    processing="#4a4a4a" # Gray
+    processing="#4a4a4a"  # Gray
 )
 
 # Color definitions

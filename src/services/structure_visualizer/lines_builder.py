@@ -4,7 +4,15 @@ from matplotlib.axes import Axes
 from mpl_toolkits.mplot3d.art3d import Line3DCollection
 from scipy.spatial.distance import pdist, squareform
 
-from src.interfaces import ILinesBuilder, IVisualizationParams
+from src.services.utils import Logger
+from src.interfaces import (
+    ILinesBuilder,
+    IStructureVisualParams,
+    PCoordinateLimits,
+)
+
+
+logger = Logger("LinesBuilder")
 
 
 class LinesBuilder(ILinesBuilder):
@@ -14,8 +22,10 @@ class LinesBuilder(ILinesBuilder):
         coordinates: NDArray[np.float64],
         ax: Axes,
         num_of_min_distances: int,
-        visual_params: IVisualizationParams,
+        structure_visual_params: IStructureVisualParams,
         skip_first_distances: int = 0,
+        bonds_to_highlight: PCoordinateLimits | None = None,
+        to_build_additional_lines: bool = False,
     ) -> None:
         """
         Add lines to the axis.
@@ -32,64 +42,76 @@ class LinesBuilder(ILinesBuilder):
 
         lc = Line3DCollection(
             lines,
-            colors=visual_params.color_bonds,
-            linewidths=visual_params.bonds_width,
-            alpha=visual_params.transparency_bonds,
+            colors=structure_visual_params.color_bonds,
+            linewidths=structure_visual_params.bonds_width,
+            alpha=structure_visual_params.transparency_bonds,
         )
         ax.add_collection3d(lc)  # type: ignore
 
-        # To highlight the front plane (uncomment and ajust limits if needed)
+        # To highlight the front plane
+        if bonds_to_highlight:
+            # Split coordinates into two groups
+            coordinates_group_1: NDArray[np.float64] = coordinates[
+                (coordinates[:, 0] > bonds_to_highlight.x_min)
+                & (coordinates[:, 0] < bonds_to_highlight.x_max)
+                & (coordinates[:, 1] > bonds_to_highlight.y_min)
+                & (coordinates[:, 1] < bonds_to_highlight.y_max)
+                & (coordinates[:, 2] > bonds_to_highlight.z_min)
+                & (coordinates[:, 2] < bonds_to_highlight.z_max)
+            ]
 
-        # # Split coordinates into two groups: with x>5 & y<5.5 and the rest
-        # x_min_limit: float = 5.0
-        # y_max_limit: float = 5.5
-        # coordinates_group_1: NDArray[np.float64] = coordinates[
-        #     (coordinates[:, 0] > x_min_limit) & (coordinates[:, 1] < y_max_limit)
-        # ]
+            if len(coordinates_group_1) > 0:
+                lines_group_1: list[list[NDArray[np.float64]]] = cls._build_lines(
+                    coordinates=coordinates_group_1,
+                    num_of_min_distances=num_of_min_distances,
+                    skip_first_distances=skip_first_distances)
 
-        # if len(coordinates_group_1) > 0:
-        #     lines_group_1: list[list[NDArray[np.float64]]] = cls._build_lines(
-        #         coordinates=coordinates_group_1,
-        #         num_of_min_distances=num_of_min_distances,
-        #         skip_first_distances=skip_first_distances)
+                lc = Line3DCollection(
+                    lines_group_1,
+                    colors=structure_visual_params.color_bonds,
+                    linewidths=1.25,
+                    alpha=structure_visual_params.transparency_bonds,
+                )
+                ax.add_collection3d(lc)  # type: ignore
+            else:
+                logger.warning(
+                    f"No coordinates to build lines for provided coordinate limits: {bonds_to_highlight}"
+                )
 
-        #     lc = Line3DCollection(
-        #         lines_group_1,
-        #         colors=visual_params.color_bonds,
-        #         linewidths=1.25,
-        #         alpha=visual_params.transparency_bonds,
-        #     )
-        #     ax.add_collection3d(lc)  # type: ignore
-        # else:
-        #     logger.warning(
-        #         f"No coordinates to build lines for x_min_limit={x_min_limit} and y_max_limit={y_max_limit}"
-        #     )
+        # To build additional dotted vertical lines
+        if to_build_additional_lines:
+            if bonds_to_highlight:
+                coordinates_group_1: NDArray[np.float64] = coordinates[
+                    (coordinates[:, 0] > bonds_to_highlight.x_min)
+                    & (coordinates[:, 0] < bonds_to_highlight.x_max)
+                    & (coordinates[:, 1] > bonds_to_highlight.y_min)
+                    & (coordinates[:, 1] < bonds_to_highlight.y_max)
+                    & (coordinates[:, 2] > bonds_to_highlight.z_min)
+                    & (coordinates[:, 2] < bonds_to_highlight.z_max)
+                ]
+            else:
+                coordinates_group_1 = coordinates
 
-        #########################################################################################
-        # # To build additional dotted vertical lines (uncomment and ajust limits if needed)
+            # Get 2 points from coordinates_group_1: first with max X and second with min X
+            # and with max Z coordinate:
+            max_x_points: NDArray[np.float64] = coordinates_group_1[coordinates_group_1[:, 0].argmax()]
+            point_1: NDArray[np.float64] = max_x_points[max_x_points[:, 2].argmax()]
 
-        # # Get 2 points from coordinates_group_1: first with max X and second with min X
-        # # and with max Z coordinate:
-        # max_x_mask: NDArray[np.float64] = coordinates_group_1[:, 0] == coordinates_group_1[:, 0].max()
-        # max_x_points: NDArray[np.float64] = coordinates_group_1[max_x_mask]
-        # point_1: NDArray[np.float64] = max_x_points[max_x_points[:, 2].argmax()]
+            min_x_points: NDArray[np.float64] = coordinates_group_1[coordinates_group_1[:, 0].argmin()]
+            point_2: NDArray[np.float64] = min_x_points[min_x_points[:, 2].argmax()]
 
-        # min_x_mask: NDArray[np.float64] = coordinates_group_1[:, 0] == coordinates_group_1[:, 0].min()
-        # min_x_points: NDArray[np.float64] = coordinates_group_1[min_x_mask]
-        # point_2: NDArray[np.float64] = min_x_points[min_x_points[:, 2].argmax()]
+            z_max: float = point_2[2] + 3.
+            line1: list[list[float]] = [[point_1[0], point_1[1], 0], [point_1[0], point_1[1], z_max]]
+            line2: list[list[float]] = [[point_2[0], point_2[1], 0], [point_2[0], point_2[1], z_max]]
 
-        # z_max: float = 16.
-        # line1: list[list[float]] = [[point_1[0], point_1[1], 0], [point_1[0], point_1[1], z_max]]
-        # line2: list[list[float]] = [[point_2[0], point_2[1], 0], [point_2[0], point_2[1], z_max]]
-
-        # lc = Line3DCollection(
-        #     [line1, line2],
-        #     colors=visual_params.color_bonds,
-        #     linewidths=1.75,
-        #     alpha=visual_params.transparency_bonds,
-        #     linestyles='dotted',
-        # )
-        # ax.add_collection3d(lc)  # type: ignore
+            lc = Line3DCollection(
+                [line1, line2],
+                colors=structure_visual_params.color_bonds,
+                linewidths=1.75,
+                alpha=structure_visual_params.transparency_bonds,
+                linestyles='dotted',
+            )
+            ax.add_collection3d(lc)  # type: ignore
 
     @classmethod
     def _build_lines(

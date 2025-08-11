@@ -41,8 +41,9 @@ logger = Logger("IntercalationAndSorption")
 class IntercalationAndSorption:
     """Intercalation and sorption analysis functionality."""
 
-    @staticmethod
+    @classmethod
     def plot_inter_in_c_structure(
+        cls,
         project_dir: str,
         subproject_dir: str,
         structure_dir: str,
@@ -71,7 +72,7 @@ class IntercalationAndSorption:
             [carbon_channel.planes[i].points for i in range(params.number_of_planes)]
         )
 
-        IntercalationAndSorption._show_structures(
+        cls._show_structures(
             carbon_channel_points=plane_points,
             inter_atoms=inter_atoms_plane_coordinates.points,
             subproject_dir=subproject_dir,
@@ -294,19 +295,7 @@ class IntercalationAndSorption:
         )
 
         to_show_inter_atoms_indexes: bool = params.to_show_inter_atoms_indexes
-
-        inter_atoms_visual_params_map: dict[str, list[StructureVisualParams]] = {
-            "al": [VisualizationParams.al_1, VisualizationParams.al_2, VisualizationParams.al_3],
-            "default": [VisualizationParams.al_1, VisualizationParams.al_2, VisualizationParams.al_3],
-            # "ar": [VisualizationParams.ar_1, VisualizationParams.ar_2, VisualizationParams.ar_3],
-        }
-
-        visual_params_key: str = subproject_dir.lower()
-        if visual_params_key not in inter_atoms_visual_params_map:
-            visual_params_key = "default"
-        inter_atoms_visual_params: list[StructureVisualParams] = inter_atoms_visual_params_map[
-            visual_params_key
-        ]
+        inter_label: str = subproject_dir.title()
 
         if params.num_of_inter_atoms_layers == 1:
             StructureVisualizer.show_two_structures(
@@ -321,8 +310,8 @@ class IntercalationAndSorption:
                 to_show_indexes_second=to_show_inter_atoms_indexes,
                 coordinate_limits_first=coordinate_limits,
                 coordinate_limits_second=coordinate_limits,
-                visual_params_first=VisualizationParams.carbon,
-                visual_params_second=inter_atoms_visual_params[0],
+                structure_visual_params_first=VisualizationParams.carbon,
+                structure_visual_params_second=VisualizationParams.intercalated_atoms_1_layer,
             )
 
         elif params.num_of_inter_atoms_layers == 2:
@@ -346,11 +335,12 @@ class IntercalationAndSorption:
                     inter_atoms[a_layer_indices],
                     inter_atoms[b_layer_indices],
                 ],
-                visual_params_list=[
+                structure_visual_params_list=[
                     VisualizationParams.carbon,
-                    inter_atoms_visual_params[0],
-                    inter_atoms_visual_params[1],
+                    VisualizationParams.intercalated_atoms_1_layer,
+                    VisualizationParams.intercalated_atoms_2_layer,
                 ],
+                labels_list=["C", inter_label, inter_label],
                 to_build_bonds_list=[
                     params.to_build_bonds,
                     False,
@@ -393,12 +383,13 @@ class IntercalationAndSorption:
                     inter_atoms[b_layer_indices],
                     inter_atoms[c_layer_indices],
                 ],
-                visual_params_list=[
+                structure_visual_params_list=[
                     VisualizationParams.carbon,
-                    inter_atoms_visual_params[0],
-                    inter_atoms_visual_params[1],
-                    inter_atoms_visual_params[2],
+                    VisualizationParams.intercalated_atoms_1_layer,
+                    VisualizationParams.intercalated_atoms_2_layer,
+                    VisualizationParams.intercalated_atoms_3_layer,
                 ],
+                labels_list=["C", inter_label, inter_label, inter_label],
                 to_build_bonds_list=[
                     params.to_build_bonds,
                     False,

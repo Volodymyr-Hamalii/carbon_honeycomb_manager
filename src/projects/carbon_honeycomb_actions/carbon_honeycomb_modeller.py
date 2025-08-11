@@ -76,7 +76,7 @@ class CarbonHoneycombModeller:
             num_of_min_distances=params.bonds_num_of_min_distances,
             skip_first_distances=params.bonds_skip_first_distances,
             coordinate_limits=coordinate_limits,
-            visual_params=VisualizationParams.carbon,
+            structure_visual_params=VisualizationParams.carbon,
         )
 
     @staticmethod
@@ -130,7 +130,7 @@ class CarbonHoneycombModeller:
             num_of_min_distances=params.bonds_num_of_min_distances,
             skip_first_distances=params.bonds_skip_first_distances,
             coordinate_limits=coordinate_limits,
-            visual_params=VisualizationParams.carbon,
+            structure_visual_params=VisualizationParams.carbon,
         )
 
     @classmethod
@@ -173,14 +173,14 @@ class CarbonHoneycombModeller:
         ax: Axes = StructureVisualizer.get_2d_plot(
             np.concatenate(planes_points_2d),
             title=structure_dir,
-            visual_params=VisualizationParams.carbon,
+            structure_visual_params=VisualizationParams.carbon,
         )
 
         # Add center point to the plot
         ax.scatter(
             center_2d[0],
             center_2d[1],
-            color=VisualizationParams.al_1.color_atoms,
+            color=VisualizationParams.intercalated_atoms_1_layer.color_atoms,
             alpha=0.5,
             label='Center',
         )

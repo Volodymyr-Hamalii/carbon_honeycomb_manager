@@ -7,7 +7,11 @@ from matplotlib.axes import Axes
 from matplotlib.backend_bases import FigureManagerBase
 from matplotlib.collections import PathCollection
 
-from src.interfaces import IVisualizationParams, PCoordinateLimits, IStructureVisualizer
+from src.interfaces import (
+    PCoordinateLimits,
+    IStructureVisualizer,
+    IStructureVisualParams,
+)
 from .lines_builder import LinesBuilder
 from ..utils import Logger
 
@@ -20,7 +24,8 @@ class StructureVisualizer(IStructureVisualizer):
     def show_structure(
             cls,
             coordinates: NDArray[np.float64],
-            visual_params: IVisualizationParams,
+            structure_visual_params: IStructureVisualParams,
+            label: str | None = None,
             to_build_bonds: bool = True,
             to_set_equal_scale: bool | None = None,
             to_show_coordinates: bool | None = None,
@@ -41,7 +46,8 @@ class StructureVisualizer(IStructureVisualizer):
             fig=fig,
             ax=ax,
             coordinates=coordinates,
-            visual_params=visual_params,
+            structure_visual_params=structure_visual_params,
+            label=label,
             to_build_bonds=to_build_bonds,
             to_set_equal_scale=to_set_equal_scale,
             to_show_coordinates=to_show_coordinates,
@@ -71,10 +77,12 @@ class StructureVisualizer(IStructureVisualizer):
             cls,
             coordinates_first: NDArray[np.float64],
             coordinates_second: NDArray[np.float64],
-            visual_params_first: IVisualizationParams,
-            visual_params_second: IVisualizationParams,
+            structure_visual_params_first: IStructureVisualParams,
+            structure_visual_params_second: IStructureVisualParams,
             coordinate_limits_first: PCoordinateLimits | None = None,
             coordinate_limits_second: PCoordinateLimits | None = None,
+            label_first: str | None = None,
+            label_second: str | None = None,
             to_show_indexes_first: bool | None = None,
             to_show_indexes_second: bool | None = None,
             to_build_bonds: bool = False,
@@ -95,7 +103,8 @@ class StructureVisualizer(IStructureVisualizer):
             fig=fig,
             ax=ax,
             coordinates=coordinates_first,
-            visual_params=visual_params_first,
+            structure_visual_params=structure_visual_params_first,
+            label=label_first,
             to_build_bonds=to_build_bonds,
             num_of_min_distances=num_of_min_distances,
             skip_first_distances=skip_first_distances,
@@ -110,7 +119,8 @@ class StructureVisualizer(IStructureVisualizer):
             fig=fig,
             ax=ax,
             coordinates=coordinates_second,
-            visual_params=visual_params_second,
+            structure_visual_params=structure_visual_params_second,
+            label=label_second,
             to_build_bonds=False,
             num_of_min_distances=1,
             skip_first_distances=0,
@@ -142,7 +152,8 @@ class StructureVisualizer(IStructureVisualizer):
     def show_structures(
             cls,
             coordinates_list: list[NDArray[np.float64]],
-            visual_params_list: list[IVisualizationParams],
+            structure_visual_params_list: list[IStructureVisualParams],
+            labels_list: list[str | None],
             to_build_bonds_list: list[bool],
             to_show_indexes_list: list[bool] | None = None,
             title: str | None = None,
@@ -155,8 +166,10 @@ class StructureVisualizer(IStructureVisualizer):
     ) -> None:
         """ Show 3D plot with multiple structures """
 
-        if len(coordinates_list) != len(visual_params_list) != len(to_build_bonds_list):
-            raise ValueError("len(coordinates_list) != len(visual_params_list) != len(to_build_bonds_list)")
+        if len(coordinates_list) != len(structure_visual_params_list) != len(
+                to_build_bonds_list) != len(labels_list):
+            raise ValueError("len(coordinates_list) != len(structure_visual_params_list) \
+                             != len(to_build_bonds_list) != len(labels_list)")
 
         if custom_indices_list and len(custom_indices_list) != len(coordinates_list):
             raise ValueError("len(custom_indices_list) != len(coordinates_list)")
@@ -170,11 +183,12 @@ class StructureVisualizer(IStructureVisualizer):
 
         all_params = zip(
             coordinates_list,
-            visual_params_list,
+            structure_visual_params_list,
             to_build_bonds_list,
+            labels_list,
         )
 
-        for i, (coordinates, visual_params, to_build_bonds) in enumerate(all_params):
+        for i, (coordinates, structure_visual_params, to_build_bonds, label) in enumerate(all_params):
             custom_indices = custom_indices_list[i] if custom_indices_list else []
 
             if coordinate_limits_list:
@@ -191,13 +205,14 @@ class StructureVisualizer(IStructureVisualizer):
                 fig=fig,
                 ax=ax,
                 coordinates=coordinates,
-                visual_params=visual_params,
+                structure_visual_params=structure_visual_params,
+                label=label,
                 to_build_bonds=to_build_bonds,
                 num_of_min_distances=num_of_min_distances,
                 skip_first_distances=skip_first_distances,
                 to_show_coordinates=to_show_coordinates,
                 to_show_indexes=to_show_indexes_list[i] if to_show_indexes_list else None,
-                is_interactive_mode=is_interactive_mode if visual_params.label != "Carbon" else False,
+                is_interactive_mode=is_interactive_mode if label != "Carbon" else False,
                 custom_indexes=custom_indices if custom_indices else [],
                 coordinate_limits=coordinate_limits,
             )
@@ -223,7 +238,7 @@ class StructureVisualizer(IStructureVisualizer):
     @staticmethod
     def get_2d_plot(
         coordinates: NDArray[np.float64],
-        visual_params: IVisualizationParams,
+        structure_visual_params: IStructureVisualParams,
         title: str | None = None,
         to_show_coordinates: bool | None = None,
         to_show_indexes: bool | None = None,
@@ -237,9 +252,9 @@ class StructureVisualizer(IStructureVisualizer):
         y: np.ndarray = coordinates[:, 1]
         ax.scatter(
             x, y,
-            color=visual_params.color_atoms,
+            color=structure_visual_params.color_atoms,
             label='Points',
-            alpha=visual_params.transparency,
+            alpha=structure_visual_params.transparency,
         )
 
         if to_show_coordinates:
@@ -284,14 +299,14 @@ class StructureVisualizer(IStructureVisualizer):
     def show_2d_graph(
         cls,
         coordinates: NDArray[np.float64],
-        visual_params: IVisualizationParams,
+        structure_visual_params: IStructureVisualParams,
         title: str | None = None,
         to_show_coordinates: bool | None = None,
         to_show_indexes: bool | None = None,
     ) -> None:
         cls.get_2d_plot(
             coordinates=coordinates,
-            visual_params=visual_params,
+            structure_visual_params=structure_visual_params,
             title=title,
             to_show_coordinates=to_show_coordinates,
             to_show_indexes=to_show_indexes,
@@ -304,7 +319,8 @@ class StructureVisualizer(IStructureVisualizer):
             fig: Figure,
             ax: Axes,
             coordinates: NDArray[np.float64],
-            visual_params: IVisualizationParams,
+            structure_visual_params: IStructureVisualParams,
+            label: str | None,
             to_set_equal_scale: bool | None = None,
             to_build_bonds: bool = True,
             num_of_min_distances: int = 2,
@@ -316,7 +332,7 @@ class StructureVisualizer(IStructureVisualizer):
             coordinate_limits: PCoordinateLimits | None = None,
     ) -> PathCollection | None:
         if coordinates.size == 0:
-            logger.warning(f"No points to plot for {visual_params.label}.")
+            logger.warning(f"No points to plot for label={label}.")
             return
 
         if coordinate_limits:
@@ -341,20 +357,21 @@ class StructureVisualizer(IStructureVisualizer):
 
         scatter: PathCollection = ax.scatter(
             x, y, z,
-            c=visual_params.color_atoms,
-            label=visual_params.label,
-            s=visual_params.size,  # type: ignore
-            alpha=visual_params.transparency,
+            c=structure_visual_params.color_atoms,
+            label=label if label else None,
+            s=structure_visual_params.size,  # type: ignore
+            alpha=structure_visual_params.transparency,
             picker=True if is_interactive_mode else False,
         )
 
         if to_set_equal_scale is None:
-            to_set_equal_scale = visual_params.to_set_equal_scale
+            to_set_equal_scale = structure_visual_params.to_set_equal_scale
 
         if to_set_equal_scale:
             cls._set_equal_scale(ax, x, y, z)
 
-        if to_show_coordinates is True or (to_show_coordinates is None and visual_params.to_show_coordinates):
+        if to_show_coordinates is True or (
+                to_show_coordinates is None and structure_visual_params.to_show_coordinates):
             # Show coordinates near each point
             for xx, yy, zz in zip(x, y, z):
                 ax.text(
@@ -366,7 +383,8 @@ class StructureVisualizer(IStructureVisualizer):
                     va="center",
                 )
 
-        if to_show_indexes or (to_show_indexes is None and visual_params.to_show_indexes):
+        if to_show_indexes or (
+                to_show_indexes is None and structure_visual_params.to_show_indexes):
             # Show coordinates near each point
             if len(custom_indexes) > 0:
                 for i, (xx, yy, zz) in enumerate(coordinates):
@@ -393,7 +411,7 @@ class StructureVisualizer(IStructureVisualizer):
             # Carbon
             LinesBuilder.add_lines(
                 coordinates=coordinates, ax=ax,
-                visual_params=visual_params,
+                structure_visual_params=structure_visual_params,
                 num_of_min_distances=num_of_min_distances,
                 skip_first_distances=skip_first_distances)
 
