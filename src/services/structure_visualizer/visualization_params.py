@@ -6,6 +6,7 @@ from src.interfaces import (
     IPlotAtomParams,
     IStructureVisualParams,
 )
+from src.ui.styles import Colors as UI_Colors
 
 
 @dataclass(frozen=True)
@@ -30,20 +31,20 @@ class PlotAtomParams(IPlotAtomParams):
 class Colors(IColors):
     # TODO: move to the data/configs/colors.json
     carbon_colors: PlotAtomParams = PlotAtomParams(
-        atoms_color="#0500a4",
-        bonds_color="#00065f",
+        atoms_color=UI_Colors.BLUE200,
+        bonds_color=UI_Colors.BLUE100,
     )
     intercalated_atoms_colors_1_layer: PlotAtomParams = PlotAtomParams(
-        atoms_color="#e00000",
-        bonds_color="#500000",
+        atoms_color=UI_Colors.RED300,
+        bonds_color=UI_Colors.RED100,
     )
     intercalated_atoms_colors_2_layer: PlotAtomParams = PlotAtomParams(
-        atoms_color="#00d11d",
-        bonds_color="#004309",
+        atoms_color=UI_Colors.GREEN300,
+        bonds_color=UI_Colors.GREEN100,
     )
     intercalated_atoms_colors_3_layer: PlotAtomParams = PlotAtomParams(
-        atoms_color="#1b9afa",
-        bonds_color="#0062ad",
+        atoms_color=UI_Colors.BLUE400,
+        bonds_color=UI_Colors.BLUE300,
     )
 
 
