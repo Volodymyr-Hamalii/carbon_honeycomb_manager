@@ -5,6 +5,7 @@ from pathlib import Path
 import numpy as np
 from numpy.typing import NDArray
 import pandas as pd
+from typing import cast
 
 from src.interfaces import (
     IPoints,
@@ -23,7 +24,6 @@ from src.services import (
     PathBuilder,
     StructureVisualizer,
     VisualizationParams,
-    StructureVisualParams,
     DistanceMeasurer,
 )
 
@@ -313,105 +313,117 @@ class IntercalationAndSorption:
                 structure_visual_params_first=VisualizationParams.carbon,
                 structure_visual_params_second=VisualizationParams.intercalated_atoms_1_layer,
             )
-
-        elif params.num_of_inter_atoms_layers == 2:
-            # Split the inter_atoms by layers along Oz (by rounded z coordinate)
-            al_groups_with_indices: list[tuple[NDArray[np.float64], NDArray[np.int64]]] = (
-                IntercalationAndSorption._split_atoms_along_z_axis(inter_atoms)
-            )
-
-            a_layer_indices: list[int] = []
-            b_layer_indices: list[int] = []
-
-            for i, (group, indices) in enumerate(al_groups_with_indices):
-                if i % params.num_of_inter_atoms_layers == 0:
-                    a_layer_indices.extend(indices)
-                else:
-                    b_layer_indices.extend(indices)
-
-            StructureVisualizer.show_structures(
-                coordinates_list=[
-                    carbon_channel_points,
-                    inter_atoms[a_layer_indices],
-                    inter_atoms[b_layer_indices],
-                ],
-                structure_visual_params_list=[
-                    VisualizationParams.carbon,
-                    VisualizationParams.intercalated_atoms_1_layer,
-                    VisualizationParams.intercalated_atoms_2_layer,
-                ],
-                labels_list=["C", inter_label, inter_label],
-                to_build_bonds_list=[
-                    params.to_build_bonds,
-                    False,
-                    False,
-                ],
-                to_show_indexes_list=[
-                    False,
-                    to_show_inter_atoms_indexes,
-                    to_show_inter_atoms_indexes,
-                ],
-                title=title,
-                num_of_min_distances=params.bonds_num_of_min_distances,
-                skip_first_distances=params.bonds_skip_first_distances,
-                to_show_coordinates=params.to_show_coordinates,
-                custom_indices_list=[None, a_layer_indices, b_layer_indices],
-                coordinate_limits_list=[coordinate_limits for _ in range(3)],
-            )
-
-        elif params.num_of_inter_atoms_layers == 3:
-            al_groups_with_indices: list[tuple[NDArray[np.float64], NDArray[np.int64]]] = (
-                IntercalationAndSorption._split_atoms_along_z_axis(inter_atoms)
-            )
-
-            a_layer_indices: list[int] = []
-            b_layer_indices: list[int] = []
-            c_layer_indices: list[int] = []
-
-            for i, (group, indices) in enumerate(al_groups_with_indices):
-                if i % params.num_of_inter_atoms_layers == 0:
-                    a_layer_indices.extend(indices)
-                elif i % params.num_of_inter_atoms_layers == 1:
-                    b_layer_indices.extend(indices)
-                else:
-                    c_layer_indices.extend(indices)
-
-            StructureVisualizer.show_structures(
-                coordinates_list=[
-                    carbon_channel_points,
-                    inter_atoms[a_layer_indices],
-                    inter_atoms[b_layer_indices],
-                    inter_atoms[c_layer_indices],
-                ],
-                structure_visual_params_list=[
-                    VisualizationParams.carbon,
-                    VisualizationParams.intercalated_atoms_1_layer,
-                    VisualizationParams.intercalated_atoms_2_layer,
-                    VisualizationParams.intercalated_atoms_3_layer,
-                ],
-                labels_list=["C", inter_label, inter_label, inter_label],
-                to_build_bonds_list=[
-                    params.to_build_bonds,
-                    False,
-                    False,
-                    False,
-                ],
-                to_show_indexes_list=[
-                    False,
-                    to_show_inter_atoms_indexes,
-                    to_show_inter_atoms_indexes,
-                    to_show_inter_atoms_indexes,
-                ],
-                title=title,
-                num_of_min_distances=params.bonds_num_of_min_distances,
-                skip_first_distances=params.bonds_skip_first_distances,
-                to_show_coordinates=params.to_show_coordinates,
-                custom_indices_list=[None, a_layer_indices, b_layer_indices, c_layer_indices],
-                coordinate_limits_list=[coordinate_limits for _ in range(4)],
-            )
-
         else:
-            raise NotImplementedError(f"Number of layers {params.num_of_inter_atoms_layers} is not implemented")
+            # Handle multiple layers (2 or more)
+            IntercalationAndSorption._show_multi_layer_structures(
+                carbon_channel_points=carbon_channel_points,
+                inter_atoms=inter_atoms,
+                coordinate_limits=coordinate_limits,
+                inter_label=inter_label,
+                to_show_inter_atoms_indexes=to_show_inter_atoms_indexes,
+                params=params,
+                title=title,
+            )
+
+    @staticmethod
+    def _show_multi_layer_structures(
+        carbon_channel_points: NDArray[np.float64],
+        inter_atoms: NDArray[np.float64],
+        coordinate_limits: PCoordinateLimits,
+        inter_label: str,
+        to_show_inter_atoms_indexes: bool,
+        params: PMvpParams,
+        title: str | None = None,
+    ) -> None:
+        """Show structures with multiple intercalated atom layers."""
+        # Split atoms into layers
+        layer_indices: list[list[int]] = IntercalationAndSorption._get_layer_indices(
+            inter_atoms, params.num_of_inter_atoms_layers
+        )
+
+        # Prepare coordinates list
+        coordinates_list: list[NDArray[np.float64]] = [carbon_channel_points]
+        coordinates_list.extend([inter_atoms[indices] for indices in layer_indices])
+
+        # Prepare visualization parameters
+        structure_visual_params_list: list = [VisualizationParams.carbon]
+        structure_visual_params_list.extend(
+            IntercalationAndSorption._get_layer_visual_params(params.num_of_inter_atoms_layers)
+        )
+
+        # Prepare labels
+        labels_list: list[str] = ["C"] + [inter_label] * params.num_of_inter_atoms_layers
+
+        # Prepare bonds settings
+        to_build_bonds_list: list[bool] = [params.to_build_bonds] + [False] * params.num_of_inter_atoms_layers
+
+        # Prepare index display settings
+        to_show_indexes_list: list[bool] = [False] + [to_show_inter_atoms_indexes] * params.num_of_inter_atoms_layers
+
+        # Prepare custom indices
+        custom_indices_list: list[list[int] | None] = [None] + layer_indices
+
+        # Prepare coordinate limits
+        num_structures: int = 1 + params.num_of_inter_atoms_layers
+        coordinate_limits_list: list[PCoordinateLimits] = [coordinate_limits] * num_structures
+
+        StructureVisualizer.show_structures(
+            coordinates_list=coordinates_list,
+            structure_visual_params_list=structure_visual_params_list,
+            labels_list=labels_list,  # type: ignore
+            to_build_bonds_list=to_build_bonds_list,
+            to_show_indexes_list=to_show_indexes_list,
+            title=title,
+            num_of_min_distances=params.bonds_num_of_min_distances,
+            skip_first_distances=params.bonds_skip_first_distances,
+            to_show_coordinates=params.to_show_coordinates,
+            custom_indices_list=custom_indices_list,
+            coordinate_limits_list=coordinate_limits_list,
+        )
+
+    @staticmethod
+    def _get_layer_indices(
+        inter_atoms: NDArray[np.float64],
+        num_layers: int
+    ) -> list[list[int]]:
+        """Get indices for each layer by splitting atoms along Z-axis."""
+        if num_layers > 3:
+            raise NotImplementedError(f"Number of layers {num_layers} is not implemented")
+
+        al_groups_with_indices: list[tuple[NDArray[np.float64], NDArray[np.int64]]] = (
+            IntercalationAndSorption._split_atoms_along_z_axis(inter_atoms)
+        )
+
+        # Initialize layer indices lists
+        layer_indices: list[list[int]] = [[] for _ in range(num_layers)]
+
+        # Distribute indices among layers
+        for i, (group, indices) in enumerate(al_groups_with_indices):
+            layer_idx: int = i % num_layers
+            layer_indices[layer_idx].extend(indices.tolist())
+
+        return layer_indices
+
+    @staticmethod
+    def _get_layer_visual_params(num_layers: int) -> list:
+        """Get visualization parameters for intercalated atom layers."""
+        layer_params_map: dict[int, list] = {
+            1: [VisualizationParams.intercalated_atoms_1_layer],
+            2: [
+                VisualizationParams.intercalated_atoms_1_layer,
+                VisualizationParams.intercalated_atoms_2_layer,
+            ],
+            3: [
+                VisualizationParams.intercalated_atoms_1_layer,
+                VisualizationParams.intercalated_atoms_2_layer,
+                VisualizationParams.intercalated_atoms_3_layer,
+            ],
+        }
+
+        if num_layers not in layer_params_map:
+            raise NotImplementedError(f"Number of layers {num_layers} is not implemented")
+
+        return layer_params_map[num_layers]
 
     @staticmethod
     def _split_atoms_along_z_axis(
