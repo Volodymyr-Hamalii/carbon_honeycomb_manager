@@ -25,7 +25,7 @@ class LinesBuilder(ILinesBuilder):
         structure_visual_params: IStructureVisualParams,
         skip_first_distances: int = 0,
         bonds_to_highlight: PCoordinateLimits | None = None,
-        to_build_additional_lines: bool = False,
+        to_build_edge_vertical_lines: bool = False,
     ) -> None:
         """
         Add lines to the axis.
@@ -79,7 +79,7 @@ class LinesBuilder(ILinesBuilder):
                 )
 
         # To build additional dotted vertical lines
-        if to_build_additional_lines:
+        if to_build_edge_vertical_lines:
             if bonds_to_highlight:
                 coordinates_group_1: NDArray[np.float64] = coordinates[
                     (coordinates[:, 0] > bonds_to_highlight.x_min)

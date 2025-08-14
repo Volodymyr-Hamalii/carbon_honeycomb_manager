@@ -35,6 +35,8 @@ class StructureVisualizer(IStructureVisualizer):
             title: str | None = None,
             is_interactive_mode: bool = False,
             coordinate_limits: PCoordinateLimits | None = None,
+            bonds_to_highlight: PCoordinateLimits | None = None,
+            to_build_edge_vertical_lines: bool = False,
     ) -> None:
         """ Show 3D plot with 1 structure. """
 
@@ -56,6 +58,8 @@ class StructureVisualizer(IStructureVisualizer):
             skip_first_distances=skip_first_distances,
             is_interactive_mode=is_interactive_mode,
             coordinate_limits=coordinate_limits,
+            bonds_to_highlight=bonds_to_highlight,
+            to_build_edge_vertical_lines=to_build_edge_vertical_lines,
         )
 
         ax.set_xlabel('X')
@@ -91,6 +95,8 @@ class StructureVisualizer(IStructureVisualizer):
             is_interactive_mode: bool = False,
             num_of_min_distances: int = 2,
             skip_first_distances: int = 0,
+            bonds_to_highlight: PCoordinateLimits | None = None,
+            to_build_edge_vertical_lines: bool = False,
     ) -> None:
         """ Show 3D plot with 2 structures (by default there are carbon and aluminium) """
 
@@ -112,6 +118,8 @@ class StructureVisualizer(IStructureVisualizer):
             to_show_indexes=to_show_indexes_first,
             is_interactive_mode=False,
             coordinate_limits=coordinate_limits_first,
+            bonds_to_highlight=bonds_to_highlight,
+            to_build_edge_vertical_lines=to_build_edge_vertical_lines,
         )
 
         # Plot second structure atoms (interactive if enabled)
@@ -128,6 +136,8 @@ class StructureVisualizer(IStructureVisualizer):
             to_show_indexes=to_show_indexes_second,
             is_interactive_mode=is_interactive_mode,
             coordinate_limits=coordinate_limits_second,
+            bonds_to_highlight=bonds_to_highlight,
+            to_build_edge_vertical_lines=to_build_edge_vertical_lines,
         )
 
         ax.set_xlabel('X')
@@ -158,11 +168,14 @@ class StructureVisualizer(IStructureVisualizer):
             to_show_indexes_list: list[bool] | None = None,
             title: str | None = None,
             to_show_coordinates: bool | None = None,
+            to_show_grid: bool | None = None,  # TODO
             num_of_min_distances: int = 2,
             skip_first_distances: int = 0,
             is_interactive_mode: bool = False,
             custom_indices_list: list[list[int] | None] | None = None,
             coordinate_limits_list: list[PCoordinateLimits] | None = None,
+            bonds_to_highlight: PCoordinateLimits | None = None,
+            to_build_edge_vertical_lines: bool = False,
     ) -> None:
         """ Show 3D plot with multiple structures """
 
@@ -215,6 +228,8 @@ class StructureVisualizer(IStructureVisualizer):
                 is_interactive_mode=is_interactive_mode if label != "Carbon" else False,
                 custom_indexes=custom_indices if custom_indices else [],
                 coordinate_limits=coordinate_limits,
+                bonds_to_highlight=bonds_to_highlight,
+                to_build_edge_vertical_lines=to_build_edge_vertical_lines,
             )
 
         ax.set_xlabel('X')
@@ -327,9 +342,16 @@ class StructureVisualizer(IStructureVisualizer):
             skip_first_distances: int = 0,
             to_show_coordinates: bool | None = None,
             to_show_indexes: bool | None = None,
+            to_show_grid: bool | None = None,  # TODO
             is_interactive_mode: bool = False,
             custom_indexes: list[int] = [],
             coordinate_limits: PCoordinateLimits | None = None,
+            bonds_to_highlight: PCoordinateLimits | None = None,
+            to_build_edge_vertical_lines: bool = False,
+            to_show_dists_to_plane: bool = False,
+            to_show_dists_to_edges: bool = False,
+            to_show_channel_angles: bool = False,
+            to_show_plane_lengths: bool = False,
     ) -> PathCollection | None:
         if coordinates.size == 0:
             logger.warning(f"No points to plot for label={label}.")
@@ -413,7 +435,10 @@ class StructureVisualizer(IStructureVisualizer):
                 coordinates=coordinates, ax=ax,
                 structure_visual_params=structure_visual_params,
                 num_of_min_distances=num_of_min_distances,
-                skip_first_distances=skip_first_distances)
+                skip_first_distances=skip_first_distances,
+                bonds_to_highlight=bonds_to_highlight,
+                to_build_edge_vertical_lines=to_build_edge_vertical_lines,
+            )
 
         if is_interactive_mode:
             def on_pick(event) -> None:

@@ -1,16 +1,22 @@
 """Presenter for init data functionality."""
 from typing import Any, Callable
 import pandas as pd
+import numpy as np
+from numpy.typing import NDArray
 
 from src.interfaces import (
     PMvpParams,
     IShowInitDataPresenter,
     IShowInitDataModel,
     IShowInitDataView,
+    ICarbonHoneycombChannel,
+    IPoints,
 )
+from src.entities import Points
 from src.mvp.general import GeneralPresenter
-from src.services import Logger
-from src.projects.carbon_honeycomb_actions import CarbonHoneycombModeller
+from src.services import Logger, FileReader, VisualizationParams
+from src.projects.carbon_honeycomb_actions import CarbonHoneycombModeller, CarbonHoneycombActions
+from src.ui.components import PlotWindow, PlotWindowFactory
 
 logger = Logger("InitDataPresenter")
 
@@ -37,16 +43,35 @@ class InitDataPresenter(GeneralPresenter, IShowInitDataPresenter):
         try:
             if params is None:
                 params = self.model.get_mvp_params()
-            
-            CarbonHoneycombModeller.show_init_structure(
+
+            file_name: str | None = params.file_name
+            if file_name is None:
+                raise ValueError("File name is required")
+
+            # Get carbon structure coordinates
+            carbon_coords: NDArray[np.float64] = FileReader.read_init_data_file(
                 project_dir=project_dir,
                 subproject_dir=subproject_dir,
                 structure_dir=structure_dir,
-                params=params,
+                file_name=file_name,
             )
+
+            # Create and show plot window
+            plot_window: PlotWindow = PlotWindowFactory.show_structure_in_new_window(
+                master=self.view,
+                coordinates=carbon_coords,
+                structure_visual_params=VisualizationParams.carbon,
+                mvp_params=params,
+                title=f"Initial Structure - {structure_dir}",
+                label="Carbon",
+            )
+
+            logger.info(f"Opened plot window for initial structure: {structure_dir}")
             self.on_visualization_completed("init_structure")
+
         except Exception as e:
-            self.on_visualization_failed("init_structure", e)
+            logger.error(f"Failed to open plot window for initial structure: {e}")
+            self.on_visualization_failed("plot_window", e)
 
     def show_one_channel_structure(
         self,
@@ -59,16 +84,40 @@ class InitDataPresenter(GeneralPresenter, IShowInitDataPresenter):
         try:
             if params is None:
                 params = self.model.get_mvp_params()
-            
-            CarbonHoneycombModeller.show_one_channel_structure(
+
+            file_name: str | None = params.file_name
+            if file_name is None:
+                raise ValueError("File name is required")
+
+            # Get channel structure coordinates
+            carbon_points: NDArray[np.float64] = FileReader.read_init_data_file(
                 project_dir=project_dir,
                 subproject_dir=subproject_dir,
                 structure_dir=structure_dir,
-                params=params,
+                file_name=file_name,
             )
+
+            carbon_channels: list[ICarbonHoneycombChannel] = CarbonHoneycombActions.split_init_structure_into_separate_channels(
+                coordinates_carbon=Points(points=carbon_points))
+
+            carbon_channel: ICarbonHoneycombChannel = carbon_channels[0]
+
+            # Create and show plot window
+            plot_window: PlotWindow = PlotWindowFactory.show_structure_in_new_window(
+                master=self.view,
+                coordinates=carbon_channel.points,
+                structure_visual_params=VisualizationParams.carbon,
+                mvp_params=params,
+                title=f"Channel Structure - {structure_dir}",
+                label="Carbon Channel",
+            )
+
+            logger.info(f"Opened plot window for channel structure: {structure_dir}")
             self.on_visualization_completed("one_channel_structure")
+
         except Exception as e:
-            self.on_visualization_failed("one_channel_structure", e)
+            logger.error(f"Failed to open plot window for channel structure: {e}")
+            self.on_visualization_failed("plot_window", e)
 
     def show_2d_channel_scheme(
         self,
@@ -81,7 +130,7 @@ class InitDataPresenter(GeneralPresenter, IShowInitDataPresenter):
         try:
             if params is None:
                 params = self.model.get_mvp_params()
-            
+
             CarbonHoneycombModeller.show_2d_channel_scheme(
                 project_dir=project_dir,
                 subproject_dir=subproject_dir,
@@ -195,10 +244,10 @@ class InitDataPresenter(GeneralPresenter, IShowInitDataPresenter):
 
             files = self.get_available_files(project_dir, subproject_dir, structure_dir)
             self.view.set_available_files(files)
-            
+
             # Load UI from current MVP parameters
             self._load_ui_from_params()
-            
+
             logger.info(f"Loaded {len(files)} files for {project_dir}/{subproject_dir}/{structure_dir}")
         except Exception as e:
             logger.error(f"Failed to load available files: {e}")
@@ -411,7 +460,7 @@ class InitDataPresenter(GeneralPresenter, IShowInitDataPresenter):
         """Load UI components from current MVP parameters."""
         try:
             params = self.model.get_mvp_params()
-            
+
             # Load visualization settings
             viz_settings = {
                 "to_build_bonds": params.to_build_bonds,
@@ -421,7 +470,7 @@ class InitDataPresenter(GeneralPresenter, IShowInitDataPresenter):
                 "bonds_skip_first_distances": params.bonds_skip_first_distances,
             }
             self.view.set_visualization_settings(viz_settings)
-            
+
             # Load coordinate limits
             coord_limits: dict[str, float] = {
                 "x_min": params.x_min,
@@ -432,7 +481,7 @@ class InitDataPresenter(GeneralPresenter, IShowInitDataPresenter):
                 "z_max": params.z_max,
             }
             self.view.set_coordinate_limits(coord_limits)
-            
+
         except Exception as e:
             logger.error(f"Failed to load UI from params: {e}")
 
@@ -444,7 +493,7 @@ class InitDataPresenter(GeneralPresenter, IShowInitDataPresenter):
         """Handle auto-sync parameter changes from UI."""
         try:
             params = self.model.get_mvp_params()
-            
+
             # Handle different parameter types
             if param_name in ['bonds_num_of_min_distances', 'bonds_skip_first_distances']:
                 try:
@@ -452,7 +501,7 @@ class InitDataPresenter(GeneralPresenter, IShowInitDataPresenter):
                     setattr(params, param_name, int_value)
                 except ValueError:
                     return  # Ignore invalid values
-            
+
             elif param_name in ['x_min', 'x_max', 'y_min', 'y_max', 'z_min', 'z_max']:
                 try:
                     if value == "" or value.lower() in ['inf', '-inf']:
@@ -462,9 +511,9 @@ class InitDataPresenter(GeneralPresenter, IShowInitDataPresenter):
                     setattr(params, param_name, float_value)
                 except ValueError:
                     return  # Ignore invalid values
-            
+
             # Save updated parameters
             self.model.set_mvp_params(params)
-            
+
         except Exception as e:
             logger.error(f"Failed to handle auto-sync parameter change for {param_name}: {e}")

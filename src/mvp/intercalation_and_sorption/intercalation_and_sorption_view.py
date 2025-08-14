@@ -128,70 +128,70 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
         self.file_selection_dropdown = DropdownList(file_frame, ["Loading..."], command=self._on_file_selected)
         self.file_selection_dropdown.pack(pady=2)
 
-        # Visualization settings section with columns
-        viz_frame: ctk.CTkFrame = self.template.create_section_frame(main_frame, "Visualization Settings")
+        # Visualization settings section with columns (hidden - controls moved to PlotWindow)
+        # viz_frame: ctk.CTkFrame = self.template.create_section_frame(main_frame, "Visualization Settings")
 
-        # Create two columns using template
-        left_column, right_column = self.template.create_columns_layout(viz_frame, 2)
+        # Create two columns using template (hidden - controls moved to PlotWindow)
+        # left_column, right_column = self.template.create_columns_layout(viz_frame, 2)
 
-        # Left column - Structure display
-        self.template.pack_label(left_column, "Structure Display", pady=2,
-                                 font=ctk.CTkFont(size=12, weight="bold"))
+        # Left column - Structure display (hidden - controls moved to PlotWindow)
+        # self.template.pack_label(left_column, "Structure Display", pady=2,
+        #                          font=ctk.CTkFont(size=12, weight="bold"))
 
-        self.visualization_checkboxes["to_build_bonds"] = self.template.pack_check_box(
-            left_column, "Build bonds"
-        )
-        self.visualization_checkboxes["to_show_coordinates"] = self.template.pack_check_box(
-            left_column, "Show coordinates"
-        )
-        self.visualization_checkboxes["to_show_c_indexes"] = self.template.pack_check_box(
-            left_column, "Show carbon atom indexes"
-        )
-        self.visualization_checkboxes["to_show_inter_atoms_indexes"] = self.template.pack_check_box(
-            left_column, "Show intercalated atom indexes"
-        )
+        # self.visualization_checkboxes["to_build_bonds"] = self.template.pack_check_box(
+        #     left_column, "Build bonds"
+        # )
+        # self.visualization_checkboxes["to_show_coordinates"] = self.template.pack_check_box(
+        #     left_column, "Show coordinates"
+        # )
+        # self.visualization_checkboxes["to_show_c_indexes"] = self.template.pack_check_box(
+        #     left_column, "Show carbon atom indexes"
+        # )
+        # self.visualization_checkboxes["to_show_inter_atoms_indexes"] = self.template.pack_check_box(
+        #     left_column, "Show intercalated atom indexes"
+        # )
 
-        # Right column - Channel analysis
-        self.template.pack_label(right_column, "Channel Analysis", pady=2,
-                                 font=ctk.CTkFont(size=12, weight="bold"))
+        # Right column - Channel analysis (hidden - controls moved to PlotWindow)
+        # self.template.pack_label(right_column, "Channel Analysis", pady=2,
+        #                          font=ctk.CTkFont(size=12, weight="bold"))
 
-        self.visualization_checkboxes["to_show_dists_to_plane"] = self.template.pack_check_box(
-            right_column, "Show distances to plane"
-        )
-        self.visualization_checkboxes["to_show_dists_to_edges"] = self.template.pack_check_box(
-            right_column, "Show distances to edges"
-        )
-        self.visualization_checkboxes["to_show_channel_angles"] = self.template.pack_check_box(
-            right_column, "Show channel angles"
-        )
-        self.visualization_checkboxes["to_show_plane_lengths"] = self.template.pack_check_box(
-            right_column, "Show plane lengths"
-        )
+        # self.visualization_checkboxes["to_show_dists_to_plane"] = self.template.pack_check_box(
+        #     right_column, "Show distances to plane"
+        # )
+        # self.visualization_checkboxes["to_show_dists_to_edges"] = self.template.pack_check_box(
+        #     right_column, "Show distances to edges"
+        # )
+        # self.visualization_checkboxes["to_show_channel_angles"] = self.template.pack_check_box(
+        #     right_column, "Show channel angles"
+        # )
+        # self.visualization_checkboxes["to_show_plane_lengths"] = self.template.pack_check_box(
+        #     right_column, "Show plane lengths"
+        # )
 
-        # Bonds parameters section
-        bonds_frame = ctk.CTkFrame(viz_frame)
-        bonds_frame.pack(fill="x", padx=10, pady=5)
+        # Bonds parameters section (hidden - controls moved to PlotWindow)
+        # bonds_frame = ctk.CTkFrame(viz_frame)
+        # bonds_frame.pack(fill="x", padx=10, pady=5)
 
-        self.template.pack_label(bonds_frame, "Bond Parameters", pady=2,
-                                 font=ctk.CTkFont(size=12, weight="bold"))
+        # self.template.pack_label(bonds_frame, "Bond Parameters", pady=2,
+        #                          font=ctk.CTkFont(size=12, weight="bold"))
 
-        # Create horizontal layout for bond inputs
-        bonds_left, bonds_right = self.template.create_columns_layout(bonds_frame, 2)
+        # Create horizontal layout for bond inputs (hidden - controls moved to PlotWindow)
+        # bonds_left, bonds_right = self.template.create_columns_layout(bonds_frame, 2)
 
-        self.bonds_num_input = self.template.pack_input_field(
-            bonds_left, "Number of min distances",
-            change_callback=self._on_bonds_num_changed
-        )
-        self.bonds_skip_input = self.template.pack_input_field(
-            bonds_right, "Skip first distances",
-            change_callback=self._on_bonds_skip_changed
-        )
+        # self.bonds_num_input = self.template.pack_input_field(
+        #     bonds_left, "Number of min distances",
+        #     change_callback=self._on_bonds_num_changed
+        # )
+        # self.bonds_skip_input = self.template.pack_input_field(
+        #     bonds_right, "Skip first distances",
+        #     change_callback=self._on_bonds_skip_changed
+        # )
 
-        # Coordinate limits using template
-        self.coordinate_limits_template = self.template.create_coordinate_limits_section(
-            main_frame,
-            change_callback=self._on_coordinate_limits_changed
-        )
+        # Coordinate limits using template (hidden - controls moved to PlotWindow)
+        # self.coordinate_limits_template = self.template.create_coordinate_limits_section(
+        #     main_frame,
+        #     change_callback=self._on_coordinate_limits_changed
+        # )
 
         # Intercalation parameters section
         inter_frame: ctk.CTkFrame = self.template.create_section_frame(main_frame, "Intercalation Parameters")
@@ -266,9 +266,34 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
 
     def get_visualization_settings(self) -> dict[str, Any]:
         """Get visualization settings from the UI."""
+        # Visualization controls moved to PlotWindow - return default values
         settings = {}
-        for key, checkbox in self.visualization_checkboxes.items():
-            settings[key] = checkbox.get()
+        
+        # Provide default values for all expected visualization settings
+        default_settings: dict[str, bool] = {
+            "to_build_bonds": True,
+            "to_show_coordinates": False,
+            "to_show_c_indexes": False,
+            "to_show_inter_atoms_indexes": False,
+            "to_show_dists_to_plane": False,
+            "to_show_dists_to_edges": False,
+            "to_show_channel_angles": False,
+            "to_show_plane_lengths": False,
+            "to_translate_inter": False,
+            "to_replace_nearby_atoms": False,
+            "to_remove_too_close_atoms": False,
+            "to_to_try_to_reflect_inter_atoms": False,
+            "to_equidistant_inter_points": False,
+            "to_filter_inter_atoms": False,
+            "to_remove_inter_atoms_with_min_and_max_x_coordinates": False,
+        }
+        
+        # Use existing checkboxes if available, otherwise use defaults
+        for key, default_value in default_settings.items():
+            if key in self.visualization_checkboxes:
+                settings[key] = self.visualization_checkboxes[key].get()
+            else:
+                settings[key] = default_value
 
         # Add bond parameters
         if self.bonds_num_input:
@@ -276,12 +301,16 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
                 settings["bonds_num_of_min_distances"] = int(self.bonds_num_input.get_value())
             except ValueError:
                 settings["bonds_num_of_min_distances"] = 2
+        else:
+            settings["bonds_num_of_min_distances"] = 2
 
         if self.bonds_skip_input:
             try:
                 settings["bonds_skip_first_distances"] = int(self.bonds_skip_input.get_value())
             except ValueError:
                 settings["bonds_skip_first_distances"] = 0
+        else:
+            settings["bonds_skip_first_distances"] = 0
 
         return settings
 
@@ -313,9 +342,19 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
 
     def get_coordinate_limits(self) -> dict[str, float]:
         """Get coordinate limits from the UI."""
+        # Coordinate limits controls moved to PlotWindow - return default values
         if self.coordinate_limits_template:
             return self.coordinate_limits_template.get_coordinate_limits()
-        return {}
+        
+        # Return default coordinate limits
+        return {
+            "x_min": -float('inf'),
+            "x_max": float('inf'),
+            "y_min": -float('inf'),
+            "y_max": float('inf'),
+            "z_min": -float('inf'),
+            "z_max": float('inf'),
+        }
 
     def show_operation_progress(self, message: str) -> None:
         """Show operation progress to user."""

@@ -86,37 +86,37 @@ class InitDataView(GeneralView, IShowInitDataView):
         self.file_names_dropdown = DropdownList(file_frame, ["None"])
         self.file_names_dropdown.pack(pady=5)
 
-        # Visualization settings section
-        viz_frame: ctk.CTkFrame = self.template.create_section_frame(main_frame, "Visualization Settings")
+        # Visualization settings section (hidden - controls moved to PlotWindow)
+        # viz_frame: ctk.CTkFrame = self.template.create_section_frame(main_frame, "Visualization Settings")
 
-        # Create checkboxes using template helper
-        self.to_build_bonds_checkbox = self.template.pack_check_box(
-            viz_frame, "Build bonds"
-        )
-        self.to_show_coordinates_checkbox = self.template.pack_check_box(
-            viz_frame, "Show coordinates"
-        )
-        self.to_show_c_indexes_checkbox = self.template.pack_check_box(
-            viz_frame, "Show C atoms indexes"
-        )
+        # Create checkboxes using template helper (hidden - moved to PlotWindow)
+        # self.to_build_bonds_checkbox = self.template.pack_check_box(
+        #     viz_frame, "Build bonds"
+        # )
+        # self.to_show_coordinates_checkbox = self.template.pack_check_box(
+        #     viz_frame, "Show coordinates"
+        # )
+        # self.to_show_c_indexes_checkbox = self.template.pack_check_box(
+        #     viz_frame, "Show C atoms indexes"
+        # )
 
-        # Create input fields using template helper
-        self.bonds_num_of_min_distances_input = self.template.pack_input_field(
-            viz_frame, 
-            "Number of min distances for bonds",
-            change_callback=self._on_bonds_num_changed
-        )
-        self.bonds_skip_first_distances_input = self.template.pack_input_field(
-            viz_frame, 
-            "Skip first distances for bonds",
-            change_callback=self._on_bonds_skip_changed
-        )
+        # Create input fields using template helper (hidden - moved to PlotWindow)
+        # self.bonds_num_of_min_distances_input = self.template.pack_input_field(
+        #     viz_frame, 
+        #     "Number of min distances for bonds",
+        #     change_callback=self._on_bonds_num_changed
+        # )
+        # self.bonds_skip_first_distances_input = self.template.pack_input_field(
+        #     viz_frame, 
+        #     "Skip first distances for bonds",
+        #     change_callback=self._on_bonds_skip_changed
+        # )
 
-        # Coordinate limits using template
-        self.coordinate_limits_template = self.template.create_coordinate_limits_section(
-            main_frame,
-            change_callback=self._on_coordinate_limits_changed
-        )
+        # Coordinate limits using template (hidden - moved to PlotWindow)
+        # self.coordinate_limits_template = self.template.create_coordinate_limits_section(
+        #     main_frame,
+        #     change_callback=self._on_coordinate_limits_changed
+        # )
         
         # Call parent set_ui to refresh scrolling
         super().set_ui()
@@ -140,16 +140,24 @@ class InitDataView(GeneralView, IShowInitDataView):
 
     def get_visualization_settings(self) -> dict[str, Any]:
         """Get visualization settings from the UI."""
+        # Return empty dict since visualization controls are now in PlotWindow
         settings: dict[str, Any] = {}
 
+        # Controls moved to PlotWindow - return default values
         if self.to_build_bonds_checkbox:
             settings["to_build_bonds"] = self.to_build_bonds_checkbox.get()
+        else:
+            settings["to_build_bonds"] = True
 
         if self.to_show_coordinates_checkbox:
             settings["to_show_coordinates"] = self.to_show_coordinates_checkbox.get()
+        else:
+            settings["to_show_coordinates"] = False
 
         if self.to_show_c_indexes_checkbox:
             settings["to_show_c_indexes"] = self.to_show_c_indexes_checkbox.get()
+        else:
+            settings["to_show_c_indexes"] = False
 
         if self.bonds_num_of_min_distances_input:
             try:
@@ -158,6 +166,8 @@ class InitDataView(GeneralView, IShowInitDataView):
                 )
             except ValueError:
                 settings["bonds_num_of_min_distances"] = 5
+        else:
+            settings["bonds_num_of_min_distances"] = 5
 
         if self.bonds_skip_first_distances_input:
             try:
@@ -166,19 +176,32 @@ class InitDataView(GeneralView, IShowInitDataView):
                 )
             except ValueError:
                 settings["bonds_skip_first_distances"] = 0
+        else:
+            settings["bonds_skip_first_distances"] = 0
 
         return settings
 
     def set_coordinate_limits(self, limits: dict[str, float]) -> None:
         """Set coordinate limits in the UI."""
+        # Coordinate limits controls moved to PlotWindow
         if self.coordinate_limits_template:
             self.coordinate_limits_template.set_coordinate_limits(limits)
 
     def get_coordinate_limits(self) -> dict[str, float]:
         """Get coordinate limits from the UI."""
+        # Coordinate limits controls moved to PlotWindow - return default values
         if self.coordinate_limits_template:
             return self.coordinate_limits_template.get_coordinate_limits()
-        return {}
+        
+        # Return default coordinate limits
+        return {
+            "x_min": -float('inf'),
+            "x_max": float('inf'),
+            "y_min": -float('inf'),
+            "y_max": float('inf'),
+            "z_min": -float('inf'),
+            "z_max": float('inf'),
+        }
 
     def set_channel_display_settings(self, settings: dict[str, Any]) -> None:
         """Set channel display settings in the UI."""
@@ -239,6 +262,7 @@ class InitDataView(GeneralView, IShowInitDataView):
 
     def reset_form(self) -> None:
         """Reset the form to default values."""
+        # Visualization controls moved to PlotWindow - only reset file selection
         if self.to_build_bonds_checkbox:
             self.to_build_bonds_checkbox.set_value(True)
 

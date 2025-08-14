@@ -1,12 +1,15 @@
 """Presenter for intercalation and sorption functionality."""
 from pathlib import Path
 from typing import Any, Callable
+from numpy.typing import NDArray
+import numpy as np
 import pandas as pd
 
 from src.interfaces import (
     IIntercalationAndSorptionPresenter,
     IIntercalationAndSorptionModel,
     IIntercalationAndSorptionView,
+    IStructureVisualParams,
     PMvpParams,
 )
 from src.services import Logger
@@ -52,18 +55,49 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
     ) -> None:
         """Plot intercalated atoms in carbon structure."""
         try:
-            self.view.show_operation_progress("Plotting intercalated atoms...")
+            from src.ui.components.plot_window_factory import PlotWindowFactory
+            from src.services.structure_visualizer.visualization_params import VisualizationParams
 
-            # TODO: Implement actual plotting logic using old_gui_logic/viewmodels/intercalation_and_sorption.py
-            # This would involve:
-            # 1. Loading carbon structure
-            # 2. Loading intercalated atoms
-            # 3. Creating visualization
+            # Get the intercalated structure data using existing method
+            coords_list, labels_list = self._get_intercalated_structures(
+                project_dir, subproject_dir, structure_dir
+            )
 
-            self.view.show_operation_success("Intercalated atoms plotted successfully")
-            logger.info(f"Plotted intercalated atoms for {project_dir}/{subproject_dir}/{structure_dir}")
+            if not coords_list:
+                logger.warning("No structures to display")
+                return
+
+            # Create visual parameters for each structure
+            visual_params_list: list[IStructureVisualParams] = []
+            for i, label in enumerate(labels_list):
+                if label == "Carbon":
+                    visual_params_list.append(VisualizationParams.carbon)
+                elif "inter" in label.lower() or "al" in label.lower():
+                    if i == 1:
+                        visual_params_list.append(VisualizationParams.intercalated_atoms_1_layer)
+                    elif i == 2:
+                        visual_params_list.append(VisualizationParams.intercalated_atoms_2_layer)
+                    else:
+                        visual_params_list.append(VisualizationParams.intercalated_atoms_3_layer)
+                else:
+                    visual_params_list.append(VisualizationParams.carbon)  # Default
+
+            # Create and show plot window
+            plot_window = PlotWindowFactory.show_structures_in_new_window(
+                master=self.view,
+                coordinates_list=coords_list,
+                structure_visual_params_list=visual_params_list,
+                labels_list=labels_list,
+                mvp_params=self.model.get_mvp_params(),
+                title=f"Intercalated Structure - {structure_dir}",
+            )
+
+            logger.info(f"Opened plot window for intercalated structure: {structure_dir}")
+            # self.view.show_operation_success("Intercalated atoms plotted successfully")
+            self.on_operation_completed("plot_inter_in_c_structure", "Intercalated atoms plotted successfully")
 
         except Exception as e:
+            logger.error(f"Failed to open plot window for intercalated structure: {e}")
             self.on_operation_failed("plot_inter_in_c_structure", e)
 
     def generate_inter_plane_coordinates_file(
@@ -120,7 +154,7 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
 
             # TODO: Implement actual translation logic
 
-            self.view.show_operation_success("Atoms translated to other planes successfully")
+            # self.view.show_operation_success("Atoms translated to other planes successfully")
             logger.info(f"Translated atoms to other planes for {project_dir}/{subproject_dir}/{structure_dir}")
 
         except Exception as e:
@@ -176,14 +210,52 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
     ) -> None:
         """Plot intercalated atoms translated to all channels."""
         try:
+            from src.ui.components.plot_window_factory import PlotWindowFactory
+            from src.services.structure_visualizer.visualization_params import VisualizationParams
+
             self.view.show_operation_progress("Plotting intercalated atoms in all channels...")
 
-            # TODO: Implement actual plotting logic
+            # Get the translated structures data using existing method
+            coords_list, labels_list = self._get_translated_structures(
+                project_dir, subproject_dir, structure_dir
+            )
 
-            self.view.show_operation_success("All channels plot generated successfully")
+            if not coords_list:
+                logger.warning("No translated structures to display")
+                return
+
+            # Create visual parameters for each structure
+            visual_params_list = []
+            for i, label in enumerate(labels_list):
+                if label == "Carbon":
+                    visual_params_list.append(VisualizationParams.carbon)
+                elif "inter" in label.lower() or "al" in label.lower():
+                    if i == 1:
+                        visual_params_list.append(VisualizationParams.intercalated_atoms_1_layer)
+                    elif i == 2:
+                        visual_params_list.append(VisualizationParams.intercalated_atoms_2_layer)
+                    else:
+                        visual_params_list.append(VisualizationParams.intercalated_atoms_3_layer)
+                else:
+                    visual_params_list.append(VisualizationParams.carbon)  # Default
+
+            # Create and show plot window
+            plot_window = PlotWindowFactory.show_structures_in_new_window(
+                master=self.view,
+                coordinates_list=coords_list,
+                structure_visual_params_list=visual_params_list,
+                labels_list=labels_list,
+                mvp_params=self.model.get_mvp_params(),
+                title=f"Translated Intercalated Structure - {structure_dir}",
+            )
+
+            # self.view.show_operation_success("All channels plot generated successfully")
             logger.info(f"Generated all channels plot for {project_dir}/{subproject_dir}/{structure_dir}")
+            self.on_operation_completed("translate_inter_to_all_channels_plot",
+                                        "All channels plot generated successfully")
 
         except Exception as e:
+            logger.error(f"Failed to open plot window for translated structure: {e}")
             self.on_operation_failed("translate_inter_to_all_channels_plot", e)
 
     def translate_inter_to_all_channels_generate_files(
@@ -266,11 +338,10 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
             self._update_params_from_ui_settings(params, ui_settings)
             self.model.set_mvp_params(params)
 
-            IntercalationAndSorption.plot_inter_in_c_structure(
+            self.plot_inter_in_c_structure(
                 project_dir=self._current_context["project_dir"],
                 subproject_dir=self._current_context["subproject_dir"],
                 structure_dir=self._current_context["structure_dir"],
-                params=params,
             )
 
         except Exception as e:
@@ -462,11 +533,10 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
             if selected_file and selected_file != "No files found":
                 params.file_name = selected_file
 
-            IntercalationAndSorption.translate_inter_to_all_channels_plot(
+            self.translate_inter_to_all_channels_plot(
                 project_dir=self._current_context["project_dir"],
                 subproject_dir=self._current_context["subproject_dir"],
                 structure_dir=self._current_context["structure_dir"],
-                params=params,
             )
 
             self.on_operation_completed("translate_inter_to_all_channels_plot", "All channels plot generated")
@@ -677,3 +747,89 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
 
         except Exception as e:
             logger.error(f"Failed to handle auto-sync parameter change for {param_name}: {e}")
+
+    def _get_intercalated_structures(
+        self,
+        project_dir: str,
+        subproject_dir: str,
+        structure_dir: str
+    ) -> tuple[list, list]:
+        """Get intercalated structure coordinates and labels."""
+        try:
+            # Use the existing intercalation logic to get structures
+            params: PMvpParams = self.model.get_mvp_params()
+
+            # Get carbon structure
+            carbon_coords: NDArray[np.float64] = IntercalationAndSorption.get_carbon_coords(
+                project_dir, subproject_dir, structure_dir
+            )
+
+            # Get intercalated coordinates if they exist
+            inter_coords_list: list[NDArray[np.float64] | None] = []
+            try:
+                inter_coords = IntercalationAndSorption.get_inter_coords(
+                    project_dir, subproject_dir, structure_dir,
+                    params.number_of_planes, params.num_of_inter_atoms_layers
+                )
+                if inter_coords is not None:
+                    inter_coords_list.append(inter_coords)
+            except Exception:
+                pass  # No intercalated atoms available
+
+            # Prepare coordinates and labels
+            coords_list: list[NDArray[np.float64]] = [carbon_coords]
+            labels_list: list[str] = ["Carbon"]
+
+            for i, inter_coords in enumerate(inter_coords_list):
+                if inter_coords is not None:
+                    coords_list.append(inter_coords)
+                    labels_list.append(f"Intercalated Layer {i+1}")
+
+            return coords_list, labels_list
+
+        except Exception as e:
+            logger.error(f"Failed to get intercalated structures: {e}")
+            return [], []
+
+    def _get_translated_structures(
+        self,
+        project_dir: str,
+        subproject_dir: str,
+        structure_dir: str
+    ) -> tuple[list, list]:
+        """Get translated structure coordinates and labels."""
+        try:
+            # Use the existing translation logic to get structures
+            params: PMvpParams = self.model.get_mvp_params()
+
+            # Get carbon structure
+            carbon_coords: NDArray[np.float64] = IntercalationAndSorption.get_carbon_coords(
+                project_dir, subproject_dir, structure_dir
+            )
+
+            # Get translated intercalated coordinates if they exist
+            translated_coords_list: list[NDArray[np.float64] | None] = []
+            try:
+                translated_coords = IntercalationAndSorption.get_translated_inter_coords(
+                    project_dir, subproject_dir, structure_dir,
+                    params.number_of_planes, params.num_of_inter_atoms_layers
+                )
+                if translated_coords is not None:
+                    translated_coords_list.append(translated_coords)
+            except Exception:
+                pass  # No translated atoms available
+
+            # Prepare coordinates and labels
+            coords_list: list[NDArray[np.float64]] = [carbon_coords]
+            labels_list: list[str] = ["Carbon"]
+
+            for i, trans_coords in enumerate(translated_coords_list):
+                if trans_coords is not None:
+                    coords_list.append(trans_coords)
+                    labels_list.append(f"Translated Layer {i+1}")
+
+            return coords_list, labels_list
+
+        except Exception as e:
+            logger.error(f"Failed to get translated structures: {e}")
+            return [], []

@@ -3,6 +3,7 @@ from typing import Any
 import pandas as pd
 
 from src.interfaces.mvp.general import IGeneralPresenter
+from src.interfaces.entities.params.p_mvp_params import PMvpParams
 
 
 class IShowInitDataPresenter(IGeneralPresenter):
@@ -14,8 +15,9 @@ class IShowInitDataPresenter(IGeneralPresenter):
         project_dir: str,
         subproject_dir: str,
         structure_dir: str,
+        params: PMvpParams | None = None,
     ) -> None:
-        """Show initial structure visualization."""
+        """Show initial structure in a new customizable plot window."""
         ...
 
     @abstractmethod
@@ -24,8 +26,9 @@ class IShowInitDataPresenter(IGeneralPresenter):
         project_dir: str,
         subproject_dir: str,
         structure_dir: str,
+        params: PMvpParams | None = None,
     ) -> None:
-        """Show one channel structure visualization."""
+        """Show one channel structure in a new customizable plot window."""
         ...
 
     @abstractmethod

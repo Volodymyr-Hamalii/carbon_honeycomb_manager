@@ -627,3 +627,70 @@ class IntercalationAndSorption:
         )
 
         return coords_path, details_path
+
+    @staticmethod
+    def get_carbon_coords(
+        project_dir: str,
+        subproject_dir: str,
+        structure_dir: str,
+    ) -> NDArray[np.float64]:
+        """Get carbon structure coordinates."""
+        carbon_points: NDArray[np.float64] = FileReader.read_init_data_file(
+            project_dir=project_dir,
+            subproject_dir=subproject_dir,
+            structure_dir=structure_dir,
+            file_name=Constants.file_names.INIT_DAT_FILE,
+        )
+        return carbon_points
+
+    @staticmethod
+    def get_inter_coords(
+        project_dir: str,
+        subproject_dir: str,
+        structure_dir: str,
+        number_of_planes: int,
+        num_of_inter_atoms_layers: int,
+    ) -> NDArray[np.float64] | None:
+        """Get intercalated atoms coordinates."""
+        try:
+            # Try to read existing intercalated coordinates file
+            path_to_file: Path = PathBuilder.build_path_to_result_data_file(
+                project_dir, subproject_dir, structure_dir,
+                file_name="intercalated-channel-coordinates.xlsx"
+            )
+            
+            intercalated_coordinates_df: pd.DataFrame | None = FileReader.read_excel_file(
+                path_to_file=path_to_file,
+                to_print_warning=False,
+            )
+            
+            if intercalated_coordinates_df is not None:
+                inter_atoms: Points = InterAtomsParser.parse_inter_atoms_coordinates_df(
+                    intercalated_coordinates_df
+                )
+                return inter_atoms.points
+            
+            return None
+            
+        except Exception:
+            return None
+
+    @staticmethod
+    def get_translated_inter_coords(
+        project_dir: str,
+        subproject_dir: str,
+        structure_dir: str,
+        number_of_planes: int,
+        num_of_inter_atoms_layers: int,
+    ) -> NDArray[np.float64] | None:
+        """Get translated intercalated atoms coordinates."""
+        try:
+            # This would be the result of translation operations
+            # For now, return the same as regular inter coords
+            return IntercalationAndSorption.get_inter_coords(
+                project_dir, subproject_dir, structure_dir,
+                number_of_planes, num_of_inter_atoms_layers
+            )
+            
+        except Exception:
+            return None

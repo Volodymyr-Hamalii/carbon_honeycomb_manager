@@ -69,7 +69,7 @@ src/
 │   ├── structure_visualizer/       # Visualization engine
 │   └── utils/                      # File I/O, logging, constants
 └── ui/               # UI infrastructure
-    ├── components/   # Reusable UI widgets
+    ├── components/   # Reusable UI widgets (including enhanced PlotWindow)
     ├── styles/       # Centralized styling system
     └── templates/    # UI templates and mixins
 ```
@@ -230,6 +230,55 @@ If Claude detects any quality issues:
 4. **Test Compilation**: Simulate import and execution
 5. **Document Changes**: Explain what was fixed and why
 
+### Plot Component Architecture
+
+The application features an enhanced plot component system for structure visualization:
+
+#### Core Components
+
+- **PlotWindow** (`src/ui/components/plot.py`): Enhanced plot window with embedded matplotlib and customization controls
+- **PlotControls**: Sidebar panel with real-time plot parameter controls
+- **PlotParams** (`src/entities/params/plot_params.py`): Dataclass for plot configuration and state management
+- **PlotWindowFactory** (`src/services/utils/plot_window_factory.py`): Factory for creating plot windows from MVP parameters
+
+#### Key Features
+
+- **Real-time Customization**: Interactive controls for bonds, coordinates, limits, distances
+- **Camera State Persistence**: Maintains viewing angles between plot updates
+- **Auto-scaling Behavior**: Always fits to data on new structure load (scale not persisted)
+- **Matplotlib Toolbar**: Full matplotlib navigation toolbar (zoom, pan, save, etc.)
+- **Enhanced Controls**: Additional options including:
+  - Additional lines visualization
+  - Channel analysis (distances to plane/edges, angles, lengths)
+  - Interactive mode toggle
+  - Equal scale toggle
+- **MVP Integration**: Seamless conversion between MVP parameters and plot parameters
+- **Multiple Visualization Modes**: Support for single, dual, and multiple structure plots
+- **Responsive UI**: Scrollable sidebar with organized control sections
+
+#### Usage Patterns
+
+```python
+# Create plot window from MVP parameters
+plot_window = PlotWindowFactory.create_plot_window_from_mvp_params(
+    master=self.view,
+    mvp_params=self.model.mvp_params,
+    title="Structure Visualization"
+)
+
+# Show single structure
+plot_window.show_structure(coordinates, visual_params, label="Carbon")
+
+# Show multiple structures
+plot_window.show_structures(coords_list, params_list, labels_list)
+```
+
+#### Interface Integration
+
+- **MVP Presenters**: Extended with `*_in_plot_window` methods for enhanced visualization
+- **Plot Controls**: Bidirectional parameter binding with real-time updates
+- **State Management**: Full integration with MVP parameter persistence system
+
 ### Current Architecture Status
 
 - **MVP Modules**: `main`, `init_data`, `intercalation_and_sorption`, `data_converter`
@@ -237,3 +286,4 @@ If Claude detects any quality issues:
 - **Centralized Styling**: All UI styling managed through `src/ui/styles/`
 - **Scrolling Infrastructure**: `ScrollableMixin` provides universal scrolling support
 - **Parameter Binding**: Full bidirectional UI ↔ MVP state synchronization
+- **Enhanced Visualization**: Standalone plot windows with customization controls
