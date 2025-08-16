@@ -9,10 +9,12 @@ from src.interfaces import (
     IIntercalationAndSorptionPresenter,
     IIntercalationAndSorptionModel,
     IIntercalationAndSorptionView,
+    ICarbonHoneycombChannel,
     IStructureVisualParams,
     PMvpParams,
 )
-from src.services import Logger
+from src.services import Logger, Constants
+from src.projects.carbon_honeycomb_actions import CarbonHoneycombModeller
 from src.projects.intercalation_and_sorption import IntercalationAndSorption
 
 logger = Logger("IntercalationAndSorptionPresenter")
@@ -58,9 +60,9 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
             from src.ui.components.plot_window_factory import PlotWindowFactory
             from src.services.structure_visualizer.visualization_params import VisualizationParams
 
-            # Get the intercalated structure data using existing method
+            # Get the intercalated structure data using existing method (one channel only)
             coords_list, labels_list = self._get_intercalated_structures(
-                project_dir, subproject_dir, structure_dir
+                project_dir, subproject_dir, structure_dir, only_one_channel=True
             )
 
             if not coords_list:
@@ -752,38 +754,75 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
         self,
         project_dir: str,
         subproject_dir: str,
-        structure_dir: str
+        structure_dir: str,
+        only_one_channel: bool = False,
     ) -> tuple[list, list]:
         """Get intercalated structure coordinates and labels."""
         try:
             # Use the existing intercalation logic to get structures
             params: PMvpParams = self.model.get_mvp_params()
 
-            # Get carbon structure
-            carbon_coords: NDArray[np.float64] = IntercalationAndSorption.get_carbon_coords(
-                project_dir, subproject_dir, structure_dir
-            )
+            if only_one_channel:
+                carbon_channel: ICarbonHoneycombChannel = CarbonHoneycombModeller.build_carbon_channel(
+                    project_dir, subproject_dir, structure_dir, file_name=Constants.file_names.INIT_DAT_FILE
+                )
+                carbon_coords: NDArray[np.float64] = carbon_channel.points
+            else:
+                # Get full carbon structure (all atoms, not just one channel)
+                carbon_coords: NDArray[np.float64] = IntercalationAndSorption.get_carbon_coords(
+                    project_dir, subproject_dir, structure_dir
+                )
+
+            file_name: str | None = self.model.get_mvp_params().file_name
+            if file_name is None:
+                raise ValueError("File name for intercalated atoms is required")
 
             # Get intercalated coordinates if they exist
-            inter_coords_list: list[NDArray[np.float64] | None] = []
+            inter_coords_list: list[NDArray[np.float64]] = []
             try:
-                inter_coords = IntercalationAndSorption.get_inter_coords(
-                    project_dir, subproject_dir, structure_dir,
-                    params.number_of_planes, params.num_of_inter_atoms_layers
+                inter_coords: NDArray[np.float64] | None = IntercalationAndSorption.get_inter_coords(
+                    project_dir=project_dir,
+                    subproject_dir=subproject_dir,
+                    structure_dir=structure_dir,
+                    file_name=file_name
                 )
-                if inter_coords is not None:
+                if inter_coords is not None and len(inter_coords) > 0:
                     inter_coords_list.append(inter_coords)
-            except Exception:
-                pass  # No intercalated atoms available
 
-            # Prepare coordinates and labels
+            except Exception as e:
+                logger.warning(f"Could not load intercalated coords: {e}")
+
+            # If no intercalated atoms, try to generate them based on current parameters
+            if not inter_coords_list:
+                logger.info("No existing intercalated atoms found, attempting to generate them")
+                try:
+                    # Generate intercalated atoms coordinates without plotting
+                    IntercalationAndSorption.generate_inter_plane_coordinates_file(
+                        project_dir, subproject_dir, structure_dir, params
+                    )
+                    # Try to get the generated coordinates
+                    inter_coords: NDArray[np.float64] | None = IntercalationAndSorption.get_inter_coords(
+                        project_dir=project_dir,
+                        subproject_dir=subproject_dir,
+                        structure_dir=structure_dir,
+                        file_name=file_name
+                    )
+                    if inter_coords is not None and len(inter_coords) > 0:
+                        inter_coords_list.append(inter_coords)
+                except Exception as e:
+                    logger.warning(f"Could not generate intercalated atoms: {e}")
+
+            # Prepare coordinates and labels - always include carbon
             coords_list: list[NDArray[np.float64]] = [carbon_coords]
-            labels_list: list[str] = ["Carbon"]
+            if only_one_channel:
+                labels_list: list[str] = ["Carbon Channel"]
+            else:
+                labels_list: list[str] = ["Carbon"]
 
+            # Add intercalated atoms if available
             for i, inter_coords in enumerate(inter_coords_list):
-                if inter_coords is not None:
-                    coords_list.append(inter_coords)
-                    labels_list.append(f"Intercalated Layer {i+1}")
+                coords_list.append(inter_coords)
+                labels_list.append(f"Intercalated Layer {i+1}")
 
             return coords_list, labels_list
 
@@ -802,31 +841,52 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
             # Use the existing translation logic to get structures
             params: PMvpParams = self.model.get_mvp_params()
 
-            # Get carbon structure
+            # Get full carbon structure (all atoms, not just one channel)
             carbon_coords: NDArray[np.float64] = IntercalationAndSorption.get_carbon_coords(
                 project_dir, subproject_dir, structure_dir
             )
 
-            # Get translated intercalated coordinates if they exist
-            translated_coords_list: list[NDArray[np.float64] | None] = []
-            try:
-                translated_coords = IntercalationAndSorption.get_translated_inter_coords(
-                    project_dir, subproject_dir, structure_dir,
-                    params.number_of_planes, params.num_of_inter_atoms_layers
-                )
-                if translated_coords is not None:
-                    translated_coords_list.append(translated_coords)
-            except Exception:
-                pass  # No translated atoms available
+            file_name: str | None = self.model.get_mvp_params().file_name
+            if file_name is None:
+                raise ValueError("File name for intercalated atoms is required")
 
-            # Prepare coordinates and labels
+            # Get translated intercalated coordinates if they exist
+            translated_coords_list: list[NDArray[np.float64]] = []
+            try:
+                translated_coords: NDArray[np.float64] | None = IntercalationAndSorption.get_translated_inter_coords(
+                    project_dir=project_dir,
+                    subproject_dir=subproject_dir,
+                    structure_dir=structure_dir,
+                    file_name=file_name
+                )
+                if translated_coords is not None and len(translated_coords) > 0:
+                    translated_coords_list.append(translated_coords)
+            except Exception as e:
+                logger.warning(f"Could not load translated coords: {e}")
+
+            # If no translated atoms available, try to use regular intercalated atoms
+            if not translated_coords_list:
+                try:
+                    inter_coords: NDArray[np.float64] | None = IntercalationAndSorption.get_inter_coords(
+                        project_dir=project_dir,
+                        subproject_dir=subproject_dir,
+                        structure_dir=structure_dir,
+                        file_name=file_name
+                    )
+                    if inter_coords is not None and len(inter_coords) > 0:
+                        translated_coords_list.append(inter_coords)
+                        logger.info("Using regular intercalated coords as no translated coords available")
+                except Exception as e:
+                    logger.warning(f"Could not load intercalated coords either: {e}")
+
+            # Prepare coordinates and labels - always include carbon
             coords_list: list[NDArray[np.float64]] = [carbon_coords]
             labels_list: list[str] = ["Carbon"]
 
+            # Add intercalated atoms if available
             for i, trans_coords in enumerate(translated_coords_list):
-                if trans_coords is not None:
-                    coords_list.append(trans_coords)
-                    labels_list.append(f"Translated Layer {i+1}")
+                coords_list.append(trans_coords)
+                labels_list.append(f"Translated Layer {i+1}")
 
             return coords_list, labels_list
 

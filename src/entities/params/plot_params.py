@@ -43,6 +43,11 @@ class PlotParams:
     to_show_channel_angles: bool = False
     to_show_plane_lengths: bool = False
 
+    # New visualization features
+    to_show_grid: bool = True
+    to_show_legend: bool = True
+    num_of_inter_atoms_layers: int = 2
+
     # Auto-scaling behavior (always fit to data, never store scale)
     auto_scale_to_data: bool = True
 
@@ -111,5 +116,8 @@ class PlotParams:
             to_show_dists_to_edges=self.to_show_dists_to_edges,
             to_show_channel_angles=self.to_show_channel_angles,
             to_show_plane_lengths=self.to_show_plane_lengths,
+            to_show_grid=self.to_show_grid,
+            to_show_legend=self.to_show_legend,
+            num_of_inter_atoms_layers=self.num_of_inter_atoms_layers,
             auto_scale_to_data=self.auto_scale_to_data,
         )

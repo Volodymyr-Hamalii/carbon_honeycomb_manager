@@ -50,6 +50,13 @@ class PMvpParams(Protocol):
     to_equidistant_inter_points: bool
     to_filter_inter_atoms: bool
     to_remove_inter_atoms_with_min_and_max_x_coordinates: bool
+
+    to_set_equal_scale: bool
+    is_interactive_mode: bool
+    to_build_edge_vertical_lines: bool
+    to_show_grid: bool
+    to_show_legend: bool
+
     inter_atoms_lattice_type: str
 
     def set_coordinate_limits(self, limits: PCoordinateLimits) -> None:

@@ -230,15 +230,17 @@ class StructureVisualizer(IStructureVisualizer):
                 coordinate_limits=coordinate_limits,
                 bonds_to_highlight=bonds_to_highlight,
                 to_build_edge_vertical_lines=to_build_edge_vertical_lines,
+                to_show_grid=to_show_grid,
             )
 
-        ax.set_xlabel('X')
-        ax.set_ylabel('Y')
-        ax.set_zlabel('Z')  # type: ignore
-        ax.legend(
-            # fontsize=12,
-            labelspacing=1.1
-        )
+        if to_show_grid is not False:
+            ax.set_xlabel('X')
+            ax.set_ylabel('Y')
+            ax.set_zlabel('Z')  # type: ignore
+            ax.legend(
+                # fontsize=12,
+                labelspacing=1.1
+            )
 
         if title is not None:
             ax.set_title(title)
@@ -358,15 +360,35 @@ class StructureVisualizer(IStructureVisualizer):
             return
 
         if coordinate_limits:
-            # Remove points outside the coordinate limits
-            coordinates = coordinates[
-                (coordinates[:, 0] >= coordinate_limits.x_min) &
-                (coordinates[:, 0] <= coordinate_limits.x_max) &
-                (coordinates[:, 1] >= coordinate_limits.y_min) &
-                (coordinates[:, 1] <= coordinate_limits.y_max) &
-                (coordinates[:, 2] >= coordinate_limits.z_min) &
-                (coordinates[:, 2] <= coordinate_limits.z_max)
-            ]
+            logger.info(f"Filtering coordinates with limits: "
+                        f"x=[{coordinate_limits.x_min}, {coordinate_limits.x_max}], "
+                        f"y=[{coordinate_limits.y_min}, {coordinate_limits.y_max}], "
+                        f"z=[{coordinate_limits.z_min}, {coordinate_limits.z_max}]")
+
+            original_count = len(coordinates)
+
+            # Check for finite limits only
+            has_finite_limits = (
+                not (coordinate_limits.x_min == -float('inf') and coordinate_limits.x_max == float('inf')) or
+                not (coordinate_limits.y_min == -float('inf') and coordinate_limits.y_max == float('inf')) or
+                not (coordinate_limits.z_min == -float('inf') and coordinate_limits.z_max == float('inf'))
+            )
+
+            if has_finite_limits:
+                # Remove points outside the coordinate limits
+                coordinates = coordinates[
+                    (coordinates[:, 0] >= coordinate_limits.x_min) &
+                    (coordinates[:, 0] <= coordinate_limits.x_max) &
+                    (coordinates[:, 1] >= coordinate_limits.y_min) &
+                    (coordinates[:, 1] <= coordinate_limits.y_max) &
+                    (coordinates[:, 2] >= coordinate_limits.z_min) &
+                    (coordinates[:, 2] <= coordinate_limits.z_max)
+                ]
+
+                filtered_count = len(coordinates)
+                logger.info(f"Coordinate filtering: {original_count} -> {filtered_count} atoms")
+            else:
+                logger.info("All coordinate limits are infinite, skipping filtering")
 
         x: NDArray[np.float64] = coordinates[:, 0]
         y: NDArray[np.float64] = coordinates[:, 1]
@@ -391,6 +413,69 @@ class StructureVisualizer(IStructureVisualizer):
 
         if to_set_equal_scale:
             cls._set_equal_scale(ax, x, y, z)
+
+        # Handle grid display
+        if to_show_grid is True:
+            ax.grid(True)
+        elif to_show_grid is False:
+            ax.grid(False)
+            # Hide axes, ticks, labels, panes, and background so only atoms/bonds remain
+            try:
+                ax.set_axis_off()
+            except Exception:
+                pass
+            try:
+                ax.set_xticks([])
+                ax.set_yticks([])
+                zticks_setter = getattr(ax, 'set_zticks', None)
+                if callable(zticks_setter):
+                    zticks_setter([])
+            except Exception:
+                pass
+            try:
+                ax.set_xlabel('')
+                ax.set_ylabel('')
+                ax.set_zlabel('')  # type: ignore
+            except Exception:
+                pass
+            try:
+                # Make axis and figure backgrounds transparent
+                ax.set_facecolor('none')
+                fig.patch.set_alpha(0.0)
+            except Exception:
+                pass
+            try:
+                # Hide 3D panes and their edges if available
+                ax.xaxis.pane.fill = False  # type: ignore[attr-defined]
+                ax.yaxis.pane.fill = False  # type: ignore[attr-defined]
+                z_axis_obj = getattr(ax, 'zaxis', None)
+                if z_axis_obj is not None:
+                    z_axis_obj.pane.fill = False  # type: ignore[attr-defined]
+                ax.xaxis.pane.set_edgecolor('none')  # type: ignore[attr-defined]
+                ax.yaxis.pane.set_edgecolor('none')  # type: ignore[attr-defined]
+                if z_axis_obj is not None:
+                    z_axis_obj.pane.set_edgecolor('none')  # type: ignore[attr-defined]
+            except Exception:
+                pass
+            try:
+                # Best-effort removal of axis lines and grids (may rely on private attrs)
+                axes_seq = [ax.xaxis, ax.yaxis]
+                z_axis_obj = getattr(ax, 'zaxis', None)
+                if z_axis_obj is not None:
+                    axes_seq.append(z_axis_obj)
+                for axis in axes_seq:
+                    try:
+                        axis._axinfo["grid"]["linewidth"] = 0  # type: ignore[attr-defined]
+                    except Exception:
+                        pass
+                try:
+                    ax.w_xaxis.line.set_lw(0.)  # type: ignore[attr-defined]
+                    ax.w_yaxis.line.set_lw(0.)  # type: ignore[attr-defined]
+                    ax.w_zaxis.line.set_lw(0.)  # type: ignore[attr-defined]
+                except Exception:
+                    pass
+            except Exception:
+                pass
 
         if to_show_coordinates is True or (
                 to_show_coordinates is None and structure_visual_params.to_show_coordinates):

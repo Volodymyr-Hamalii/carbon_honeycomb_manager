@@ -648,30 +648,31 @@ class IntercalationAndSorption:
         project_dir: str,
         subproject_dir: str,
         structure_dir: str,
-        number_of_planes: int,
-        num_of_inter_atoms_layers: int,
+        file_name: str,
     ) -> NDArray[np.float64] | None:
         """Get intercalated atoms coordinates."""
         try:
             # Try to read existing intercalated coordinates file
             path_to_file: Path = PathBuilder.build_path_to_result_data_file(
-                project_dir, subproject_dir, structure_dir,
-                file_name="intercalated-channel-coordinates.xlsx"
+                project_dir=project_dir,
+                subproject_dir=subproject_dir,
+                structure_dir=structure_dir,
+                file_name=file_name
             )
-            
+
             intercalated_coordinates_df: pd.DataFrame | None = FileReader.read_excel_file(
                 path_to_file=path_to_file,
                 to_print_warning=False,
             )
-            
+
             if intercalated_coordinates_df is not None:
                 inter_atoms: Points = InterAtomsParser.parse_inter_atoms_coordinates_df(
                     intercalated_coordinates_df
                 )
                 return inter_atoms.points
-            
+
             return None
-            
+
         except Exception:
             return None
 
@@ -680,8 +681,7 @@ class IntercalationAndSorption:
         project_dir: str,
         subproject_dir: str,
         structure_dir: str,
-        number_of_planes: int,
-        num_of_inter_atoms_layers: int,
+        file_name: str,
     ) -> NDArray[np.float64] | None:
         """Get translated intercalated atoms coordinates."""
         try:
@@ -689,8 +689,8 @@ class IntercalationAndSorption:
             # For now, return the same as regular inter coords
             return IntercalationAndSorption.get_inter_coords(
                 project_dir, subproject_dir, structure_dir,
-                number_of_planes, num_of_inter_atoms_layers
+                file_name=file_name
             )
-            
+
         except Exception:
             return None

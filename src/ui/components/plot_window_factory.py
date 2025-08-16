@@ -125,7 +125,8 @@ class PlotWindowFactory:
     @staticmethod
     def _convert_mvp_to_plot_params(mvp_params: PMvpParams, title: str) -> PlotParams:
         """Convert MVP parameters to plot parameters."""
-        return PlotParams(
+        # Check if there are any saved plot params in the MVP params
+        plot_params = PlotParams(
             to_build_bonds=mvp_params.to_build_bonds,
             to_show_coordinates=mvp_params.to_show_coordinates,
             to_show_indexes=mvp_params.to_show_c_indexes,  # Use carbon indexes as default
@@ -138,10 +139,46 @@ class PlotWindowFactory:
             z_min=mvp_params.z_min,
             z_max=mvp_params.z_max,
             title=title,
-            to_set_equal_scale=True,  # Default to true for structure visualization
-            is_interactive_mode=False,  # Default to false for safety
-            to_build_edge_vertical_lines=False,  # Default to false
+            to_set_equal_scale=getattr(mvp_params, 'to_set_equal_scale', True),
+            is_interactive_mode=getattr(mvp_params, 'is_interactive_mode', False),
+            to_build_edge_vertical_lines=getattr(mvp_params, 'to_build_edge_vertical_lines', False),
+            to_show_grid=getattr(mvp_params, 'to_show_grid', True),
+            to_show_legend=getattr(mvp_params, 'to_show_legend', True),
+            num_of_inter_atoms_layers=getattr(mvp_params, 'num_of_inter_atoms_layers', 2),
         )
+        return plot_params
+
+    @staticmethod
+    def sync_plot_params_to_mvp(plot_params: PlotParams, mvp_params: PMvpParams) -> PMvpParams:
+        """Sync plot parameters back to MVP parameters for state persistence."""
+        # Update MVP params with current plot settings
+        mvp_params.to_build_bonds = plot_params.to_build_bonds
+        mvp_params.to_show_coordinates = plot_params.to_show_coordinates
+        mvp_params.to_show_c_indexes = plot_params.to_show_indexes
+        mvp_params.bonds_num_of_min_distances = plot_params.num_of_min_distances
+        mvp_params.bonds_skip_first_distances = plot_params.skip_first_distances
+        mvp_params.x_min = plot_params.x_min
+        mvp_params.x_max = plot_params.x_max
+        mvp_params.y_min = plot_params.y_min
+        mvp_params.y_max = plot_params.y_max
+        mvp_params.z_min = plot_params.z_min
+        mvp_params.z_max = plot_params.z_max
+        
+        # Update additional plot-specific settings if they exist in MVP params
+        if hasattr(mvp_params, 'to_set_equal_scale'):
+            mvp_params.to_set_equal_scale = plot_params.to_set_equal_scale
+        if hasattr(mvp_params, 'is_interactive_mode'):
+            mvp_params.is_interactive_mode = plot_params.is_interactive_mode
+        if hasattr(mvp_params, 'to_build_edge_vertical_lines'):
+            mvp_params.to_build_edge_vertical_lines = plot_params.to_build_edge_vertical_lines
+        if hasattr(mvp_params, 'to_show_grid'):
+            mvp_params.to_show_grid = plot_params.to_show_grid
+        if hasattr(mvp_params, 'to_show_legend'):
+            mvp_params.to_show_legend = plot_params.to_show_legend
+        if hasattr(mvp_params, 'num_of_inter_atoms_layers'):
+            mvp_params.num_of_inter_atoms_layers = plot_params.num_of_inter_atoms_layers
+            
+        return mvp_params
 
     @staticmethod
     def update_plot_params_from_mvp(plot_params: PlotParams, mvp_params: PMvpParams) -> PlotParams:
@@ -157,5 +194,6 @@ class PlotWindowFactory:
         plot_params.y_max = mvp_params.y_max
         plot_params.z_min = mvp_params.z_min
         plot_params.z_max = mvp_params.z_max
+        plot_params.num_of_inter_atoms_layers = getattr(mvp_params, 'num_of_inter_atoms_layers', 2)
 
         return plot_params

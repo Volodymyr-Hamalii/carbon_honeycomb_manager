@@ -46,18 +46,29 @@ class PlotControls(ctk.CTkFrame, IPlotControls):
         ctk.CTkLabel(viz_frame, text="Visualization", font=ctk.CTkFont(weight="bold")).pack(pady=SPACING.sm)
 
         # Checkboxes for visualization options
-        self.bonds_var = ctk.BooleanVar(value=True)
-        self.coords_var = ctk.BooleanVar(value=False)
-        self.indexes_var = ctk.BooleanVar(value=False)
-        self.equal_scale_var = ctk.BooleanVar(value=True)
-        self.interactive_var = ctk.BooleanVar(value=False)
-        self.additional_lines_var = ctk.BooleanVar(value=False)
+        # Use default values from PlotParams
+        self._default_params = PlotParams()
+        self.bonds_var = ctk.BooleanVar(value=self._default_params.to_build_bonds)
+        self.coords_var = ctk.BooleanVar(value=self._default_params.to_show_coordinates)
+        self.indexes_var = ctk.BooleanVar(value=self._default_params.to_show_indexes)
+        self.equal_scale_var = ctk.BooleanVar(value=self._default_params.to_set_equal_scale)
+        self.interactive_var = ctk.BooleanVar(value=self._default_params.is_interactive_mode)
+        self.additional_lines_var = ctk.BooleanVar(value=self._default_params.to_build_edge_vertical_lines)
+        self.grid_var = ctk.BooleanVar(value=self._default_params.to_show_grid)
+        self.edge_lines_var = ctk.BooleanVar(value=self._default_params.to_build_edge_vertical_lines)
+        self.legend_var = ctk.BooleanVar(value=self._default_params.to_show_legend)
 
         ctk.CTkCheckBox(viz_frame, text="Show Bonds", variable=self.bonds_var,
                         command=self._on_params_changed).pack(anchor="w", padx=SPACING.sm)
         ctk.CTkCheckBox(viz_frame, text="Show Coordinates", variable=self.coords_var,
                         command=self._on_params_changed).pack(anchor="w", padx=SPACING.sm)
         ctk.CTkCheckBox(viz_frame, text="Show Indexes", variable=self.indexes_var,
+                        command=self._on_params_changed).pack(anchor="w", padx=SPACING.sm)
+        ctk.CTkCheckBox(viz_frame, text="Show Grid", variable=self.grid_var,
+                        command=self._on_params_changed).pack(anchor="w", padx=SPACING.sm)
+        ctk.CTkCheckBox(viz_frame, text="Build Edge Vertical Lines", variable=self.edge_lines_var,
+                        command=self._on_params_changed).pack(anchor="w", padx=SPACING.sm)
+        ctk.CTkCheckBox(viz_frame, text="Show Legend", variable=self.legend_var,
                         command=self._on_params_changed).pack(anchor="w", padx=SPACING.sm)
         ctk.CTkCheckBox(viz_frame, text="Equal Scale", variable=self.equal_scale_var,
                         command=self._on_params_changed).pack(anchor="w", padx=SPACING.sm)
@@ -74,17 +85,21 @@ class PlotControls(ctk.CTkFrame, IPlotControls):
 
         # Min distances
         ctk.CTkLabel(bonds_frame, text="Min Distances:").pack(anchor="w", padx=SPACING.sm)
-        self.min_distances_var = ctk.IntVar(value=2)
+        self.min_distances_var = ctk.IntVar(value=self._default_params.num_of_min_distances)
         self.min_distances_spinbox = ctk.CTkEntry(bonds_frame, textvariable=self.min_distances_var, width=80)
+        self.min_distances_spinbox.insert(0, str(self._default_params.num_of_min_distances))
         self.min_distances_spinbox.pack(anchor="w", padx=SPACING.sm)
-        self.min_distances_spinbox.bind("<KeyRelease>", lambda e: self._on_params_changed())
+        self.min_distances_spinbox.bind("<KeyRelease>", self._on_bond_settings_changed)
+        self.min_distances_spinbox.bind("<FocusOut>", self._on_bond_settings_changed)
 
         # Skip distances
         ctk.CTkLabel(bonds_frame, text="Skip First Distances:").pack(anchor="w", padx=SPACING.sm)
-        self.skip_distances_var = ctk.IntVar(value=0)
+        self.skip_distances_var = ctk.IntVar(value=self._default_params.skip_first_distances)
         self.skip_distances_spinbox = ctk.CTkEntry(bonds_frame, textvariable=self.skip_distances_var, width=80)
+        self.skip_distances_spinbox.insert(0, str(self._default_params.skip_first_distances))
         self.skip_distances_spinbox.pack(anchor="w", padx=SPACING.sm)
-        self.skip_distances_spinbox.bind("<KeyRelease>", lambda e: self._on_params_changed())
+        self.skip_distances_spinbox.bind("<KeyRelease>", self._on_bond_settings_changed)
+        self.skip_distances_spinbox.bind("<FocusOut>", self._on_bond_settings_changed)
 
         # Coordinate limits frame
         limits_frame = ctk.CTkFrame(self)
@@ -130,7 +145,23 @@ class PlotControls(ctk.CTkFrame, IPlotControls):
 
         # Bind coordinate limit events
         for entry in [self.x_min_entry, self.x_max_entry, self.y_min_entry, self.y_max_entry, self.z_min_entry, self.z_max_entry]:
-            entry.bind("<KeyRelease>", lambda e: self._on_params_changed())
+            entry.bind("<KeyRelease>", self._on_coordinate_changed)
+            entry.bind("<FocusOut>", self._on_coordinate_changed)
+
+        # Inter atom layers frame
+        inter_frame = ctk.CTkFrame(self)
+        inter_frame.pack(fill="x", padx=SPACING.sm, pady=SPACING.sm)
+
+        ctk.CTkLabel(inter_frame, text="Inter Atom Settings", font=ctk.CTkFont(weight="bold")).pack(pady=SPACING.sm)
+
+        # Number of inter atom layers
+        ctk.CTkLabel(inter_frame, text="Number of Inter Atom Layers:").pack(anchor="w", padx=SPACING.sm)
+        self.inter_layers_var = ctk.IntVar(value=self._default_params.num_of_inter_atoms_layers)
+        self.inter_layers_spinbox = ctk.CTkEntry(inter_frame, textvariable=self.inter_layers_var, width=80)
+        self.inter_layers_spinbox.insert(0, str(self._default_params.num_of_inter_atoms_layers))
+        self.inter_layers_spinbox.pack(anchor="w", padx=SPACING.sm)
+        self.inter_layers_spinbox.bind("<KeyRelease>", self._on_inter_settings_changed)
+        self.inter_layers_spinbox.bind("<FocusOut>", self._on_inter_settings_changed)
 
         # # Channel Analysis frame
         # channel_frame = ctk.CTkFrame(self)
@@ -169,6 +200,18 @@ class PlotControls(ctk.CTkFrame, IPlotControls):
             params = self.load_params_from_ui()
             self._params_changed_callback(params)
 
+    def _on_coordinate_changed(self, event=None) -> None:
+        """Handle coordinate limit changes."""
+        self._on_params_changed()
+
+    def _on_bond_settings_changed(self, event=None) -> None:
+        """Handle bond settings changes."""
+        self._on_params_changed()
+
+    def _on_inter_settings_changed(self, event=None) -> None:
+        """Handle inter atom settings changes."""
+        self._on_params_changed()
+
     def _reset_limits(self) -> None:
         """Reset coordinate limits to default values."""
         self.x_min_var.set("-inf")
@@ -181,7 +224,9 @@ class PlotControls(ctk.CTkFrame, IPlotControls):
 
     def _parse_float(self, value: str, default: float) -> float:
         """Parse float value, handling 'inf' and invalid inputs."""
-        if value.lower() in ['inf', '+inf']:
+        if not value or value.strip() == "":
+            return default
+        elif value.lower() in ['inf', '+inf']:
             return float('inf')
         elif value.lower() == '-inf':
             return -float('inf')
@@ -200,12 +245,17 @@ class PlotControls(ctk.CTkFrame, IPlotControls):
         try:
             num_min_distances = int(self.min_distances_var.get())
         except (ValueError, tk.TclError):
-            num_min_distances = SPACING.xs
+            num_min_distances = 2
 
         try:
             skip_distances = int(self.skip_distances_var.get())
         except (ValueError, tk.TclError):
             skip_distances = 0
+
+        try:
+            inter_layers = int(self.inter_layers_var.get())
+        except (ValueError, tk.TclError):
+            inter_layers = 2
 
         return PlotParams(
             to_build_bonds=self.bonds_var.get(),
@@ -213,7 +263,10 @@ class PlotControls(ctk.CTkFrame, IPlotControls):
             to_show_indexes=self.indexes_var.get(),
             to_set_equal_scale=self.equal_scale_var.get(),
             is_interactive_mode=self.interactive_var.get(),
-            to_build_edge_vertical_lines=self.additional_lines_var.get(),
+            to_build_edge_vertical_lines=self.edge_lines_var.get(),
+            to_show_grid=self.grid_var.get(),
+            to_show_legend=self.legend_var.get(),
+            num_of_inter_atoms_layers=inter_layers,
             # to_show_dists_to_plane=self.show_dists_to_plane_var.get(),
             # to_show_dists_to_edges=self.show_dists_to_edges_var.get(),
             # to_show_channel_angles=self.show_channel_angles_var.get(),
@@ -236,12 +289,16 @@ class PlotControls(ctk.CTkFrame, IPlotControls):
         self.equal_scale_var.set(params.to_set_equal_scale)
         self.interactive_var.set(params.is_interactive_mode)
         self.additional_lines_var.set(params.to_build_edge_vertical_lines)
+        self.grid_var.set(params.to_show_grid)
+        self.edge_lines_var.set(params.to_build_edge_vertical_lines)
+        self.legend_var.set(params.to_show_legend)
         # self.show_dists_to_plane_var.set(params.to_show_dists_to_plane)
         # self.show_dists_to_edges_var.set(params.to_show_dists_to_edges)
         # self.show_channel_angles_var.set(params.to_show_channel_angles)
         # self.show_plane_lengths_var.set(params.to_show_plane_lengths)
         self.min_distances_var.set(params.num_of_min_distances)
         self.skip_distances_var.set(params.skip_first_distances)
+        self.inter_layers_var.set(params.num_of_inter_atoms_layers)
 
         # Handle infinite values for display
         inf = float('inf')
@@ -398,7 +455,11 @@ class PlotWindow(ctk.CTkToplevel, IPlotWindow):
         self.ax = self.figure.add_subplot(111, projection='3d')
 
         data_type = self._current_data['type']
-        coordinate_limits = self._plot_params.coordinate_limits if self._plot_params.has_coordinate_limits() else None
+        # Always pass coordinate limits - let StructureVisualizer handle infinite values
+        coordinate_limits = self._plot_params.coordinate_limits
+        logger.info(f"Using coordinate limits: x={coordinate_limits.x_min:.2f} to {coordinate_limits.x_max:.2f}, "
+                   f"y={coordinate_limits.y_min:.2f} to {coordinate_limits.y_max:.2f}, "
+                   f"z={coordinate_limits.z_min:.2f} to {coordinate_limits.z_max:.2f}")
 
         try:
             logger.info(f"Rendering plot with data type: {data_type}")
@@ -413,6 +474,7 @@ class PlotWindow(ctk.CTkToplevel, IPlotWindow):
                     to_set_equal_scale=self._plot_params.to_set_equal_scale,
                     to_show_coordinates=self._plot_params.to_show_coordinates,
                     to_show_indexes=self._plot_params.to_show_indexes,
+                    to_show_grid=self._plot_params.to_show_grid,
                     num_of_min_distances=self._plot_params.num_of_min_distances,
                     skip_first_distances=self._plot_params.skip_first_distances,
                     is_interactive_mode=self._plot_params.is_interactive_mode,
@@ -436,6 +498,7 @@ class PlotWindow(ctk.CTkToplevel, IPlotWindow):
                     to_set_equal_scale=self._plot_params.to_set_equal_scale,
                     to_show_coordinates=self._plot_params.to_show_coordinates,
                     to_show_indexes=self._plot_params.to_show_indexes,
+                    to_show_grid=self._plot_params.to_show_grid,
                     num_of_min_distances=self._plot_params.num_of_min_distances,
                     skip_first_distances=self._plot_params.skip_first_distances,
                     is_interactive_mode=False,
@@ -458,6 +521,7 @@ class PlotWindow(ctk.CTkToplevel, IPlotWindow):
                     to_set_equal_scale=False,  # Only apply once
                     to_show_coordinates=self._plot_params.to_show_coordinates,
                     to_show_indexes=self._plot_params.to_show_indexes,
+                    to_show_grid=False,  # Only apply once
                     num_of_min_distances=1,
                     skip_first_distances=0,
                     is_interactive_mode=self._plot_params.is_interactive_mode,
@@ -486,6 +550,7 @@ class PlotWindow(ctk.CTkToplevel, IPlotWindow):
                         to_set_equal_scale=self._plot_params.to_set_equal_scale if i == 0 else False,  # Only apply once
                         to_show_coordinates=self._plot_params.to_show_coordinates,
                         to_show_indexes=self._plot_params.to_show_indexes,
+                        to_show_grid=self._plot_params.to_show_grid if i == 0 else False,  # Only apply once
                         num_of_min_distances=self._plot_params.num_of_min_distances,
                         skip_first_distances=self._plot_params.skip_first_distances,
                         is_interactive_mode=self._plot_params.is_interactive_mode if label != "Carbon" else False,
@@ -503,8 +568,8 @@ class PlotWindow(ctk.CTkToplevel, IPlotWindow):
             self.ax.set_zlabel('Z')  # type: ignore
             self.ax.set_title(self._plot_params.title)
 
-            # Add legend if there are multiple structures
-            if data_type in ['two', 'multiple']:
+            # Add legend if enabled and there are multiple structures or labels
+            if self._plot_params.to_show_legend and data_type in ['two', 'multiple']:
                 self.ax.legend(labelspacing=1.1)
 
             # Restore camera state
