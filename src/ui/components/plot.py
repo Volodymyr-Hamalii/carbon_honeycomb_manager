@@ -157,8 +157,6 @@ class PlotControls(ctk.CTkFrame, IPlotControls):
 
         # Number of inter atom layers
         ctk.CTkLabel(inter_frame, text="Number of Inter Atom Layers:").pack(anchor="w", padx=SPACING.sm)
-        ctk.CTkLabel(inter_frame, text="(Affects data generation, not current plot)",
-                     font=ctk.CTkFont(size=10)).pack(anchor="w", padx=SPACING.sm)
         self.inter_layers_spinbox = ctk.CTkEntry(inter_frame, width=80)
         self.inter_layers_spinbox.insert(0, str(self._default_params.num_of_inter_atoms_layers))
         self.inter_layers_spinbox.pack(anchor="w", padx=SPACING.sm)
@@ -500,6 +498,11 @@ class PlotWindow(ctk.CTkToplevel, IPlotWindow):
 
                 for i, (coordinates, visual_params, label) in enumerate(
                         zip(coordinates_list, structure_visual_params_list, labels_list)):
+
+                    to_show_grid: bool | None = (
+                        self._plot_params.to_show_grid if i == len(coordinates_list) - 1 else None
+                    )
+
                     StructureVisualizer._plot_atoms_3d(
                         fig=self.figure,
                         ax=self.ax,
@@ -510,8 +513,7 @@ class PlotWindow(ctk.CTkToplevel, IPlotWindow):
                         to_set_equal_scale=self._plot_params.to_set_equal_scale if i == 0 else False,
                         to_show_coordinates=self._plot_params.to_show_coordinates,
                         to_show_indexes=self._plot_params.to_show_indexes,
-                        to_show_grid=self._plot_params.to_show_grid if i == len(
-                            coordinates_list) - 1 else None,
+                        to_show_grid=to_show_grid,
                         num_of_min_distances=self._plot_params.num_of_min_distances,
                         skip_first_distances=self._plot_params.skip_first_distances,
                         is_interactive_mode=self._plot_params.is_interactive_mode if label != "Carbon" else False,
