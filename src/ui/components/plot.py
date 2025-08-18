@@ -17,6 +17,7 @@ from src.interfaces import (
 from src.entities.params.plot_params import PlotParams
 from src.services.utils.logger import Logger
 from src.ui.styles import SPACING
+from src.services import StructureVisualizer
 
 
 logger = Logger("PlotWindow")
@@ -54,7 +55,7 @@ class PlotControls(ctk.CTkFrame, IPlotControls):
         self.coords_var = ctk.BooleanVar(value=self._default_params.to_show_coordinates)
         self.indexes_var = ctk.BooleanVar(value=self._default_params.to_show_indexes)
         self.equal_scale_var = ctk.BooleanVar(value=self._default_params.to_set_equal_scale)
-        self.interactive_var = ctk.BooleanVar(value=self._default_params.is_interactive_mode)
+        # self.interactive_var = ctk.BooleanVar(value=self._default_params.is_interactive_mode)
         self.additional_lines_var = ctk.BooleanVar(value=self._default_params.to_build_edge_vertical_lines)
         self.grid_var = ctk.BooleanVar(value=self._default_params.to_show_grid)
         self.edge_lines_var = ctk.BooleanVar(value=self._default_params.to_build_edge_vertical_lines)
@@ -74,8 +75,8 @@ class PlotControls(ctk.CTkFrame, IPlotControls):
                         command=self._on_params_changed).pack(anchor="w", padx=SPACING.sm)
         ctk.CTkCheckBox(viz_frame, text="Equal Scale", variable=self.equal_scale_var,
                         command=self._on_params_changed).pack(anchor="w", padx=SPACING.sm)
-        ctk.CTkCheckBox(viz_frame, text="Interactive Mode", variable=self.interactive_var,
-                        command=self._on_params_changed).pack(anchor="w", padx=SPACING.sm)
+        # ctk.CTkCheckBox(viz_frame, text="Interactive Mode", variable=self.interactive_var,
+        #                 command=self._on_params_changed).pack(anchor="w", padx=SPACING.sm)
         ctk.CTkCheckBox(viz_frame, text="Additional Lines", variable=self.additional_lines_var,
                         command=self._on_params_changed).pack(anchor="w", padx=SPACING.sm)
 
@@ -283,7 +284,7 @@ class PlotControls(ctk.CTkFrame, IPlotControls):
             to_show_coordinates=self.coords_var.get(),
             to_show_indexes=self.indexes_var.get(),
             to_set_equal_scale=self.equal_scale_var.get(),
-            is_interactive_mode=self.interactive_var.get(),
+            # is_interactive_mode=self.interactive_var.get(),
             to_build_edge_vertical_lines=self.edge_lines_var.get(),
             to_show_grid=self.grid_var.get(),
             to_show_legend=self.legend_var.get(),
@@ -308,7 +309,7 @@ class PlotControls(ctk.CTkFrame, IPlotControls):
         self.coords_var.set(params.to_show_coordinates)
         self.indexes_var.set(params.to_show_indexes)
         self.equal_scale_var.set(params.to_set_equal_scale)
-        self.interactive_var.set(params.is_interactive_mode)
+        # self.interactive_var.set(params.is_interactive_mode)
         self.additional_lines_var.set(params.to_build_edge_vertical_lines)
         self.grid_var.set(params.to_show_grid)
         self.edge_lines_var.set(params.to_build_edge_vertical_lines)
@@ -363,9 +364,6 @@ class PlotWindow(ctk.CTkToplevel, IPlotWindow):
 
     def _setup_ui(self) -> None:
         """Setup the main UI layout."""
-        # Import styles locally to avoid circular imports
-        from src.ui.styles.spacing import SPACING
-
         # Create main container - use regular frame since we're not using ScrollableToplevel
         main_frame = ctk.CTkFrame(self)
         main_frame.pack(fill="both", expand=True, padx=SPACING.sm, pady=SPACING.sm)
@@ -385,9 +383,6 @@ class PlotWindow(ctk.CTkToplevel, IPlotWindow):
 
     def _setup_plot(self) -> None:
         """Setup the matplotlib plot area."""
-        # Import styles locally to avoid circular imports
-        from src.ui.styles.spacing import SPACING
-
         # Add toolbar frame first (at top)
         toolbar_frame = ctk.CTkFrame(self.plot_frame)
         toolbar_frame.pack(fill="x", pady=(0, SPACING.sm))
@@ -460,9 +455,6 @@ class PlotWindow(ctk.CTkToplevel, IPlotWindow):
         """Render the plot based on current data and parameters."""
         if not self._current_data:
             return
-
-        # Import StructureVisualizer locally to avoid circular imports
-        from src.services.structure_visualizer.structure_visualizer import StructureVisualizer
 
         # Save current camera state
         self.save_plot_state()

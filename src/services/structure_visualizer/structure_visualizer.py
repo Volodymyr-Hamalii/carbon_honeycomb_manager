@@ -459,41 +459,41 @@ class StructureVisualizer(IStructureVisualizer):
                 to_build_edge_vertical_lines=to_build_edge_vertical_lines,
             )
 
-        if is_interactive_mode:
-            def on_pick(event) -> None:
-                try:
-                    ind: int = event.ind[0]
-                except Exception:
-                    return
+        # if is_interactive_mode:
+        #     def on_pick(event) -> None:
+        #         try:
+        #             ind: int = event.ind[0]
+        #         except Exception:
+        #             return
 
-                while True:
-                    try:
-                        result: str = input(
-                            f"Update coordinates for point with coordinates={coordinates[ind]}? (y/n): ")
-                        if result == "y":
-                            break
-                        else:
-                            return
-                    except Exception:
-                        return
+        #         while True:
+        #             try:
+        #                 result: str = input(
+        #                     f"Update coordinates for point with coordinates={coordinates[ind]}? (y/n): ")
+        #                 if result == "y":
+        #                     break
+        #                 else:
+        #                     return
+        #             except Exception:
+        #                 return
 
-                new_x = float(input(f"Enter new X ({coordinates[ind][0]:.2f}): ") or coordinates[ind][0])
-                new_y = float(input(f"Enter new Y ({coordinates[ind][1]:.2f}): ") or coordinates[ind][1])
-                new_z = float(input(f"Enter new Z ({coordinates[ind][2]:.2f}): ") or coordinates[ind][2])
+        #         new_x = float(input(f"Enter new X ({coordinates[ind][0]:.2f}): ") or coordinates[ind][0])
+        #         new_y = float(input(f"Enter new Y ({coordinates[ind][1]:.2f}): ") or coordinates[ind][1])
+        #         new_z = float(input(f"Enter new Z ({coordinates[ind][2]:.2f}): ") or coordinates[ind][2])
 
-                upd_point: list[float] = [new_x, new_y, new_z]
+        #         upd_point: list[float] = [new_x, new_y, new_z]
 
-                coordinates[ind] = upd_point
-                scatter._offsets3d = (coordinates[:, 0], coordinates[:, 1], coordinates[:, 2])  # type: ignore
-                plt.draw()
+        #         coordinates[ind] = upd_point
+        #         scatter._offsets3d = (coordinates[:, 0], coordinates[:, 1], coordinates[:, 2])  # type: ignore
+        #         plt.draw()
 
-                logger.info(f"Updated point coordinates: {coordinates[ind]}")
+        #         logger.info(f"Updated point coordinates: {coordinates[ind]}")
 
-                # min_dists: np.ndarray = DistanceMeasure.calculate_min_distances(coordinates, np.array([upd_point]))
-                # min_dist: float = np.min(min_dists[min_dists > 0])
-                # logger.info(f"Distance to the nearest atom: {min_dist}")
+        #         # min_dists: np.ndarray = DistanceMeasure.calculate_min_distances(coordinates, np.array([upd_point]))
+        #         # min_dist: float = np.min(min_dists[min_dists > 0])
+        #         # logger.info(f"Distance to the nearest atom: {min_dist}")
 
-            fig.canvas.mpl_connect('pick_event', on_pick)
+        #     fig.canvas.mpl_connect('pick_event', on_pick)
 
         return scatter
 
