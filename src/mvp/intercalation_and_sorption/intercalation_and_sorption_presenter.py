@@ -13,9 +13,10 @@ from src.interfaces import (
     IStructureVisualParams,
     PMvpParams,
 )
-from src.services import Logger, Constants
+from src.services import Logger, Constants, VisualizationParams
 from src.projects.carbon_honeycomb_actions import CarbonHoneycombModeller
 from src.projects.intercalation_and_sorption import IntercalationAndSorption
+from src.ui.components import PlotWindow, PlotWindowFactory
 
 logger = Logger("IntercalationAndSorptionPresenter")
 
@@ -57,9 +58,6 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
     ) -> None:
         """Plot intercalated atoms in carbon structure."""
         try:
-            from src.ui.components.plot_window_factory import PlotWindowFactory
-            from src.services.structure_visualizer.visualization_params import VisualizationParams
-
             # Get the intercalated structure data using existing method (one channel only)
             coords_list, labels_list = self._get_intercalated_structures(
                 project_dir, subproject_dir, structure_dir, only_one_channel=True
@@ -70,22 +68,18 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
                 return
 
             # Create visual parameters for each structure
-            visual_params_list: list[IStructureVisualParams] = []
-            for i, label in enumerate(labels_list):
-                if label == "Carbon":
-                    visual_params_list.append(VisualizationParams.carbon)
-                elif "inter" in label.lower() or "al" in label.lower():
-                    if i == 1:
-                        visual_params_list.append(VisualizationParams.intercalated_atoms_1_layer)
-                    elif i == 2:
-                        visual_params_list.append(VisualizationParams.intercalated_atoms_2_layer)
-                    else:
-                        visual_params_list.append(VisualizationParams.intercalated_atoms_3_layer)
-                else:
-                    visual_params_list.append(VisualizationParams.carbon)  # Default
+            visual_params_list: list[IStructureVisualParams] = [
+                VisualizationParams.carbon,
+                VisualizationParams.intercalated_atoms_1_layer,
+                VisualizationParams.intercalated_atoms_2_layer,
+                VisualizationParams.intercalated_atoms_3_layer,
+            ]
 
             # Create and show plot window
-            plot_window = PlotWindowFactory.show_structures_in_new_window(
+            mvp_params: PMvpParams = self.model.get_mvp_params()
+            logger.info(f">>> plot_inter_in_c_structure mvp_params: {mvp_params}")
+
+            plot_window: PlotWindow = PlotWindowFactory.show_structures_in_new_window(
                 master=self.view,
                 coordinates_list=coords_list,
                 structure_visual_params_list=visual_params_list,
@@ -227,22 +221,17 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
                 return
 
             # Create visual parameters for each structure
-            visual_params_list = []
-            for i, label in enumerate(labels_list):
-                if label == "Carbon":
-                    visual_params_list.append(VisualizationParams.carbon)
-                elif "inter" in label.lower() or "al" in label.lower():
-                    if i == 1:
-                        visual_params_list.append(VisualizationParams.intercalated_atoms_1_layer)
-                    elif i == 2:
-                        visual_params_list.append(VisualizationParams.intercalated_atoms_2_layer)
-                    else:
-                        visual_params_list.append(VisualizationParams.intercalated_atoms_3_layer)
-                else:
-                    visual_params_list.append(VisualizationParams.carbon)  # Default
+
+            # Create visual parameters for each structure
+            visual_params_list: list[IStructureVisualParams] = [
+                VisualizationParams.carbon,
+                VisualizationParams.intercalated_atoms_1_layer,
+                VisualizationParams.intercalated_atoms_2_layer,
+                VisualizationParams.intercalated_atoms_3_layer,
+            ]
 
             # Create and show plot window
-            plot_window = PlotWindowFactory.show_structures_in_new_window(
+            plot_window: PlotWindow = PlotWindowFactory.show_structures_in_new_window(
                 master=self.view,
                 coordinates_list=coords_list,
                 structure_visual_params_list=visual_params_list,
@@ -269,6 +258,8 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
         """Generate files for intercalated atoms in all channels."""
         try:
             self.view.show_operation_progress("Generating files for all channels...")
+
+            raise NotImplementedError("translate_inter_to_all_channels_generate_files is not implemented")
 
             # TODO: Implement actual file generation
             output_paths = (
@@ -330,8 +321,11 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
             self.view.show_processing_message("Plotting intercalated atoms in carbon structure...")
 
             # Get current MVP params with file selection and UI settings
-            params = self.model.get_mvp_params()
-            selected_file = self.view.get_selected_file()
+            params: PMvpParams = self.model.get_mvp_params()
+
+            logger.info(f">>> _handle_plot_inter_in_c_structure mvp_params: {params}")
+
+            selected_file: str = self.view.get_selected_file()
             if selected_file and selected_file != "No files found":
                 params.file_name = selected_file
 
@@ -360,9 +354,10 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
             self.view.show_processing_message("Generating intercalated plane coordinates file...")
 
             # Get current MVP params
-            params = self.model.get_mvp_params()
+            params: PMvpParams = self.model.get_mvp_params()
+            logger.info(f">>> _handle_generate_inter_plane_coordinates mvp_params: {params}")
 
-            output_path = IntercalationAndSorption.generate_inter_plane_coordinates_file(
+            output_path: Path = IntercalationAndSorption.generate_inter_plane_coordinates_file(
                 project_dir=self._current_context["project_dir"],
                 subproject_dir=self._current_context["subproject_dir"],
                 structure_dir=self._current_context["structure_dir"],
@@ -407,12 +402,12 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
                 return
 
             # Get current MVP params with file selection
-            params = self.model.get_mvp_params()
-            selected_file = self.view.get_selected_file()
+            params: PMvpParams = self.model.get_mvp_params()
+            selected_file: str = self.view.get_selected_file()
             if selected_file and selected_file != "No files found":
                 params.file_name = selected_file
 
-            output_path = IntercalationAndSorption.translate_inter_atoms_to_other_planes(
+            output_path: None = IntercalationAndSorption.translate_inter_atoms_to_other_planes(
                 project_dir=self._current_context["project_dir"],
                 subproject_dir=self._current_context["subproject_dir"],
                 structure_dir=self._current_context["structure_dir"],
@@ -531,6 +526,8 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
 
             # Get current MVP params with file selection
             params: PMvpParams = self.model.get_mvp_params()
+            # logger.info(f">>> _handle_translate_inter_to_all_channels_plot mvp_params: {params}")
+
             selected_file: str = self.view.get_selected_file()
             if selected_file and selected_file != "No files found":
                 params.file_name = selected_file
@@ -886,7 +883,7 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
             # Add intercalated atoms if available
             for i, trans_coords in enumerate(translated_coords_list):
                 coords_list.append(trans_coords)
-                labels_list.append(f"Translated Layer {i+1}")
+                labels_list.append(f"{subproject_dir} layer {i+1}")
 
             return coords_list, labels_list
 

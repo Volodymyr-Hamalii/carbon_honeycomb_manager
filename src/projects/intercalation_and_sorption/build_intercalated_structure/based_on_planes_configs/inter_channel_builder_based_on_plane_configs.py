@@ -26,9 +26,6 @@ class InterChannelBuilderBasedOnPlaneConfigs:
         atoms_inter = InterAtomsFilter.replace_nearby_atoms_with_one_atom(atoms_inter, atom_params)
         atoms_inter = InterAtomsFilter.remove_too_close_atoms(atoms_inter, atom_params)
 
-        # StructureVisualizer.show_two_structures(
-        #     coordinates_first=carbon_channel.points, coordinates_second=atoms_inter.points, to_build_bonds=True)
-
         # atoms_inter = InterAtomConfigurator.reorganize_inter_atoms_atoms(atoms_inter, carbon_channel)
         cls._print_statistics(atoms_inter, carbon_channel)
 

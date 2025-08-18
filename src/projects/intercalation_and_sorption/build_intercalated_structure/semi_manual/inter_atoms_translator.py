@@ -16,7 +16,6 @@ from src.projects.carbon_honeycomb_actions import CarbonHoneycombUtils
 from ..based_on_planes_configs import InterAtomsFilter
 
 
-
 logger = Logger("AlAtomsTranslator")
 
 
@@ -183,18 +182,6 @@ class InterAtomsTranslator:
 
             inter_atoms_points_rotated: IPoints = PointsRotator.rotate_around_z_parallel_line(
                 inter_atoms_points, line_point=carbon_channel.center, angle=angle)
-
-            # StructureVisualizer.show_two_structures(
-            #     carbon_channel.points,
-            #     np.concatenate(all_inter_atoms_points + [inter_atoms_points_rotated.points]),
-            #     title=f"Plane {plane_i}",
-            #     to_build_bonds=True
-            # )
-
-            # all_inter_atoms_points.append(inter_atoms_points_rotated.points)
-            # continue
-
-            # inter_atoms_adjusted: IPoints = cls._adjust_inter_atoms(inter_atoms_rotated, plane)
 
             if to_try_to_reflect_inter_atoms:
                 # Check if we need to reflect points

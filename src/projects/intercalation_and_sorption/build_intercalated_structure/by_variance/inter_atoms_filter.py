@@ -163,9 +163,6 @@ class InterAtomsFilter:
                 direction=direction,
                 min_distance=distance_from_plane)
 
-            # from src.structure_visualizer import StructureVisualizer
-            # StructureVisualizer.show_two_structures(carbon_channel.points, filtered_points.points)
-
             if len(filtered_points.points) == 0:
                 return filtered_points
 

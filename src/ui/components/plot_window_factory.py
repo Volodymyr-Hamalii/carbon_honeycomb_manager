@@ -32,10 +32,19 @@ class PlotWindowFactory:
         """Create a plot window with parameters converted from MVP params."""
         plot_params: PlotParams = cls._convert_mvp_to_plot_params(mvp_params, title)
 
-        plot_window = PlotWindow(
+        # Create callback to sync changes back to MVP params
+        def on_plot_params_changed(updated_plot_params: PlotParams) -> None:
+            # logger.info(f"Syncing plot params back to MVP: x_min={updated_plot_params.x_min}, "
+            #            f"x_max={updated_plot_params.x_max}, bonds_min_dist={updated_plot_params.num_of_min_distances}")
+            cls.sync_plot_params_to_mvp(updated_plot_params, mvp_params)
+            # logger.info(f"MVP params after sync: x_min={mvp_params.x_min}, x_max={mvp_params.x_max}, "
+            #            f"bonds_min_dist={mvp_params.bonds_num_of_min_distances}")
+
+        plot_window: PlotWindow = PlotWindow(
             master=master,
             title=title,
             plot_params=plot_params,
+            on_params_changed_callback=on_plot_params_changed,
             **kwargs
         )
 
@@ -67,37 +76,6 @@ class PlotWindowFactory:
         return plot_window
 
     @classmethod
-    def show_two_structures_in_new_window(
-        cls,
-        master: ctk.CTk | ctk.CTkToplevel | IShowInitDataView | IIntercalationAndSorptionView,
-        coordinates_first: NDArray[np.float64],
-        coordinates_second: NDArray[np.float64],
-        structure_visual_params_first: IStructureVisualParams,
-        structure_visual_params_second: IStructureVisualParams,
-        mvp_params: PMvpParams,
-        title: str = "Structure Comparison",
-        label_first: str | None = None,
-        label_second: str | None = None,
-    ) -> PlotWindow:
-        """Show two structures in a new plot window."""
-        plot_window: PlotWindow = cls.create_plot_window_from_mvp_params(
-            master=master,
-            mvp_params=mvp_params,
-            title=title,
-        )
-
-        plot_window.show_two_structures(
-            coordinates_first=coordinates_first,
-            coordinates_second=coordinates_second,
-            structure_visual_params_first=structure_visual_params_first,
-            structure_visual_params_second=structure_visual_params_second,
-            label_first=label_first,
-            label_second=label_second,
-        )
-
-        return plot_window
-
-    @classmethod
     def show_structures_in_new_window(
         cls,
         master: ctk.CTk | ctk.CTkToplevel | IShowInitDataView | IIntercalationAndSorptionView,
@@ -108,6 +86,7 @@ class PlotWindowFactory:
         title: str = "Multiple Structures",
     ) -> PlotWindow:
         """Show multiple structures in a new plot window."""
+
         plot_window: PlotWindow = cls.create_plot_window_from_mvp_params(
             master=master,
             mvp_params=mvp_params,
@@ -163,7 +142,7 @@ class PlotWindowFactory:
         mvp_params.y_max = plot_params.y_max
         mvp_params.z_min = plot_params.z_min
         mvp_params.z_max = plot_params.z_max
-        
+
         # Update additional plot-specific settings if they exist in MVP params
         if hasattr(mvp_params, 'to_set_equal_scale'):
             mvp_params.to_set_equal_scale = plot_params.to_set_equal_scale
@@ -177,7 +156,7 @@ class PlotWindowFactory:
             mvp_params.to_show_legend = plot_params.to_show_legend
         if hasattr(mvp_params, 'num_of_inter_atoms_layers'):
             mvp_params.num_of_inter_atoms_layers = plot_params.num_of_inter_atoms_layers
-            
+
         return mvp_params
 
     @staticmethod

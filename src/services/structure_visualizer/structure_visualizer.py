@@ -77,88 +77,6 @@ class StructureVisualizer(IStructureVisualizer):
         plt.show()
 
     @classmethod
-    def show_two_structures(
-            cls,
-            coordinates_first: NDArray[np.float64],
-            coordinates_second: NDArray[np.float64],
-            structure_visual_params_first: IStructureVisualParams,
-            structure_visual_params_second: IStructureVisualParams,
-            coordinate_limits_first: PCoordinateLimits | None = None,
-            coordinate_limits_second: PCoordinateLimits | None = None,
-            label_first: str | None = None,
-            label_second: str | None = None,
-            to_show_indexes_first: bool | None = None,
-            to_show_indexes_second: bool | None = None,
-            to_build_bonds: bool = False,
-            to_show_coordinates: bool | None = None,
-            title: str | None = None,
-            is_interactive_mode: bool = False,
-            num_of_min_distances: int = 2,
-            skip_first_distances: int = 0,
-            bonds_to_highlight: PCoordinateLimits | None = None,
-            to_build_edge_vertical_lines: bool = False,
-    ) -> None:
-        """ Show 3D plot with 2 structures (by default there are carbon and aluminium) """
-
-        # Prepare to visualize
-        fig: Figure = plt.figure()
-        ax: Axes = fig.add_subplot(111, projection='3d')
-
-        # Plot first structure atoms (not interactive)
-        cls._plot_atoms_3d(
-            fig=fig,
-            ax=ax,
-            coordinates=coordinates_first,
-            structure_visual_params=structure_visual_params_first,
-            label=label_first,
-            to_build_bonds=to_build_bonds,
-            num_of_min_distances=num_of_min_distances,
-            skip_first_distances=skip_first_distances,
-            to_show_coordinates=to_show_coordinates,
-            to_show_indexes=to_show_indexes_first,
-            is_interactive_mode=False,
-            coordinate_limits=coordinate_limits_first,
-            bonds_to_highlight=bonds_to_highlight,
-            to_build_edge_vertical_lines=to_build_edge_vertical_lines,
-        )
-
-        # Plot second structure atoms (interactive if enabled)
-        cls._plot_atoms_3d(
-            fig=fig,
-            ax=ax,
-            coordinates=coordinates_second,
-            structure_visual_params=structure_visual_params_second,
-            label=label_second,
-            to_build_bonds=False,
-            num_of_min_distances=1,
-            skip_first_distances=0,
-            to_show_coordinates=to_show_coordinates,
-            to_show_indexes=to_show_indexes_second,
-            is_interactive_mode=is_interactive_mode,
-            coordinate_limits=coordinate_limits_second,
-            bonds_to_highlight=bonds_to_highlight,
-            to_build_edge_vertical_lines=to_build_edge_vertical_lines,
-        )
-
-        ax.set_xlabel('X')
-        ax.set_ylabel('Y')
-        ax.set_zlabel('Z')  # type: ignore
-        ax.legend(
-            # fontsize=16,
-            labelspacing=1.1,
-        )
-
-        if title is not None:
-            ax.set_title(title)
-
-            # Set the plot window name
-            current_fig_manager: FigureManagerBase | None = plt.get_current_fig_manager()
-            if current_fig_manager:
-                current_fig_manager.set_window_title(title)
-
-        plt.show()
-
-    @classmethod
     def show_structures(
             cls,
             coordinates_list: list[NDArray[np.float64]],
@@ -344,7 +262,7 @@ class StructureVisualizer(IStructureVisualizer):
             skip_first_distances: int = 0,
             to_show_coordinates: bool | None = None,
             to_show_indexes: bool | None = None,
-            to_show_grid: bool | None = None,  # TODO
+            to_show_grid: bool | None = None,
             is_interactive_mode: bool = False,
             custom_indexes: list[int] = [],
             coordinate_limits: PCoordinateLimits | None = None,
@@ -365,27 +283,43 @@ class StructureVisualizer(IStructureVisualizer):
                         f"y=[{coordinate_limits.y_min}, {coordinate_limits.y_max}], "
                         f"z=[{coordinate_limits.z_min}, {coordinate_limits.z_max}]")
 
-            original_count = len(coordinates)
+            original_count: int = len(coordinates)
 
-            # Check for finite limits only
-            has_finite_limits = (
-                not (coordinate_limits.x_min == -float('inf') and coordinate_limits.x_max == float('inf')) or
-                not (coordinate_limits.y_min == -float('inf') and coordinate_limits.y_max == float('inf')) or
-                not (coordinate_limits.z_min == -float('inf') and coordinate_limits.z_max == float('inf'))
-            )
+            # Check if any limits are finite (not infinite)
+            # logger.info(f"coordinate_limits.x_min: {coordinate_limits.x_min}, coordinate_limits.x_max: {coordinate_limits.x_max}")
+            # logger.info(f"coordinate_limits.y_min: {coordinate_limits.y_min}, coordinate_limits.y_max: {coordinate_limits.y_max}")
+            # logger.info(f"coordinate_limits.z_min: {coordinate_limits.z_min}, coordinate_limits.z_max: {coordinate_limits.z_max}")
+
+            inf = float("inf")
+            has_finite_x: bool = not (coordinate_limits.x_min == -inf and coordinate_limits.x_max == inf)
+            has_finite_y: bool = not (coordinate_limits.y_min == -inf and coordinate_limits.y_max == inf)
+            has_finite_z: bool = not (coordinate_limits.z_min == -inf and coordinate_limits.z_max == inf)
+
+            has_finite_limits: bool = has_finite_x or has_finite_y or has_finite_z
 
             if has_finite_limits:
-                # Remove points outside the coordinate limits
-                coordinates = coordinates[
-                    (coordinates[:, 0] >= coordinate_limits.x_min) &
-                    (coordinates[:, 0] <= coordinate_limits.x_max) &
-                    (coordinates[:, 1] >= coordinate_limits.y_min) &
-                    (coordinates[:, 1] <= coordinate_limits.y_max) &
-                    (coordinates[:, 2] >= coordinate_limits.z_min) &
-                    (coordinates[:, 2] <= coordinate_limits.z_max)
-                ]
+                # Create filtering conditions based on finite limits only
+                x_condition: NDArray[np.bool_] = np.ones(len(coordinates), dtype=bool)  # Default: no filtering
+                y_condition: NDArray[np.bool_] = np.ones(len(coordinates), dtype=bool)  # Default: no filtering
+                z_condition: NDArray[np.bool_] = np.ones(len(coordinates), dtype=bool)  # Default: no filtering
 
-                filtered_count = len(coordinates)
+                if has_finite_x:
+                    x_condition = (
+                        coordinates[:, 0] >= coordinate_limits.x_min) & (
+                        coordinates[:, 0] <= coordinate_limits.x_max)
+                if has_finite_y:
+                    y_condition = (
+                        coordinates[:, 1] >= coordinate_limits.y_min) & (
+                        coordinates[:, 1] <= coordinate_limits.y_max)
+                if has_finite_z:
+                    z_condition = (
+                        coordinates[:, 2] >= coordinate_limits.z_min) & (
+                        coordinates[:, 2] <= coordinate_limits.z_max)
+
+                # Apply combined filtering
+                coordinates = coordinates[x_condition & y_condition & z_condition]
+
+                filtered_count: int = len(coordinates)
                 logger.info(f"Coordinate filtering: {original_count} -> {filtered_count} atoms")
             else:
                 logger.info("All coordinate limits are infinite, skipping filtering")

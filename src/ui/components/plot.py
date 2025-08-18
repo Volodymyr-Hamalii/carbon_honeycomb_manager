@@ -12,6 +12,7 @@ from src.interfaces import (
     IPlotControls,
     IShowInitDataView,
     IIntercalationAndSorptionView,
+    PCoordinateLimits,
 )
 from src.entities.params.plot_params import PlotParams
 from src.services.utils.logger import Logger
@@ -19,6 +20,7 @@ from src.ui.styles import SPACING
 
 
 logger = Logger("PlotWindow")
+controls_logger = Logger("PlotControls")
 
 
 class PlotControls(ctk.CTkFrame, IPlotControls):
@@ -85,8 +87,7 @@ class PlotControls(ctk.CTkFrame, IPlotControls):
 
         # Min distances
         ctk.CTkLabel(bonds_frame, text="Min Distances:").pack(anchor="w", padx=SPACING.sm)
-        self.min_distances_var = ctk.IntVar(value=self._default_params.num_of_min_distances)
-        self.min_distances_spinbox = ctk.CTkEntry(bonds_frame, textvariable=self.min_distances_var, width=80)
+        self.min_distances_spinbox = ctk.CTkEntry(bonds_frame, width=80)
         self.min_distances_spinbox.insert(0, str(self._default_params.num_of_min_distances))
         self.min_distances_spinbox.pack(anchor="w", padx=SPACING.sm)
         self.min_distances_spinbox.bind("<KeyRelease>", self._on_bond_settings_changed)
@@ -94,8 +95,7 @@ class PlotControls(ctk.CTkFrame, IPlotControls):
 
         # Skip distances
         ctk.CTkLabel(bonds_frame, text="Skip First Distances:").pack(anchor="w", padx=SPACING.sm)
-        self.skip_distances_var = ctk.IntVar(value=self._default_params.skip_first_distances)
-        self.skip_distances_spinbox = ctk.CTkEntry(bonds_frame, textvariable=self.skip_distances_var, width=80)
+        self.skip_distances_spinbox = ctk.CTkEntry(bonds_frame, width=80)
         self.skip_distances_spinbox.insert(0, str(self._default_params.skip_first_distances))
         self.skip_distances_spinbox.pack(anchor="w", padx=SPACING.sm)
         self.skip_distances_spinbox.bind("<KeyRelease>", self._on_bond_settings_changed)
@@ -156,8 +156,9 @@ class PlotControls(ctk.CTkFrame, IPlotControls):
 
         # Number of inter atom layers
         ctk.CTkLabel(inter_frame, text="Number of Inter Atom Layers:").pack(anchor="w", padx=SPACING.sm)
-        self.inter_layers_var = ctk.IntVar(value=self._default_params.num_of_inter_atoms_layers)
-        self.inter_layers_spinbox = ctk.CTkEntry(inter_frame, textvariable=self.inter_layers_var, width=80)
+        ctk.CTkLabel(inter_frame, text="(Affects data generation, not current plot)",
+                     font=ctk.CTkFont(size=10)).pack(anchor="w", padx=SPACING.sm)
+        self.inter_layers_spinbox = ctk.CTkEntry(inter_frame, width=80)
         self.inter_layers_spinbox.insert(0, str(self._default_params.num_of_inter_atoms_layers))
         self.inter_layers_spinbox.pack(anchor="w", padx=SPACING.sm)
         self.inter_layers_spinbox.bind("<KeyRelease>", self._on_inter_settings_changed)
@@ -191,13 +192,14 @@ class PlotControls(ctk.CTkFrame, IPlotControls):
         refresh_btn = ctk.CTkButton(button_frame, text="Refresh Plot", command=self._on_params_changed)
         refresh_btn.pack(fill="x", pady=SPACING.xs)
 
-        reset_limits_btn = ctk.CTkButton(button_frame, text="Reset Limits", command=self._reset_limits)
-        reset_limits_btn.pack(fill="x", pady=SPACING.xs)
-
     def _on_params_changed(self) -> None:
         """Handle parameter changes."""
         if self._params_changed_callback:
-            params = self.load_params_from_ui()
+            params: PlotParams = self.load_params_from_ui()
+            controls_logger.info(f"UI params changed: x=[{params.x_min}, {params.x_max}], "
+                                 f"y=[{params.y_min}, {params.y_max}], z=[{params.z_min}, {params.z_max}], "
+                                 f"bonds=[{params.num_of_min_distances}, {params.skip_first_distances}], "
+                                 f"inter_layers={params.num_of_inter_atoms_layers}")
             self._params_changed_callback(params)
 
     def _on_coordinate_changed(self, event=None) -> None:
@@ -212,28 +214,26 @@ class PlotControls(ctk.CTkFrame, IPlotControls):
         """Handle inter atom settings changes."""
         self._on_params_changed()
 
-    def _reset_limits(self) -> None:
-        """Reset coordinate limits to default values."""
-        self.x_min_var.set("-inf")
-        self.x_max_var.set("inf")
-        self.y_min_var.set("-inf")
-        self.y_max_var.set("inf")
-        self.z_min_var.set("-inf")
-        self.z_max_var.set("inf")
-        self._on_params_changed()
-
     def _parse_float(self, value: str, default: float) -> float:
         """Parse float value, handling 'inf' and invalid inputs."""
+        controls_logger.info(f"_parse_float: parsing '{value}' (type: {type(value)}) with default {default}")
+
         if not value or value.strip() == "":
+            controls_logger.info(f"_parse_float: empty value, returning default {default}")
             return default
         elif value.lower() in ['inf', '+inf']:
+            controls_logger.info(f"_parse_float: positive infinity")
             return float('inf')
         elif value.lower() == '-inf':
+            controls_logger.info(f"_parse_float: negative infinity")
             return -float('inf')
         else:
             try:
-                return float(value)
+                result = float(value)
+                controls_logger.info(f"_parse_float: successfully parsed '{value}' as {result}")
+                return result
             except ValueError:
+                controls_logger.info(f"_parse_float: failed to parse '{value}', returning default {default}")
                 return default
 
     def set_on_params_changed_callback(self, callback: Callable[[PlotParams], None]) -> None:
@@ -243,19 +243,40 @@ class PlotControls(ctk.CTkFrame, IPlotControls):
     def load_params_from_ui(self) -> PlotParams:
         """Load plot parameters from UI controls."""
         try:
-            num_min_distances = int(self.min_distances_var.get())
+            num_min_distances = int(self.min_distances_spinbox.get())
         except (ValueError, tk.TclError):
             num_min_distances = 2
 
         try:
-            skip_distances = int(self.skip_distances_var.get())
+            skip_distances = int(self.skip_distances_spinbox.get())
         except (ValueError, tk.TclError):
             skip_distances = 0
 
         try:
-            inter_layers = int(self.inter_layers_var.get())
+            inter_layers = int(self.inter_layers_spinbox.get())
         except (ValueError, tk.TclError):
             inter_layers = 2
+
+        # Parse coordinate limits - debug raw UI values
+        x_min_raw: str = self.x_min_entry.get()
+        x_max_raw: str = self.x_max_entry.get()
+        y_min_raw: str = self.y_min_entry.get()
+        y_max_raw: str = self.y_max_entry.get()
+        z_min_raw: str = self.z_min_entry.get()
+        z_max_raw: str = self.z_max_entry.get()
+
+        controls_logger.info(
+            f"Raw UI values: x_min='{x_min_raw}', x_max='{x_max_raw}', y_min='{y_min_raw}', y_max='{y_max_raw}', z_min='{z_min_raw}', z_max='{z_max_raw}'")
+
+        x_min: float = self._parse_float(x_min_raw, -float('inf'))
+        x_max: float = self._parse_float(x_max_raw, float('inf'))
+        y_min: float = self._parse_float(y_min_raw, -float('inf'))
+        y_max: float = self._parse_float(y_max_raw, float('inf'))
+        z_min: float = self._parse_float(z_min_raw, -float('inf'))
+        z_max: float = self._parse_float(z_max_raw, float('inf'))
+
+        controls_logger.info(
+            f"Parsed coordinates: x=[{x_min}, {x_max}], y=[{y_min}, {y_max}], z=[{z_min}, {z_max}], inter_layers={inter_layers}")
 
         return PlotParams(
             to_build_bonds=self.bonds_var.get(),
@@ -273,12 +294,12 @@ class PlotControls(ctk.CTkFrame, IPlotControls):
             # to_show_plane_lengths=self.show_plane_lengths_var.get(),
             num_of_min_distances=num_min_distances,
             skip_first_distances=skip_distances,
-            x_min=self._parse_float(self.x_min_var.get(), -float('inf')),
-            x_max=self._parse_float(self.x_max_var.get(), float('inf')),
-            y_min=self._parse_float(self.y_min_var.get(), -float('inf')),
-            y_max=self._parse_float(self.y_max_var.get(), float('inf')),
-            z_min=self._parse_float(self.z_min_var.get(), -float('inf')),
-            z_max=self._parse_float(self.z_max_var.get(), float('inf')),
+            x_min=x_min,
+            x_max=x_max,
+            y_min=y_min,
+            y_max=y_max,
+            z_min=z_min,
+            z_max=z_max,
         )
 
     def load_ui_from_params(self, params: PlotParams) -> None:
@@ -296,18 +317,21 @@ class PlotControls(ctk.CTkFrame, IPlotControls):
         # self.show_dists_to_edges_var.set(params.to_show_dists_to_edges)
         # self.show_channel_angles_var.set(params.to_show_channel_angles)
         # self.show_plane_lengths_var.set(params.to_show_plane_lengths)
-        self.min_distances_var.set(params.num_of_min_distances)
-        self.skip_distances_var.set(params.skip_first_distances)
-        self.inter_layers_var.set(params.num_of_inter_atoms_layers)
+        self.min_distances_spinbox.delete(0, 'end')
+        self.min_distances_spinbox.insert(0, str(params.num_of_min_distances))
+        self.skip_distances_spinbox.delete(0, 'end')
+        self.skip_distances_spinbox.insert(0, str(params.skip_first_distances))
+        self.inter_layers_spinbox.delete(0, 'end')
+        self.inter_layers_spinbox.insert(0, str(params.num_of_inter_atoms_layers))
 
         # Handle infinite values for display
         inf = float('inf')
-        self.x_min_var.set("inf" if params.x_min == inf else "-inf" if params.x_min == -inf else str(params.x_min))
-        self.x_max_var.set("inf" if params.x_max == inf else "-inf" if params.x_max == -inf else str(params.x_max))
-        self.y_min_var.set("inf" if params.y_min == inf else "-inf" if params.y_min == -inf else str(params.y_min))
-        self.y_max_var.set("inf" if params.y_max == inf else "-inf" if params.y_max == -inf else str(params.y_max))
-        self.z_min_var.set("inf" if params.z_min == inf else "-inf" if params.z_min == -inf else str(params.z_min))
-        self.z_max_var.set("inf" if params.z_max == inf else "-inf" if params.z_max == -inf else str(params.z_max))
+        self.x_min_var.set("-inf" if params.x_min == -inf else str(params.x_min))
+        self.x_max_var.set("inf" if params.x_max == inf else str(params.x_max))
+        self.y_min_var.set("-inf" if params.y_min == -inf else str(params.y_min))
+        self.y_max_var.set("inf" if params.y_max == inf else str(params.y_max))
+        self.z_min_var.set("-inf" if params.z_min == -inf else str(params.z_min))
+        self.z_max_var.set("inf" if params.z_max == inf else str(params.z_max))
 
 
 class PlotWindow(ctk.CTkToplevel, IPlotWindow):
@@ -318,6 +342,7 @@ class PlotWindow(ctk.CTkToplevel, IPlotWindow):
             master: ctk.CTk | ctk.CTkToplevel | IShowInitDataView | IIntercalationAndSorptionView | None = None,
             title: str = "Structure Plot",
             plot_params: PlotParams | None = None,
+            on_params_changed_callback: Callable[[PlotParams], None] | None = None,
             **kwargs,
     ) -> None:
         super().__init__(master, **kwargs)
@@ -328,6 +353,7 @@ class PlotWindow(ctk.CTkToplevel, IPlotWindow):
         self._plot_params = plot_params or PlotParams(title=title)
         self._current_data: dict[str, Any] = {}
         self._last_camera_state: dict[str, float] = {}
+        self._on_params_changed_callback = on_params_changed_callback
 
         self._setup_ui()
         self._setup_plot()
@@ -385,7 +411,19 @@ class PlotWindow(ctk.CTkToplevel, IPlotWindow):
 
     def _on_params_changed(self, params: PlotParams) -> None:
         """Handle parameter changes from controls."""
+        logger.info(f"PlotWindow updating: x=[{params.x_min}, {params.x_max}], "
+                    f"y=[{params.y_min}, {params.y_max}], z=[{params.z_min}, {params.z_max}], "
+                    f"bonds=[{params.num_of_min_distances}, {params.skip_first_distances}]")
+
         self._plot_params = params
+
+        # Notify external callback if set (for MVP parameter synchronization)
+        if self._on_params_changed_callback:
+            logger.info("Syncing to MVP parameters")
+            self._on_params_changed_callback(params)
+        else:
+            logger.warning("No MVP sync callback available")
+
         self.refresh_plot()
 
     def show_structure(
@@ -400,27 +438,6 @@ class PlotWindow(ctk.CTkToplevel, IPlotWindow):
             'coordinates': coordinates,
             'structure_visual_params': structure_visual_params,
             'label': label,
-        }
-        self._render_plot()
-
-    def show_two_structures(
-        self,
-        coordinates_first: NDArray[np.float64],
-        coordinates_second: NDArray[np.float64],
-        structure_visual_params_first: IStructureVisualParams,
-        structure_visual_params_second: IStructureVisualParams,
-        label_first: str | None = None,
-        label_second: str | None = None,
-    ) -> None:
-        """Display two structures in the plot window."""
-        self._current_data = {
-            'type': 'two',
-            'coordinates_first': coordinates_first,
-            'coordinates_second': coordinates_second,
-            'structure_visual_params_first': structure_visual_params_first,
-            'structure_visual_params_second': structure_visual_params_second,
-            'label_first': label_first,
-            'label_second': label_second,
         }
         self._render_plot()
 
@@ -456,13 +473,9 @@ class PlotWindow(ctk.CTkToplevel, IPlotWindow):
 
         data_type = self._current_data['type']
         # Always pass coordinate limits - let StructureVisualizer handle infinite values
-        coordinate_limits = self._plot_params.coordinate_limits
-        logger.info(f"Using coordinate limits: x={coordinate_limits.x_min:.2f} to {coordinate_limits.x_max:.2f}, "
-                   f"y={coordinate_limits.y_min:.2f} to {coordinate_limits.y_max:.2f}, "
-                   f"z={coordinate_limits.z_min:.2f} to {coordinate_limits.z_max:.2f}")
+        coordinate_limits: PCoordinateLimits = self._plot_params.coordinate_limits
 
         try:
-            logger.info(f"Rendering plot with data type: {data_type}")
             if data_type == 'single':
                 StructureVisualizer._plot_atoms_3d(
                     fig=self.figure,
@@ -486,57 +499,12 @@ class PlotWindow(ctk.CTkToplevel, IPlotWindow):
                     to_show_plane_lengths=self._plot_params.to_show_plane_lengths,
                 )
 
-            elif data_type == 'two':
-                # Plot first structure
-                StructureVisualizer._plot_atoms_3d(
-                    fig=self.figure,
-                    ax=self.ax,
-                    coordinates=self._current_data['coordinates_first'],
-                    structure_visual_params=self._current_data['structure_visual_params_first'],
-                    label=self._current_data['label_first'],
-                    to_build_bonds=self._plot_params.to_build_bonds,
-                    to_set_equal_scale=self._plot_params.to_set_equal_scale,
-                    to_show_coordinates=self._plot_params.to_show_coordinates,
-                    to_show_indexes=self._plot_params.to_show_indexes,
-                    to_show_grid=self._plot_params.to_show_grid,
-                    num_of_min_distances=self._plot_params.num_of_min_distances,
-                    skip_first_distances=self._plot_params.skip_first_distances,
-                    is_interactive_mode=False,
-                    coordinate_limits=coordinate_limits,
-                    to_build_edge_vertical_lines=self._plot_params.to_build_edge_vertical_lines,
-                    to_show_dists_to_plane=self._plot_params.to_show_dists_to_plane,
-                    to_show_dists_to_edges=self._plot_params.to_show_dists_to_edges,
-                    to_show_channel_angles=self._plot_params.to_show_channel_angles,
-                    to_show_plane_lengths=self._plot_params.to_show_plane_lengths,
-                )
-
-                # Plot second structure
-                StructureVisualizer._plot_atoms_3d(
-                    fig=self.figure,
-                    ax=self.ax,
-                    coordinates=self._current_data['coordinates_second'],
-                    structure_visual_params=self._current_data['structure_visual_params_second'],
-                    label=self._current_data['label_second'],
-                    to_build_bonds=False,  # Usually only first structure has bonds
-                    to_set_equal_scale=False,  # Only apply once
-                    to_show_coordinates=self._plot_params.to_show_coordinates,
-                    to_show_indexes=self._plot_params.to_show_indexes,
-                    to_show_grid=False,  # Only apply once
-                    num_of_min_distances=1,
-                    skip_first_distances=0,
-                    is_interactive_mode=self._plot_params.is_interactive_mode,
-                    coordinate_limits=coordinate_limits,
-                    to_build_edge_vertical_lines=self._plot_params.to_build_edge_vertical_lines,
-                    to_show_dists_to_plane=self._plot_params.to_show_dists_to_plane,
-                    to_show_dists_to_edges=self._plot_params.to_show_dists_to_edges,
-                    to_show_channel_angles=self._plot_params.to_show_channel_angles,
-                    to_show_plane_lengths=self._plot_params.to_show_plane_lengths,
-                )
-
             elif data_type == 'multiple':
-                coordinates_list = self._current_data['coordinates_list']
-                structure_visual_params_list = self._current_data['structure_visual_params_list']
-                labels_list = self._current_data['labels_list']
+                coordinates_list: list[NDArray[np.float64]] = self._current_data['coordinates_list']
+                structure_visual_params_list: list[IStructureVisualParams] = (
+                    self._current_data['structure_visual_params_list'][:len(coordinates_list)]
+                )
+                labels_list: list[str | None] = self._current_data['labels_list']
 
                 for i, (coordinates, visual_params, label) in enumerate(
                         zip(coordinates_list, structure_visual_params_list, labels_list)):
@@ -546,11 +514,12 @@ class PlotWindow(ctk.CTkToplevel, IPlotWindow):
                         coordinates=coordinates,
                         structure_visual_params=visual_params,
                         label=label,
-                        to_build_bonds=self._plot_params.to_build_bonds if i == 0 else False,  # Only first structure gets bonds
-                        to_set_equal_scale=self._plot_params.to_set_equal_scale if i == 0 else False,  # Only apply once
+                        to_build_bonds=self._plot_params.to_build_bonds if i == 0 else False,
+                        to_set_equal_scale=self._plot_params.to_set_equal_scale if i == 0 else False,
                         to_show_coordinates=self._plot_params.to_show_coordinates,
                         to_show_indexes=self._plot_params.to_show_indexes,
-                        to_show_grid=self._plot_params.to_show_grid if i == 0 else False,  # Only apply once
+                        to_show_grid=self._plot_params.to_show_grid if i == len(
+                            coordinates_list) - 1 else None,
                         num_of_min_distances=self._plot_params.num_of_min_distances,
                         skip_first_distances=self._plot_params.skip_first_distances,
                         is_interactive_mode=self._plot_params.is_interactive_mode if label != "Carbon" else False,
@@ -569,7 +538,7 @@ class PlotWindow(ctk.CTkToplevel, IPlotWindow):
             self.ax.set_title(self._plot_params.title)
 
             # Add legend if enabled and there are multiple structures or labels
-            if self._plot_params.to_show_legend and data_type in ['two', 'multiple']:
+            if self._plot_params.to_show_legend and data_type in ['multiple']:
                 self.ax.legend(labelspacing=1.1)
 
             # Restore camera state
@@ -594,7 +563,7 @@ class PlotWindow(ctk.CTkToplevel, IPlotWindow):
 
     def set_plot_params(self, params: PlotParams) -> None:
         """Set plot parameters and refresh display."""
-        self._plot_params = params
+        self._plot_params: PlotParams = params
         self.controls.load_ui_from_params(params)
         self.refresh_plot()
 

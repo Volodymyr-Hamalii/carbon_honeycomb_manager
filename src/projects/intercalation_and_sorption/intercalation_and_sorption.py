@@ -12,6 +12,7 @@ from src.interfaces import (
     ICarbonHoneycombChannel,
     PMvpParams,
     PCoordinateLimits,
+    IStructureVisualParams,
 )
 from src.entities import Points, CoordinateLimits
 from src.services import (
@@ -297,33 +298,16 @@ class IntercalationAndSorption:
         to_show_inter_atoms_indexes: bool = params.to_show_inter_atoms_indexes
         inter_label: str = subproject_dir.title()
 
-        if params.num_of_inter_atoms_layers == 1:
-            StructureVisualizer.show_two_structures(
-                coordinates_first=carbon_channel_points,
-                coordinates_second=inter_atoms,
-                title=title,
-                to_build_bonds=params.to_build_bonds,
-                num_of_min_distances=params.bonds_num_of_min_distances,
-                skip_first_distances=params.bonds_skip_first_distances,
-                to_show_coordinates=params.to_show_coordinates,
-                to_show_indexes_first=False,
-                to_show_indexes_second=to_show_inter_atoms_indexes,
-                coordinate_limits_first=coordinate_limits,
-                coordinate_limits_second=coordinate_limits,
-                structure_visual_params_first=VisualizationParams.carbon,
-                structure_visual_params_second=VisualizationParams.intercalated_atoms_1_layer,
-            )
-        else:
-            # Handle multiple layers (2 or more)
-            IntercalationAndSorption._show_multi_layer_structures(
-                carbon_channel_points=carbon_channel_points,
-                inter_atoms=inter_atoms,
-                coordinate_limits=coordinate_limits,
-                inter_label=inter_label,
-                to_show_inter_atoms_indexes=to_show_inter_atoms_indexes,
-                params=params,
-                title=title,
-            )
+        # Handle multiple layers (2 or more)
+        IntercalationAndSorption._show_multi_layer_structures(
+            carbon_channel_points=carbon_channel_points,
+            inter_atoms=inter_atoms,
+            coordinate_limits=coordinate_limits,
+            inter_label=inter_label,
+            to_show_inter_atoms_indexes=to_show_inter_atoms_indexes,
+            params=params,
+            title=title,
+        )
 
     @staticmethod
     def _show_multi_layer_structures(
@@ -346,10 +330,12 @@ class IntercalationAndSorption:
         coordinates_list.extend([inter_atoms[indices] for indices in layer_indices])
 
         # Prepare visualization parameters
-        structure_visual_params_list: list = [VisualizationParams.carbon]
-        structure_visual_params_list.extend(
-            IntercalationAndSorption._get_layer_visual_params(params.num_of_inter_atoms_layers)
-        )
+        structure_visual_params_list: list[IStructureVisualParams] = [
+            VisualizationParams.carbon,
+            VisualizationParams.intercalated_atoms_1_layer,
+            VisualizationParams.intercalated_atoms_2_layer,
+            VisualizationParams.intercalated_atoms_3_layer,
+        ][:params.num_of_inter_atoms_layers+1]
 
         # Prepare labels
         labels_list: list[str] = ["C"] + [inter_label] * params.num_of_inter_atoms_layers
@@ -403,27 +389,6 @@ class IntercalationAndSorption:
             layer_indices[layer_idx].extend(indices.tolist())
 
         return layer_indices
-
-    @staticmethod
-    def _get_layer_visual_params(num_layers: int) -> list:
-        """Get visualization parameters for intercalated atom layers."""
-        layer_params_map: dict[int, list] = {
-            1: [VisualizationParams.intercalated_atoms_1_layer],
-            2: [
-                VisualizationParams.intercalated_atoms_1_layer,
-                VisualizationParams.intercalated_atoms_2_layer,
-            ],
-            3: [
-                VisualizationParams.intercalated_atoms_1_layer,
-                VisualizationParams.intercalated_atoms_2_layer,
-                VisualizationParams.intercalated_atoms_3_layer,
-            ],
-        }
-
-        if num_layers not in layer_params_map:
-            raise NotImplementedError(f"Number of layers {num_layers} is not implemented")
-
-        return layer_params_map[num_layers]
 
     @staticmethod
     def _split_atoms_along_z_axis(

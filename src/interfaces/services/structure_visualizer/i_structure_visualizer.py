@@ -31,27 +31,6 @@ class IStructureVisualizer(ABC):
 
     @classmethod
     @abstractmethod
-    def show_two_structures(
-            cls,
-            coordinates_first: NDArray[np.float64],
-            coordinates_second: NDArray[np.float64],
-            visual_params_first: IVisualizationParams,
-            visual_params_second: IVisualizationParams,
-            coordinate_limits_first: PCoordinateLimits | None,
-            coordinate_limits_second: PCoordinateLimits | None,
-            to_show_indexes_first: bool | None,
-            to_show_indexes_second: bool | None,
-            to_build_bonds: bool,
-            to_show_coordinates: bool | None,
-            title: str | None,
-            is_interactive_mode: bool,
-            num_of_min_distances: int,
-            skip_first_distances: int,
-    ) -> None:
-        ...
-
-    @classmethod
-    @abstractmethod
     def show_structures(
             cls,
             coordinates_list: list[NDArray[np.float64]],
