@@ -3,18 +3,19 @@ from typing import Any, Callable
 import pandas as pd
 
 from src.interfaces.mvp.general import IGeneralView
+from src.interfaces.entities import PMvpParams
 
 
 class IShowInitDataView(IGeneralView):
     """Interface for show init data view."""
 
     @abstractmethod
-    def set_visualization_settings(self, settings: dict[str, Any]) -> None:
+    def set_visualization_settings(self, settings: PMvpParams) -> None:
         """Set visualization settings in the UI."""
         ...
 
     @abstractmethod
-    def get_visualization_settings(self) -> dict[str, Any]:
+    def get_visualization_settings(self) -> PMvpParams | None:
         """Get visualization settings from the UI."""
         ...
 

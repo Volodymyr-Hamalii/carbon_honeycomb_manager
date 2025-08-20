@@ -242,7 +242,7 @@ class InitDataPresenter(GeneralPresenter, IShowInitDataPresenter):
                 "structure_dir": structure_dir,
             }
 
-            files = self.get_available_files(project_dir, subproject_dir, structure_dir)
+            files: list[str] = self.get_available_files(project_dir, subproject_dir, structure_dir)
             self.view.set_available_files(files)
 
             # Load UI from current MVP parameters
@@ -282,20 +282,16 @@ class InitDataPresenter(GeneralPresenter, IShowInitDataPresenter):
                 self.model.set_mvp_params(params)
 
             # Get visualization settings from view
-            viz_settings: dict[str, Any] = self.view.get_visualization_settings()
+            viz_settings: PMvpParams | None = self.view.get_visualization_settings()
             coord_limits: dict[str, float] = self.view.get_coordinate_limits()
 
             # Update params with view settings
-            if "to_build_bonds" in viz_settings:
-                params.to_build_bonds = viz_settings["to_build_bonds"]
-            if "to_show_coordinates" in viz_settings:
-                params.to_show_coordinates = viz_settings["to_show_coordinates"]
-            if "to_show_c_indexes" in viz_settings:
-                params.to_show_c_indexes = viz_settings["to_show_c_indexes"]
-            if "bonds_num_of_min_distances" in viz_settings:
-                params.bonds_num_of_min_distances = viz_settings["bonds_num_of_min_distances"]
-            if "bonds_skip_first_distances" in viz_settings:
-                params.bonds_skip_first_distances = viz_settings["bonds_skip_first_distances"]
+            if viz_settings:
+                params.to_build_bonds = viz_settings.to_build_bonds
+                params.to_show_coordinates = viz_settings.to_show_coordinates
+                params.to_show_c_indexes = viz_settings.to_show_c_indexes
+                params.bonds_num_of_min_distances = viz_settings.bonds_num_of_min_distances
+                params.bonds_skip_first_distances = viz_settings.bonds_skip_first_distances
 
             # Update coordinate limits (directly on params, not on frozen coordinate_limits property)
             if coord_limits:
@@ -338,20 +334,16 @@ class InitDataPresenter(GeneralPresenter, IShowInitDataPresenter):
                 self.model.set_mvp_params(params)
 
             # Get visualization settings from view
-            viz_settings = self.view.get_visualization_settings()
-            coord_limits = self.view.get_coordinate_limits()
+            viz_settings: PMvpParams | None = self.view.get_visualization_settings()
+            coord_limits: dict[str, float] = self.view.get_coordinate_limits()
 
             # Update params with view settings
-            if "to_build_bonds" in viz_settings:
-                params.to_build_bonds = viz_settings["to_build_bonds"]
-            if "to_show_coordinates" in viz_settings:
-                params.to_show_coordinates = viz_settings["to_show_coordinates"]
-            if "to_show_c_indexes" in viz_settings:
-                params.to_show_c_indexes = viz_settings["to_show_c_indexes"]
-            if "bonds_num_of_min_distances" in viz_settings:
-                params.bonds_num_of_min_distances = viz_settings["bonds_num_of_min_distances"]
-            if "bonds_skip_first_distances" in viz_settings:
-                params.bonds_skip_first_distances = viz_settings["bonds_skip_first_distances"]
+            if viz_settings:
+                params.to_build_bonds = viz_settings.to_build_bonds
+                params.to_show_coordinates = viz_settings.to_show_coordinates
+                params.to_show_c_indexes = viz_settings.to_show_c_indexes
+                params.bonds_num_of_min_distances = viz_settings.bonds_num_of_min_distances
+                params.bonds_skip_first_distances = viz_settings.bonds_skip_first_distances
 
             # Update coordinate limits (directly on params, not on frozen coordinate_limits property)
             if coord_limits:
@@ -394,20 +386,16 @@ class InitDataPresenter(GeneralPresenter, IShowInitDataPresenter):
                 self.model.set_mvp_params(params)
 
             # Get visualization settings from view
-            viz_settings = self.view.get_visualization_settings()
-            coord_limits = self.view.get_coordinate_limits()
+            viz_settings: PMvpParams | None = self.view.get_visualization_settings()
+            coord_limits: dict[str, float] = self.view.get_coordinate_limits()
 
             # Update params with view settings
-            if "to_build_bonds" in viz_settings:
-                params.to_build_bonds = viz_settings["to_build_bonds"]
-            if "to_show_coordinates" in viz_settings:
-                params.to_show_coordinates = viz_settings["to_show_coordinates"]
-            if "to_show_c_indexes" in viz_settings:
-                params.to_show_c_indexes = viz_settings["to_show_c_indexes"]
-            if "bonds_num_of_min_distances" in viz_settings:
-                params.bonds_num_of_min_distances = viz_settings["bonds_num_of_min_distances"]
-            if "bonds_skip_first_distances" in viz_settings:
-                params.bonds_skip_first_distances = viz_settings["bonds_skip_first_distances"]
+            if viz_settings:
+                params.to_build_bonds = viz_settings.to_build_bonds
+                params.to_show_coordinates = viz_settings.to_show_coordinates
+                params.to_show_c_indexes = viz_settings.to_show_c_indexes
+                params.bonds_num_of_min_distances = viz_settings.bonds_num_of_min_distances
+                params.bonds_skip_first_distances = viz_settings.bonds_skip_first_distances
 
             # Update coordinate limits (directly on params, not on frozen coordinate_limits property)
             if coord_limits:
@@ -459,17 +447,8 @@ class InitDataPresenter(GeneralPresenter, IShowInitDataPresenter):
     def _load_ui_from_params(self) -> None:
         """Load UI components from current MVP parameters."""
         try:
-            params = self.model.get_mvp_params()
-
-            # Load visualization settings
-            viz_settings = {
-                "to_build_bonds": params.to_build_bonds,
-                "to_show_coordinates": params.to_show_coordinates,
-                "to_show_c_indexes": params.to_show_c_indexes,
-                "bonds_num_of_min_distances": params.bonds_num_of_min_distances,
-                "bonds_skip_first_distances": params.bonds_skip_first_distances,
-            }
-            self.view.set_visualization_settings(viz_settings)
+            params: PMvpParams = self.model.get_mvp_params()
+            self.view.set_visualization_settings(params)
 
             # Load coordinate limits
             coord_limits: dict[str, float] = {

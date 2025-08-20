@@ -3,7 +3,7 @@ import customtkinter as ctk
 from typing import Any, Callable
 import pandas as pd
 
-from src.interfaces import IShowInitDataView
+from src.interfaces import IShowInitDataView, PMvpParams
 from src.mvp.general import GeneralView
 from src.ui.components import (
     Button,
@@ -25,12 +25,14 @@ class InitDataView(GeneralView, IShowInitDataView):
     def __init__(self) -> None:
         super().__init__()
         self.title("Carbon Honeycomb Init Data Viewer")
-        self.geometry("600x800")
+        self.geometry("600x500")
 
         # Context variables
         self.project_dir = ""
         self.subproject_dir = ""
         self.structure_dir = ""
+
+        self.settings: PMvpParams | None = None
 
         # UI template
         self.template = WindowGeneralTemplate()
@@ -102,12 +104,12 @@ class InitDataView(GeneralView, IShowInitDataView):
 
         # Create input fields using template helper (hidden - moved to PlotWindow)
         # self.bonds_num_of_min_distances_input = self.template.pack_input_field(
-        #     viz_frame, 
+        #     viz_frame,
         #     "Number of min distances for bonds",
         #     change_callback=self._on_bonds_num_changed
         # )
         # self.bonds_skip_first_distances_input = self.template.pack_input_field(
-        #     viz_frame, 
+        #     viz_frame,
         #     "Skip first distances for bonds",
         #     change_callback=self._on_bonds_skip_changed
         # )
@@ -117,69 +119,17 @@ class InitDataView(GeneralView, IShowInitDataView):
         #     main_frame,
         #     change_callback=self._on_coordinate_limits_changed
         # )
-        
+
         # Call parent set_ui to refresh scrolling
         super().set_ui()
 
-    def set_visualization_settings(self, settings: dict[str, Any]) -> None:
+    def set_visualization_settings(self, settings: PMvpParams) -> None:
         """Set visualization settings in the UI."""
-        if self.to_build_bonds_checkbox and "to_build_bonds" in settings:
-            self.to_build_bonds_checkbox.set_value(settings["to_build_bonds"])
+        self.settings = settings
 
-        if self.to_show_coordinates_checkbox and "to_show_coordinates" in settings:
-            self.to_show_coordinates_checkbox.set_value(settings["to_show_coordinates"])
-
-        if self.to_show_c_indexes_checkbox and "to_show_c_indexes" in settings:
-            self.to_show_c_indexes_checkbox.set_value(settings["to_show_c_indexes"])
-
-        if self.bonds_num_of_min_distances_input and "bonds_num_of_min_distances" in settings:
-            self.bonds_num_of_min_distances_input.set_value(str(settings["bonds_num_of_min_distances"]))
-
-        if self.bonds_skip_first_distances_input and "bonds_skip_first_distances" in settings:
-            self.bonds_skip_first_distances_input.set_value(str(settings["bonds_skip_first_distances"]))
-
-    def get_visualization_settings(self) -> dict[str, Any]:
+    def get_visualization_settings(self) -> PMvpParams | None:
         """Get visualization settings from the UI."""
-        # Return empty dict since visualization controls are now in PlotWindow
-        settings: dict[str, Any] = {}
-
-        # Controls moved to PlotWindow - return default values
-        if self.to_build_bonds_checkbox:
-            settings["to_build_bonds"] = self.to_build_bonds_checkbox.get()
-        else:
-            settings["to_build_bonds"] = True
-
-        if self.to_show_coordinates_checkbox:
-            settings["to_show_coordinates"] = self.to_show_coordinates_checkbox.get()
-        else:
-            settings["to_show_coordinates"] = False
-
-        if self.to_show_c_indexes_checkbox:
-            settings["to_show_c_indexes"] = self.to_show_c_indexes_checkbox.get()
-        else:
-            settings["to_show_c_indexes"] = False
-
-        if self.bonds_num_of_min_distances_input:
-            try:
-                settings["bonds_num_of_min_distances"] = int(
-                    self.bonds_num_of_min_distances_input.get_value()
-                )
-            except ValueError:
-                settings["bonds_num_of_min_distances"] = 5
-        else:
-            settings["bonds_num_of_min_distances"] = 5
-
-        if self.bonds_skip_first_distances_input:
-            try:
-                settings["bonds_skip_first_distances"] = int(
-                    self.bonds_skip_first_distances_input.get_value()
-                )
-            except ValueError:
-                settings["bonds_skip_first_distances"] = 0
-        else:
-            settings["bonds_skip_first_distances"] = 0
-
-        return settings
+        return self.settings
 
     def set_coordinate_limits(self, limits: dict[str, float]) -> None:
         """Set coordinate limits in the UI."""
@@ -192,7 +142,7 @@ class InitDataView(GeneralView, IShowInitDataView):
         # Coordinate limits controls moved to PlotWindow - return default values
         if self.coordinate_limits_template:
             return self.coordinate_limits_template.get_coordinate_limits()
-        
+
         # Return default coordinate limits
         return {
             "x_min": -float('inf'),
