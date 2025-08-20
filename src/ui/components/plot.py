@@ -215,24 +215,24 @@ class PlotControls(ctk.CTkFrame, IPlotControls):
 
     def _parse_float(self, value: str, default: float) -> float:
         """Parse float value, handling 'inf' and invalid inputs."""
-        controls_logger.info(f"_parse_float: parsing '{value}' (type: {type(value)}) with default {default}")
+        controls_logger.debug(f"_parse_float: parsing '{value}' (type: {type(value)}) with default {default}")
 
         if not value or value.strip() == "":
-            controls_logger.info(f"_parse_float: empty value, returning default {default}")
+            controls_logger.debug(f"_parse_float: empty value, returning default {default}")
             return default
         elif value.lower() in ['inf', '+inf']:
-            controls_logger.info(f"_parse_float: positive infinity")
+            controls_logger.debug(f"_parse_float: positive infinity")
             return float('inf')
         elif value.lower() == '-inf':
-            controls_logger.info(f"_parse_float: negative infinity")
+            controls_logger.debug(f"_parse_float: negative infinity")
             return -float('inf')
         else:
             try:
                 result = float(value)
-                controls_logger.info(f"_parse_float: successfully parsed '{value}' as {result}")
+                controls_logger.debug(f"_parse_float: successfully parsed '{value}' as {result}")
                 return result
             except ValueError:
-                controls_logger.info(f"_parse_float: failed to parse '{value}', returning default {default}")
+                controls_logger.debug(f"_parse_float: failed to parse '{value}', returning default {default}")
                 return default
 
     def set_on_params_changed_callback(self, callback: Callable[[PlotParams], None]) -> None:
