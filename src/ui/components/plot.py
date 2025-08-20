@@ -495,6 +495,26 @@ class PlotWindow(ctk.CTkToplevel, IPlotWindow):
                     self._current_data['structure_visual_params_list'][:len(coordinates_list)]
                 )
                 labels_list: list[str | None] = self._current_data['labels_list']
+                
+                # Apply intercalated atom layer splitting based on current parameters
+                coordinates_list, labels_list = self._split_intercalated_atoms_into_layers(
+                    coordinates_list, labels_list, self._plot_params.num_of_inter_atoms_layers
+                )
+                
+                # Update structure_visual_params_list to match new coordinates_list length
+                if len(coordinates_list) > len(structure_visual_params_list):
+                    # Add more visual params for additional layers
+                    from src.services import VisualizationParams
+                    base_params_list: list[IStructureVisualParams] = [
+                        VisualizationParams.carbon,
+                        VisualizationParams.intercalated_atoms_1_layer,
+                        VisualizationParams.intercalated_atoms_2_layer,
+                        VisualizationParams.intercalated_atoms_3_layer,
+                    ]
+                    # Extend with repetition of the last intercalated params if needed
+                    while len(structure_visual_params_list) < len(coordinates_list):
+                        # Use the last intercalated layer params for additional layers
+                        structure_visual_params_list.append(base_params_list[-1])
 
                 for i, (coordinates, visual_params, label) in enumerate(
                         zip(coordinates_list, structure_visual_params_list, labels_list)):
@@ -599,3 +619,103 @@ class PlotWindow(ctk.CTkToplevel, IPlotWindow):
                 )
         except Exception as e:
             logger.warning(f"Could not restore plot state: {e}")
+
+    def _split_intercalated_atoms_into_layers(
+        self,
+        coordinates_list: list[NDArray[np.float64]],
+        labels_list: list[str | None],
+        num_layers: int
+    ) -> tuple[list[NDArray[np.float64]], list[str | None]]:
+        """Split intercalated atoms into multiple layers based on z-coordinates."""
+        try:
+            # If no intercalated atoms (only carbon), return as-is
+            if len(coordinates_list) <= 1:
+                logger.info("No intercalated atoms to split into layers")
+                return coordinates_list, labels_list
+
+            # If num_layers is 1, return as-is (don't split)
+            if num_layers == 1:
+                logger.info("num_layers=1, keeping all intercalated atoms together")
+                return coordinates_list, labels_list
+
+            # Extract carbon coordinates (first item) and intercalated atoms (second item)
+            carbon_coords: NDArray[np.float64] = coordinates_list[0]
+            carbon_label: str | None = labels_list[0]
+            intercalated_coords: NDArray[np.float64] = coordinates_list[1]
+
+            logger.info(f"Splitting {len(intercalated_coords)} intercalated atoms into {num_layers} layers")
+
+            # Get layer indices using the correct logic from intercalation project
+            layer_indices: list[list[int]] = self._get_layer_indices(intercalated_coords, num_layers)
+
+            # Create new coordinates and labels lists
+            new_coords_list: list[NDArray[np.float64]] = [carbon_coords]
+            new_labels_list: list[str | None] = [carbon_label]
+
+            # Add layers based on indices
+            for i, indices in enumerate(layer_indices):
+                if indices:  # Only add if there are atoms in this layer
+                    layer_atoms: NDArray[np.float64] = intercalated_coords[indices]
+                    new_coords_list.append(layer_atoms)
+                    new_labels_list.append(f"Intercalated Layer {i+1}")
+                    logger.info(f"Layer {i+1}: {len(layer_atoms)} atoms")
+
+            # Verify all atoms are included
+            total_atoms_check = len(intercalated_coords)
+            total_atoms_distributed = sum(len(coords) for coords in new_coords_list[1:])  # Skip carbon
+            logger.info(f"Successfully split into {len(new_coords_list)-1} intercalated layers")
+            logger.info(f"Atom distribution check: {total_atoms_distributed}/{total_atoms_check} atoms distributed")
+            
+            if total_atoms_distributed != total_atoms_check:
+                logger.error(f"ATOM COUNT MISMATCH: Expected {total_atoms_check}, distributed {total_atoms_distributed}")
+                # Return original data to avoid losing atoms
+                return coordinates_list, labels_list
+            
+            return new_coords_list, new_labels_list
+
+        except Exception as e:
+            logger.error(f"Error splitting intercalated atoms into layers: {e}")
+            # Return original data on error
+            return coordinates_list, labels_list
+
+    def _get_layer_indices(
+        self,
+        inter_atoms: NDArray[np.float64],
+        num_layers: int
+    ) -> list[list[int]]:
+        """Get indices for each layer by splitting atoms along Z-axis."""
+        if num_layers > 3:
+            raise NotImplementedError(f"Number of layers {num_layers} is not implemented")
+
+        al_groups_with_indices: list[tuple[NDArray[np.float64], NDArray[np.int64]]] = (
+            self._split_atoms_along_z_axis(inter_atoms)
+        )
+
+        # Initialize layer indices lists
+        layer_indices: list[list[int]] = [[] for _ in range(num_layers)]
+
+        # Distribute indices among layers
+        for i, (group, indices) in enumerate(al_groups_with_indices):
+            layer_idx: int = i % num_layers
+            layer_indices[layer_idx].extend(indices.tolist())
+
+        return layer_indices
+
+    def _split_atoms_along_z_axis(
+        self,
+        coordinates: NDArray[np.float64]
+    ) -> list[tuple[NDArray[np.float64], NDArray[np.int64]]]:
+        """Returns grouped coordinates with their original indices, grouped by rounded Z coordinate."""
+        # Round Z values to the nearest integer or a desired precision
+        rounded_z_values: NDArray[np.float64] = np.round(coordinates[:, 2], decimals=1)
+
+        # Get unique rounded Z values
+        unique_z_values: NDArray[np.float64] = np.unique(rounded_z_values)
+
+        # Group points and their indices by their rounded Z coordinate
+        grouped_coordinates: list[tuple[NDArray[np.float64], NDArray[np.int64]]] = [
+            (coordinates[rounded_z_values == z], np.where(rounded_z_values == z)[0])
+            for z in unique_z_values
+        ]
+
+        return grouped_coordinates

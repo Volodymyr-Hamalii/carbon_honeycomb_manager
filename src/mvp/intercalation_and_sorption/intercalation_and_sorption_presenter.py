@@ -67,6 +67,9 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
                 logger.warning("No structures to display")
                 return
 
+            # Get MVP parameters to access plot settings (pass to Plot window)
+            mvp_params: PMvpParams = self.model.get_mvp_params()
+
             # Create visual parameters for each structure
             visual_params_list: list[IStructureVisualParams] = [
                 VisualizationParams.carbon,
@@ -76,15 +79,12 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
             ]
 
             # Create and show plot window
-            mvp_params: PMvpParams = self.model.get_mvp_params()
-            logger.info(f">>> plot_inter_in_c_structure mvp_params: {mvp_params}")
-
             plot_window: PlotWindow = PlotWindowFactory.show_structures_in_new_window(
                 master=self.view,
                 coordinates_list=coords_list,
                 structure_visual_params_list=visual_params_list,
-                labels_list=labels_list,
-                mvp_params=self.model.get_mvp_params(),
+                labels_list=labels_list,  # type: ignore
+                mvp_params=mvp_params,
                 title=f"Intercalated Structure - {structure_dir}",
             )
 
