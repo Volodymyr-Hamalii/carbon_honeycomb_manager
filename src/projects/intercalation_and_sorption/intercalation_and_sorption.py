@@ -41,46 +41,6 @@ logger = Logger("IntercalationAndSorption")
 
 class IntercalationAndSorption:
     """Intercalation and sorption analysis functionality."""
-
-    @classmethod
-    def plot_inter_in_c_structure(
-        cls,
-        project_dir: str,
-        subproject_dir: str,
-        structure_dir: str,
-        params: PMvpParams,
-    ) -> None:
-        """Plot intercalated atoms in carbon structure."""
-        atom_params: ConstantsAtomParams = ATOM_PARAMS_MAP[subproject_dir.lower()]
-
-        carbon_channel: ICarbonHoneycombChannel = CarbonHoneycombModeller.build_carbon_channel(
-            project_dir, subproject_dir, structure_dir, file_name=Constants.file_names.INIT_DAT_FILE
-        )
-
-        inter_atoms_plane_coordinates: IPoints = InterAtomsParser.get_inter_atoms_plane_coordinates(
-            project_dir=project_dir,
-            subproject_dir=subproject_dir,
-            structure_dir=structure_dir,
-            carbon_channel=carbon_channel,
-            number_of_planes=params.number_of_planes,
-            atom_params=atom_params,
-            file_name=params.file_name,
-            to_replace_nearby_atoms=params.to_replace_nearby_atoms,
-            to_remove_too_close_atoms=params.to_remove_too_close_atoms,
-        )
-
-        plane_points: NDArray[np.float64] = np.vstack(
-            [carbon_channel.planes[i].points for i in range(params.number_of_planes)]
-        )
-
-        cls._show_structures(
-            carbon_channel_points=plane_points,
-            inter_atoms=inter_atoms_plane_coordinates.points,
-            subproject_dir=subproject_dir,
-            title=structure_dir,
-            params=params,
-        )
-
     @staticmethod
     def generate_inter_plane_coordinates_file(
         project_dir: str,
@@ -224,13 +184,7 @@ class IntercalationAndSorption:
             # Build all planes
             carbon_channel_points: NDArray[np.float64] = carbon_channel.points
 
-        IntercalationAndSorption._show_structures(
-            carbon_channel_points=carbon_channel_points,
-            inter_atoms=inter_atoms_coordinates.points,
-            subproject_dir=subproject_dir,
-            title=structure_dir,
-            params=params,
-        )
+        raise NotImplementedError("Not implemented fully")
 
     @staticmethod
     def get_inter_chc_constants(
@@ -276,138 +230,6 @@ class IntercalationAndSorption:
         ).reset_index().rename(columns={'index': 'Name'})
 
         return intercalation_constants_df
-
-    @staticmethod
-    def _show_structures(
-        carbon_channel_points: NDArray[np.float64],
-        inter_atoms: NDArray[np.float64],
-        subproject_dir: str,
-        params: PMvpParams,
-        title: str | None = None,
-    ) -> None:
-        """Show carbon and intercalated structures with visualization."""
-        coordinate_limits: PCoordinateLimits = CoordinateLimits(
-            x_min=params.x_min,
-            x_max=params.x_max,
-            y_min=params.y_min,
-            y_max=params.y_max,
-            z_min=params.z_min,
-            z_max=params.z_max,
-        )
-
-        to_show_inter_atoms_indexes: bool = params.to_show_inter_atoms_indexes
-        inter_label: str = subproject_dir.title()
-
-        # Handle multiple layers (2 or more)
-        IntercalationAndSorption._show_multi_layer_structures(
-            carbon_channel_points=carbon_channel_points,
-            inter_atoms=inter_atoms,
-            coordinate_limits=coordinate_limits,
-            inter_label=inter_label,
-            to_show_inter_atoms_indexes=to_show_inter_atoms_indexes,
-            params=params,
-            title=title,
-        )
-
-    @staticmethod
-    def _show_multi_layer_structures(
-        carbon_channel_points: NDArray[np.float64],
-        inter_atoms: NDArray[np.float64],
-        coordinate_limits: PCoordinateLimits,
-        inter_label: str,
-        to_show_inter_atoms_indexes: bool,
-        params: PMvpParams,
-        title: str | None = None,
-    ) -> None:
-        """Show structures with multiple intercalated atom layers."""
-        # Split atoms into layers
-        layer_indices: list[list[int]] = IntercalationAndSorption._get_layer_indices(
-            inter_atoms, params.num_of_inter_atoms_layers
-        )
-
-        # Prepare coordinates list
-        coordinates_list: list[NDArray[np.float64]] = [carbon_channel_points]
-        coordinates_list.extend([inter_atoms[indices] for indices in layer_indices])
-
-        # Prepare visualization parameters
-        structure_visual_params_list: list[IStructureVisualParams] = [
-            VisualizationParams.carbon,
-            VisualizationParams.intercalated_atoms_1_layer,
-            VisualizationParams.intercalated_atoms_2_layer,
-            VisualizationParams.intercalated_atoms_3_layer,
-        ][:params.num_of_inter_atoms_layers+1]
-
-        # Prepare labels
-        labels_list: list[str] = ["C"] + [inter_label] * params.num_of_inter_atoms_layers
-
-        # Prepare bonds settings
-        to_build_bonds_list: list[bool] = [params.to_build_bonds] + [False] * params.num_of_inter_atoms_layers
-
-        # Prepare index display settings
-        to_show_indexes_list: list[bool] = [False] + [to_show_inter_atoms_indexes] * params.num_of_inter_atoms_layers
-
-        # Prepare custom indices
-        custom_indices_list: list[list[int] | None] = [None] + layer_indices
-
-        # Prepare coordinate limits
-        num_structures: int = 1 + params.num_of_inter_atoms_layers
-        coordinate_limits_list: list[PCoordinateLimits] = [coordinate_limits] * num_structures
-
-        StructureVisualizer.show_structures(
-            coordinates_list=coordinates_list,
-            structure_visual_params_list=structure_visual_params_list,
-            labels_list=labels_list,  # type: ignore
-            to_build_bonds_list=to_build_bonds_list,
-            to_show_indexes_list=to_show_indexes_list,
-            title=title,
-            num_of_min_distances=params.bonds_num_of_min_distances,
-            skip_first_distances=params.bonds_skip_first_distances,
-            to_show_coordinates=params.to_show_coordinates,
-            custom_indices_list=custom_indices_list,
-            coordinate_limits_list=coordinate_limits_list,
-        )
-
-    @staticmethod
-    def _get_layer_indices(
-        inter_atoms: NDArray[np.float64],
-        num_layers: int
-    ) -> list[list[int]]:
-        """Get indices for each layer by splitting atoms along Z-axis."""
-        if num_layers > 3:
-            raise NotImplementedError(f"Number of layers {num_layers} is not implemented")
-
-        al_groups_with_indices: list[tuple[NDArray[np.float64], NDArray[np.int64]]] = (
-            IntercalationAndSorption._split_atoms_along_z_axis(inter_atoms)
-        )
-
-        # Initialize layer indices lists
-        layer_indices: list[list[int]] = [[] for _ in range(num_layers)]
-
-        # Distribute indices among layers
-        for i, (group, indices) in enumerate(al_groups_with_indices):
-            layer_idx: int = i % num_layers
-            layer_indices[layer_idx].extend(indices.tolist())
-
-        return layer_indices
-
-    @staticmethod
-    def _split_atoms_along_z_axis(
-        coordinates: NDArray[np.float64]
-    ) -> list[tuple[NDArray[np.float64], NDArray[np.int64]]]:
-        """Returns grouped coordinates with their original indices, grouped by rounded Z coordinate."""
-        # Round Z values to the nearest integer or a desired precision
-        rounded_z_values: NDArray[np.float64] = np.round(coordinates[:, 2], decimals=1)
-
-        # Get unique rounded Z values
-        unique_z_values: NDArray[np.float64] = np.unique(rounded_z_values)
-
-        # Group points and their indices by their rounded Z coordinate
-        grouped_coordinates: list[tuple[NDArray[np.float64], NDArray[np.int64]]] = [
-            (coordinates[rounded_z_values == z], np.where(rounded_z_values == z)[0])
-            for z in unique_z_values
-        ]
-
-        return grouped_coordinates
 
     @staticmethod
     def update_inter_channel_coordinates(
@@ -456,15 +278,16 @@ class IntercalationAndSorption:
 
         return path_to_file
 
-    @staticmethod
+    @classmethod
     def save_distance_matrix(
+        cls,
         project_dir: str,
         subproject_dir: str,
         structure_dir: str,
         params: PMvpParams,
     ) -> Path:
         """Save intercalated in channel details to an Excel file."""
-        data: pd.DataFrame = IntercalationAndSorption.get_distance_matrix(
+        data: pd.DataFrame = cls.get_distance_matrix(
             project_dir, subproject_dir, structure_dir, params
         )
 
@@ -566,12 +389,12 @@ class IntercalationAndSorption:
         """Plot intercalated atoms translated to all channels."""
         # This would show a visualization of all channels with intercalated atoms
         # For now, we'll use the existing plot functionality
-        IntercalationAndSorption.plot_inter_in_c_structure(
-            project_dir, subproject_dir, structure_dir, params
-        )
 
-    @staticmethod
+        raise NotImplementedError("Not implemented")
+
+    @classmethod
     def translate_inter_to_all_channels_generate_files(
+        cls,
         project_dir: str,
         subproject_dir: str,
         structure_dir: str,
@@ -582,12 +405,12 @@ class IntercalationAndSorption:
         atom_params: ConstantsAtomParams = ATOM_PARAMS_MAP[subproject_dir.lower()]
 
         # Generate the main coordinates file
-        coords_path: Path = IntercalationAndSorption.generate_inter_plane_coordinates_file(
+        coords_path: Path = cls.generate_inter_plane_coordinates_file(
             project_dir, subproject_dir, structure_dir, params
         )
 
         # Generate the details file
-        details_path: Path = IntercalationAndSorption.save_distance_matrix(
+        details_path: Path = cls.save_distance_matrix(
             project_dir, subproject_dir, structure_dir, params
         )
 
@@ -641,8 +464,9 @@ class IntercalationAndSorption:
         except Exception:
             return None
 
-    @staticmethod
+    @classmethod
     def get_translated_inter_coords(
+        cls,
         project_dir: str,
         subproject_dir: str,
         structure_dir: str,
@@ -652,7 +476,7 @@ class IntercalationAndSorption:
         try:
             # This would be the result of translation operations
             # For now, return the same as regular inter coords
-            return IntercalationAndSorption.get_inter_coords(
+            return cls.get_inter_coords(
                 project_dir, subproject_dir, structure_dir,
                 file_name=file_name
             )
