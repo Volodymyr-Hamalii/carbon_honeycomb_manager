@@ -491,30 +491,16 @@ class PlotWindow(ctk.CTkToplevel, IPlotWindow):
 
             elif data_type == 'multiple':
                 coordinates_list: list[NDArray[np.float64]] = self._current_data['coordinates_list']
-                structure_visual_params_list: list[IStructureVisualParams] = (
-                    self._current_data['structure_visual_params_list'][:len(coordinates_list)]
-                )
                 labels_list: list[str | None] = self._current_data['labels_list']
                 
                 # Apply intercalated atom layer splitting based on current parameters
                 coordinates_list, labels_list = self._split_intercalated_atoms_into_layers(
                     coordinates_list, labels_list, self._plot_params.num_of_inter_atoms_layers
                 )
-                
-                # Update structure_visual_params_list to match new coordinates_list length
-                if len(coordinates_list) > len(structure_visual_params_list):
-                    # Add more visual params for additional layers
-                    from src.services import VisualizationParams
-                    base_params_list: list[IStructureVisualParams] = [
-                        VisualizationParams.carbon,
-                        VisualizationParams.intercalated_atoms_1_layer,
-                        VisualizationParams.intercalated_atoms_2_layer,
-                        VisualizationParams.intercalated_atoms_3_layer,
-                    ]
-                    # Extend with repetition of the last intercalated params if needed
-                    while len(structure_visual_params_list) < len(coordinates_list):
-                        # Use the last intercalated layer params for additional layers
-                        structure_visual_params_list.append(base_params_list[-1])
+
+                structure_visual_params_list: list[IStructureVisualParams] = (
+                    self._current_data['structure_visual_params_list'][:len(coordinates_list)+1]
+                )
 
                 for i, (coordinates, visual_params, label) in enumerate(
                         zip(coordinates_list, structure_visual_params_list, labels_list)):

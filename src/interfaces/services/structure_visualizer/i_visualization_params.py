@@ -23,10 +23,15 @@ class IColors(Protocol):
 class IStructureVisualParams(Protocol):
     color_atoms: str
     color_bonds: str
+
+    as_shaded_3d_spheres: bool
+
     size: int
     bonds_width: float
+
     transparency: float
     transparency_bonds: float
+
     to_set_equal_scale: bool
     to_show_coordinates: bool
     to_show_indexes: bool

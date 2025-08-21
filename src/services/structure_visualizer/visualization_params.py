@@ -20,6 +20,7 @@ class StructureVisualParams(IStructureVisualParams):
     to_set_equal_scale: bool
     to_show_coordinates: bool
     to_show_indexes: bool
+    as_shaded_3d_spheres: bool
 
 
 @dataclass(frozen=True)
@@ -52,6 +53,7 @@ class VisualizationParams(IVisualizationParams):
     carbon = StructureVisualParams(
         color_atoms=Colors.carbon_colors.atoms_color,
         transparency=0.2,
+        as_shaded_3d_spheres=False,
         size=100,
 
         color_bonds=Colors.carbon_colors.bonds_color,
@@ -65,8 +67,9 @@ class VisualizationParams(IVisualizationParams):
 
     intercalated_atoms_1_layer = StructureVisualParams(
         color_atoms=Colors.intercalated_atoms_colors_1_layer.atoms_color,
-        transparency=0.5,
-        size=400,
+        transparency=0.99,
+        as_shaded_3d_spheres=True,
+        size=300,
 
         color_bonds=Colors.intercalated_atoms_colors_1_layer.bonds_color,
         transparency_bonds=1,
@@ -79,8 +82,9 @@ class VisualizationParams(IVisualizationParams):
 
     intercalated_atoms_2_layer = StructureVisualParams(
         color_atoms=Colors.intercalated_atoms_colors_2_layer.atoms_color,
-        transparency=0.5,
-        size=400,
+        transparency=0.99,
+        as_shaded_3d_spheres=True,
+        size=300,
 
         color_bonds=Colors.intercalated_atoms_colors_2_layer.bonds_color,
         transparency_bonds=1,
@@ -93,8 +97,9 @@ class VisualizationParams(IVisualizationParams):
 
     intercalated_atoms_3_layer = StructureVisualParams(
         color_atoms=Colors.intercalated_atoms_colors_3_layer.atoms_color,
-        transparency=0.5,
-        size=400,
+        transparency=0.99,
+        as_shaded_3d_spheres=True,
+        size=300,
 
         color_bonds=Colors.intercalated_atoms_colors_3_layer.bonds_color,
         transparency_bonds=1,

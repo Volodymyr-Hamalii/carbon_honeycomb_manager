@@ -6,6 +6,7 @@ from matplotlib.figure import Figure
 from matplotlib.axes import Axes
 from matplotlib.backend_bases import FigureManagerBase
 from matplotlib.collections import PathCollection
+import matplotlib.colors as mcolors
 
 from src.interfaces import (
     PCoordinateLimits,
@@ -333,14 +334,82 @@ class StructureVisualizer(IStructureVisualizer):
         #     y = np.clip(y, coordinate_limits.y_min, coordinate_limits.y_max)
         #     z = np.clip(z, coordinate_limits.z_min, coordinate_limits.z_max)
 
-        scatter: PathCollection = ax.scatter(
-            x, y, z,
-            c=structure_visual_params.color_atoms,
-            label=label if label else None,
-            s=structure_visual_params.size,  # type: ignore
-            alpha=structure_visual_params.transparency,
-            picker=True if is_interactive_mode else False,
-        )
+        scatter: PathCollection | None = None
+
+        if structure_visual_params.as_shaded_3d_spheres:
+            # Render atoms as shaded 3D spheres with thin outlines
+            try:
+                radius: float = structure_visual_params.size / 300
+
+                # # Sphere resolution adaptive to number of atoms
+                num_atoms: int = len(coordinates)
+                if num_atoms > 100:
+                    res: int = 10
+                elif num_atoms > 40:
+                    res = 14
+                else:
+                    res = 18
+
+                phi = np.linspace(0, np.pi, res)
+                theta = np.linspace(0, 2 * np.pi, 2 * res)
+                phi_grid, theta_grid = np.meshgrid(phi, theta)
+
+                # Unit sphere
+                unit_x = np.sin(phi_grid) * np.cos(theta_grid)
+                unit_y = np.sin(phi_grid) * np.sin(theta_grid)
+                unit_z = np.cos(phi_grid)
+
+                # Lighting
+                light_dir = np.array([1.0, 1.0, 2.0])
+                light_dir = light_dir / np.linalg.norm(light_dir)
+
+                base_rgba = mcolors.to_rgba(structure_visual_params.color_atoms,
+                                            alpha=structure_visual_params.transparency)
+                # edge_rgb = tuple(max(0.0, min(1.0, c * 0.6)) for c in base_rgba[:3])
+
+                for cx, cy, cz in zip(x, y, z):
+                    X = radius * unit_x + cx
+                    Y = radius * unit_y + cy
+                    Z = radius * unit_z + cz
+
+                    # Normals are unit sphere coordinates
+                    N = np.stack((unit_x, unit_y, unit_z), axis=-1)  # (*,*,3)
+                    intensity = np.clip(np.tensordot(N, light_dir, axes=([2], [0])) * 0.5 + 0.5, 0.1, 1.0)
+
+                    facecolors = np.empty(X.shape + (4,), dtype=float)
+                    facecolors[..., 0] = base_rgba[0] * intensity
+                    facecolors[..., 1] = base_rgba[1] * intensity
+                    facecolors[..., 2] = base_rgba[2] * intensity
+                    facecolors[..., 3] = base_rgba[3]
+
+                    ax.plot_surface(  # type: ignore[attr-defined]
+                        X, Y, Z,
+                        rstride=1, cstride=1,
+                        facecolors=facecolors,
+                        edgecolor='none',
+                        linewidth=0.0,
+                        antialiased=True,
+                        shade=False,
+                    )
+            except Exception as e:
+                logger.error(f"Failed to render balls, falling back to scatter: {e}")
+                scatter = ax.scatter(
+                    x, y, z,
+                    c=structure_visual_params.color_atoms,
+                    label=label if label else None,
+                    s=structure_visual_params.size,  # type: ignore
+                    alpha=structure_visual_params.transparency,
+                    picker=True if is_interactive_mode else False,
+                )
+        else:
+            scatter = ax.scatter(
+                x, y, z,
+                c=structure_visual_params.color_atoms,
+                label=label if label else None,
+                s=structure_visual_params.size,  # type: ignore
+                alpha=structure_visual_params.transparency,
+                picker=True if is_interactive_mode else False,
+            )
 
         if to_set_equal_scale is None:
             to_set_equal_scale = structure_visual_params.to_set_equal_scale
