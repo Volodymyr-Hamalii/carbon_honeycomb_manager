@@ -24,12 +24,14 @@ class Colors:
     RED100: str = "#500000"
     RED200: str = "#8b0000"
     RED300: str = "#e00000"
+    RED400: str = "#ff4d4d"
 
     ORANGE: str = "#8b5a00"
 
     GREEN100: str = "#004309"
     GREEN200: str = "#2d5a27"
     GREEN300: str = "#00d11d"
+    GREEN400: str = "#99ff99"
 
 
 @dataclass(frozen=True)
