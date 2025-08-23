@@ -11,6 +11,11 @@ class PlotParams:
     """Parameters for plot customization and state management."""
 
     # Plot visualization parameters
+    camera_elevation: float = 65.0
+    camera_azimuth: float = -110.0
+    camera_roll: float = -5.0
+    plot_scale: float = 0.0
+
     to_build_bonds: bool = True
     to_show_coordinates: bool = False
     to_show_indexes: bool = False
@@ -25,11 +30,6 @@ class PlotParams:
     y_max: float = float("inf")
     z_min: float = -float("inf")
     z_max: float = float("inf")
-
-    # Plot state (camera position, scale, angles)
-    camera_elevation: float = 20.0
-    camera_azimuth: float = -60.0
-    plot_scale: float = 1.0
 
     # Plot window settings
     title: str = "Structure Plot"
@@ -93,6 +93,10 @@ class PlotParams:
     def copy(self) -> "PlotParams":
         """Create a copy of the plot parameters."""
         return PlotParams(
+            camera_elevation=self.camera_elevation,
+            camera_azimuth=self.camera_azimuth,
+            camera_roll=self.camera_roll,
+            plot_scale=self.plot_scale,
             to_build_bonds=self.to_build_bonds,
             to_show_coordinates=self.to_show_coordinates,
             to_show_indexes=self.to_show_indexes,
@@ -105,9 +109,6 @@ class PlotParams:
             y_max=self.y_max,
             z_min=self.z_min,
             z_max=self.z_max,
-            camera_elevation=self.camera_elevation,
-            camera_azimuth=self.camera_azimuth,
-            plot_scale=self.plot_scale,
             title=self.title,
             figsize=self.figsize,
             is_interactive_mode=self.is_interactive_mode,

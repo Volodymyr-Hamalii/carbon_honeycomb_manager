@@ -184,6 +184,44 @@ class PlotControls(ctk.CTkFrame, IPlotControls):
         # ctk.CTkCheckBox(channel_frame, text="Show plane lengths", variable=self.show_plane_lengths_var,
         #                 command=self._on_params_changed).pack(anchor="w", padx=SPACING.sm)
 
+        # Camera view parameters frame
+        camera_frame = ctk.CTkFrame(self)
+        camera_frame.pack(fill="x", padx=SPACING.sm, pady=SPACING.sm)
+
+        ctk.CTkLabel(camera_frame, text="Camera View", font=ctk.CTkFont(weight="bold")).pack(pady=SPACING.sm)
+
+        # Elevation
+        ctk.CTkLabel(camera_frame, text="Elevation:").pack(anchor="w", padx=SPACING.sm)
+        self.elevation_entry = ctk.CTkEntry(camera_frame, width=80)
+        self.elevation_entry.insert(0, str(self._default_params.camera_elevation))
+        self.elevation_entry.pack(anchor="w", padx=SPACING.sm)
+        self.elevation_entry.bind("<KeyRelease>", self._on_camera_changed)
+        self.elevation_entry.bind("<FocusOut>", self._on_camera_changed)
+
+        # Azimuth
+        ctk.CTkLabel(camera_frame, text="Azimuth:").pack(anchor="w", padx=SPACING.sm)
+        self.azimuth_entry = ctk.CTkEntry(camera_frame, width=80)
+        self.azimuth_entry.insert(0, str(self._default_params.camera_azimuth))
+        self.azimuth_entry.pack(anchor="w", padx=SPACING.sm)
+        self.azimuth_entry.bind("<KeyRelease>", self._on_camera_changed)
+        self.azimuth_entry.bind("<FocusOut>", self._on_camera_changed)
+
+        # Roll
+        ctk.CTkLabel(camera_frame, text="Roll:").pack(anchor="w", padx=SPACING.sm)
+        self.roll_entry = ctk.CTkEntry(camera_frame, width=80)
+        self.roll_entry.insert(0, str(self._default_params.camera_roll))
+        self.roll_entry.pack(anchor="w", padx=SPACING.sm)
+        self.roll_entry.bind("<KeyRelease>", self._on_camera_changed)
+        self.roll_entry.bind("<FocusOut>", self._on_camera_changed)
+
+        # Scale
+        ctk.CTkLabel(camera_frame, text="Scale:").pack(anchor="w", padx=SPACING.sm)
+        self.scale_entry = ctk.CTkEntry(camera_frame, width=80)
+        self.scale_entry.insert(0, str(self._default_params.plot_scale))
+        self.scale_entry.pack(anchor="w", padx=SPACING.sm)
+        self.scale_entry.bind("<KeyRelease>", self._on_camera_changed)
+        self.scale_entry.bind("<FocusOut>", self._on_camera_changed)
+
         # Action buttons
         button_frame = ctk.CTkFrame(self)
         button_frame.pack(fill="x", padx=SPACING.sm, pady=SPACING.md)
@@ -211,6 +249,10 @@ class PlotControls(ctk.CTkFrame, IPlotControls):
 
     def _on_inter_settings_changed(self, event=None) -> None:
         """Handle inter atom settings changes."""
+        self._on_params_changed()
+
+    def _on_camera_changed(self, event=None) -> None:
+        """Handle camera parameter changes."""
         self._on_params_changed()
 
     def _parse_float(self, value: str, default: float) -> float:
@@ -256,6 +298,27 @@ class PlotControls(ctk.CTkFrame, IPlotControls):
         except (ValueError, tk.TclError):
             inter_layers = 2
 
+        # Parse camera parameters
+        try:
+            elevation = float(self.elevation_entry.get())
+        except (ValueError, tk.TclError):
+            elevation = 60.0
+
+        try:
+            azimuth = float(self.azimuth_entry.get())
+        except (ValueError, tk.TclError):
+            azimuth: float = -100.0
+
+        try:
+            roll = float(self.roll_entry.get())
+        except (ValueError, tk.TclError):
+            roll: float = -10.0
+
+        try:
+            scale = float(self.scale_entry.get())
+        except (ValueError, tk.TclError):
+            scale = 0.0
+
         # Parse coordinate limits - debug raw UI values
         x_min_raw: str = self.x_min_entry.get()
         x_max_raw: str = self.x_max_entry.get()
@@ -278,6 +341,10 @@ class PlotControls(ctk.CTkFrame, IPlotControls):
             f"Parsed coordinates: x=[{x_min}, {x_max}], y=[{y_min}, {y_max}], z=[{z_min}, {z_max}], inter_layers={inter_layers}")
 
         return PlotParams(
+            camera_elevation=elevation,
+            camera_azimuth=azimuth,
+            camera_roll=roll,
+            plot_scale=scale,
             to_build_bonds=self.bonds_var.get(),
             to_show_coordinates=self.coords_var.get(),
             to_show_indexes=self.indexes_var.get(),
@@ -322,6 +389,16 @@ class PlotControls(ctk.CTkFrame, IPlotControls):
         self.skip_distances_spinbox.insert(0, str(params.skip_first_distances))
         self.inter_layers_spinbox.delete(0, 'end')
         self.inter_layers_spinbox.insert(0, str(params.num_of_inter_atoms_layers))
+
+        # Update camera parameters
+        self.elevation_entry.delete(0, 'end')
+        self.elevation_entry.insert(0, str(params.camera_elevation))
+        self.azimuth_entry.delete(0, 'end')
+        self.azimuth_entry.insert(0, str(params.camera_azimuth))
+        self.roll_entry.delete(0, 'end')
+        self.roll_entry.insert(0, str(params.camera_roll))
+        self.scale_entry.delete(0, 'end')
+        self.scale_entry.insert(0, str(params.plot_scale))
 
         # Handle infinite values for display
         inf = float('inf')
@@ -400,6 +477,20 @@ class PlotWindow(ctk.CTkToplevel, IPlotWindow):
         self.ax.set_ylabel('Y')
         self.ax.set_zlabel('Z')  # type: ignore
         self.ax.set_title(self._plot_params.title)
+        # Apply initial camera from default PlotParams so the first frame uses correct view
+        try:
+            # Prefer roll if available (Matplotlib >= 3.6), fallback otherwise
+            self.ax.view_init(  # type: ignore[attr-defined]
+                elev=self._plot_params.camera_elevation,
+                azim=self._plot_params.camera_azimuth,
+                roll=self._plot_params.camera_roll,
+            )
+        except TypeError:
+            # Older Matplotlib without roll keyword
+            self.ax.view_init(  # type: ignore[attr-defined]
+                elev=self._plot_params.camera_elevation,
+                azim=self._plot_params.camera_azimuth,
+            )
         self.canvas.draw()
 
     def _on_params_changed(self, params: PlotParams) -> None:
@@ -492,7 +583,7 @@ class PlotWindow(ctk.CTkToplevel, IPlotWindow):
             elif data_type == 'multiple':
                 coordinates_list: list[NDArray[np.float64]] = self._current_data['coordinates_list']
                 labels_list: list[str | None] = self._current_data['labels_list']
-                
+
                 # Apply intercalated atom layer splitting based on current parameters
                 coordinates_list, labels_list = self._split_intercalated_atoms_into_layers(
                     coordinates_list, labels_list, self._plot_params.num_of_inter_atoms_layers
@@ -541,8 +632,8 @@ class PlotWindow(ctk.CTkToplevel, IPlotWindow):
             if self._plot_params.to_show_legend and data_type in ['multiple']:
                 self.ax.legend(labelspacing=1.1)
 
-            # Restore camera state
-            self.restore_plot_state()
+            # Apply camera view parameters from UI
+            self._apply_camera_view()
 
             # Refresh the canvas
             self.canvas.draw()
@@ -552,6 +643,51 @@ class PlotWindow(ctk.CTkToplevel, IPlotWindow):
             # Show error in plot
             self.ax.text(0.5, 0.5, 0.5, f"Error: {str(e)}", ha="center", va="center")  # type: ignore
             self.canvas.draw()
+
+    def _apply_camera_view(self) -> None:
+        """Apply camera view parameters from PlotParams to the matplotlib axes."""
+        try:
+            # Set camera view using elevation and azimuth from UI parameters
+            self.ax.view_init(  # type: ignore[attr-defined]
+                elev=self._plot_params.camera_elevation,
+                azim=self._plot_params.camera_azimuth,
+                roll=self._plot_params.camera_roll
+            )
+
+            # Apply scale if needed (matplotlib doesn't have direct scale, but we can adjust zoom)
+            if self._plot_params.plot_scale != 0.0:
+                # Get current axis limits
+                xlims = self.ax.get_xlim()
+                ylims = self.ax.get_ylim()
+                zlims = self.ax.get_zlim()  # type: ignore
+
+                # Calculate center points
+                x_center = (xlims[0] + xlims[1]) / 2
+                y_center = (ylims[0] + ylims[1]) / 2
+                z_center = (zlims[0] + zlims[1]) / 2
+
+                # Calculate current ranges
+                x_range = xlims[1] - xlims[0]
+                y_range = ylims[1] - ylims[0]
+                z_range = zlims[1] - zlims[0]
+
+                # Apply scale factor (scale > 1 = zoom out, 0 < scale < 1 = zoom in)
+                scale_factor = 1.0 + self._plot_params.plot_scale
+                if scale_factor > 0:
+                    new_x_range = x_range * scale_factor
+                    new_y_range = y_range * scale_factor
+                    new_z_range = z_range * scale_factor
+
+                    self.ax.set_xlim(x_center - new_x_range/2, x_center + new_x_range/2)
+                    self.ax.set_ylim(y_center - new_y_range/2, y_center + new_y_range/2)
+                    self.ax.set_zlim(z_center - new_z_range/2, z_center + new_z_range/2)  # type: ignore
+
+            logger.info(f"Applied camera view: elevation={self._plot_params.camera_elevation}, "
+                        f"azimuth={self._plot_params.camera_azimuth}, roll={self._plot_params.camera_roll}, "
+                        f"scale={self._plot_params.plot_scale}")
+
+        except Exception as e:
+            logger.warning(f"Could not apply camera view: {e}")
 
     def refresh_plot(self) -> None:
         """Refresh the plot with current parameters while maintaining camera position."""
@@ -577,32 +713,36 @@ class PlotWindow(ctk.CTkToplevel, IPlotWindow):
                 'ylim': self.ax.get_ylim(),
                 'zlim': self.ax.get_zlim(),  # type: ignore
             }
-            # Update plot params with camera state
-            self._plot_params.camera_elevation = self.ax.elev  # type: ignore
-            self._plot_params.camera_azimuth = self.ax.azim  # type: ignore
+            # Update plot params with camera state from matplotlib
+            self._plot_params.camera_elevation = float(self.ax.elev)  # type: ignore
+            self._plot_params.camera_azimuth = float(self.ax.azim)  # type: ignore
+
+            # Also sync UI parameters with actual matplotlib state when user interacts with plot
+            if hasattr(self.ax, 'elev') and hasattr(self.ax, 'azim'):
+                self._plot_params.camera_elevation = float(self.ax.elev)  # type: ignore
+                self._plot_params.camera_azimuth = float(self.ax.azim)  # type: ignore
+                # Update UI controls to reflect the actual camera state
+                if hasattr(self, 'controls'):
+                    self.controls.elevation_entry.delete(0, 'end')
+                    self.controls.elevation_entry.insert(0, str(self.ax.elev))  # type: ignore
+                    self.controls.azimuth_entry.delete(0, 'end')
+                    self.controls.azimuth_entry.insert(0, str(self.ax.azim))  # type: ignore
+
         except Exception as e:
             logger.warning(f"Could not save plot state: {e}")
 
     def restore_plot_state(self) -> None:
-        """Restore saved plot state."""
+        """Restore saved plot state - but this is now handled by _apply_camera_view."""
+        # Note: Camera view restoration is now handled by _apply_camera_view method
+        # This method is kept for compatibility but the actual camera positioning
+        # is controlled by the UI parameters
         try:
-            if self._last_camera_state:
-                self.ax.view_init(  # type: ignore
-                    elev=self._last_camera_state['elevation'],
-                    azim=self._last_camera_state['azimuth']
-                )
-                # Only restore limits if auto_scale_to_data is False
-                # When auto_scale_to_data is True, always fit to current data
-                if not self._plot_params.auto_scale_to_data and 'xlim' in self._last_camera_state:
+            # Only restore axis limits, not camera position (that's handled by _apply_camera_view)
+            if self._last_camera_state and not self._plot_params.auto_scale_to_data:
+                if 'xlim' in self._last_camera_state:
                     self.ax.set_xlim(self._last_camera_state['xlim'])
                     self.ax.set_ylim(self._last_camera_state['ylim'])
                     self.ax.set_zlim(self._last_camera_state['zlim'])  # type: ignore
-            else:
-                # Use parameters if no saved state
-                self.ax.view_init(  # type: ignore
-                    elev=self._plot_params.camera_elevation,
-                    azim=self._plot_params.camera_azimuth
-                )
         except Exception as e:
             logger.warning(f"Could not restore plot state: {e}")
 
@@ -651,12 +791,13 @@ class PlotWindow(ctk.CTkToplevel, IPlotWindow):
             total_atoms_distributed = sum(len(coords) for coords in new_coords_list[1:])  # Skip carbon
             logger.info(f"Successfully split into {len(new_coords_list)-1} intercalated layers")
             logger.info(f"Atom distribution check: {total_atoms_distributed}/{total_atoms_check} atoms distributed")
-            
+
             if total_atoms_distributed != total_atoms_check:
-                logger.error(f"ATOM COUNT MISMATCH: Expected {total_atoms_check}, distributed {total_atoms_distributed}")
+                logger.error(
+                    f"ATOM COUNT MISMATCH: Expected {total_atoms_check}, distributed {total_atoms_distributed}")
                 # Return original data to avoid losing atoms
                 return coordinates_list, labels_list
-            
+
             return new_coords_list, new_labels_list
 
         except Exception as e:
