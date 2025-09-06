@@ -11,9 +11,9 @@ class PlotParams:
     """Parameters for plot customization and state management."""
 
     # Plot visualization parameters
-    camera_elevation: float = 65.0
-    camera_azimuth: float = -110.0
-    camera_roll: float = -5.0
+    camera_elevation: float = 62.0
+    camera_azimuth: float = -100.0
+    camera_roll: float = -3.0
     plot_scale: float = 0.0
 
     to_build_bonds: bool = True
