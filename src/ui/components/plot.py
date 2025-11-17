@@ -60,6 +60,7 @@ class PlotControls(ctk.CTkFrame, IPlotControls):
         self.grid_var = ctk.BooleanVar(value=self._default_params.to_show_grid)
         self.edge_lines_var = ctk.BooleanVar(value=self._default_params.to_build_edge_vertical_lines)
         self.legend_var = ctk.BooleanVar(value=self._default_params.to_show_legend)
+        self.title_var = ctk.BooleanVar(value=self._default_params.to_show_title)
 
         ctk.CTkCheckBox(viz_frame, text="Show Bonds", variable=self.bonds_var,
                         command=self._on_params_changed).pack(anchor="w", padx=SPACING.sm)
@@ -68,6 +69,8 @@ class PlotControls(ctk.CTkFrame, IPlotControls):
         ctk.CTkCheckBox(viz_frame, text="Show Indexes", variable=self.indexes_var,
                         command=self._on_params_changed).pack(anchor="w", padx=SPACING.sm)
         ctk.CTkCheckBox(viz_frame, text="Show Grid", variable=self.grid_var,
+                        command=self._on_params_changed).pack(anchor="w", padx=SPACING.sm)
+        ctk.CTkCheckBox(viz_frame, text="Show Title", variable=self.title_var,
                         command=self._on_params_changed).pack(anchor="w", padx=SPACING.sm)
         ctk.CTkCheckBox(viz_frame, text="Build Edge Vertical Lines", variable=self.edge_lines_var,
                         command=self._on_params_changed).pack(anchor="w", padx=SPACING.sm)
@@ -285,6 +288,7 @@ class PlotControls(ctk.CTkFrame, IPlotControls):
             # is_interactive_mode=self.interactive_var.get(),
             to_build_edge_vertical_lines=self.edge_lines_var.get(),
             to_show_grid=self.grid_var.get(),
+            to_show_title=self.title_var.get(),
             to_show_legend=self.legend_var.get(),
             num_of_inter_atoms_layers=inter_layers,
             # to_show_dists_to_plane=self.show_dists_to_plane_var.get(),
@@ -310,6 +314,7 @@ class PlotControls(ctk.CTkFrame, IPlotControls):
         # self.interactive_var.set(params.is_interactive_mode)
         self.additional_lines_var.set(params.to_build_edge_vertical_lines)
         self.grid_var.set(params.to_show_grid)
+        self.title_var.set(params.to_show_title)
         self.edge_lines_var.set(params.to_build_edge_vertical_lines)
         self.legend_var.set(params.to_show_legend)
         # self.show_dists_to_plane_var.set(params.to_show_dists_to_plane)
@@ -399,7 +404,8 @@ class PlotWindow(ctk.CTkToplevel, IPlotWindow):
         self.ax.set_xlabel('X')
         self.ax.set_ylabel('Y')
         self.ax.set_zlabel('Z')  # type: ignore
-        self.ax.set_title(self._plot_params.title)
+        if self._plot_params.to_show_title:
+            self.ax.set_title(self._plot_params.title)
         # Apply initial camera from default PlotParams so the first frame uses correct view
         try:
             # Prefer roll if available (Matplotlib >= 3.6), fallback otherwise
@@ -421,6 +427,15 @@ class PlotWindow(ctk.CTkToplevel, IPlotWindow):
         logger.info(f"PlotWindow updating: x=[{params.x_min}, {params.x_max}], "
                     f"y=[{params.y_min}, {params.y_max}], z=[{params.z_min}, {params.z_max}], "
                     f"bonds=[{params.num_of_min_distances}, {params.skip_first_distances}]")
+
+        # Preserve properties not controlled by UI (title, camera params, figsize)
+        params.title = self._plot_params.title
+        params.figsize = self._plot_params.figsize
+        params.camera_elevation = self._plot_params.camera_elevation
+        params.camera_azimuth = self._plot_params.camera_azimuth
+        params.camera_roll = self._plot_params.camera_roll
+        params.plot_scale = self._plot_params.plot_scale
+        params.auto_scale_to_data = self._plot_params.auto_scale_to_data
 
         self._plot_params = params
 
@@ -549,7 +564,8 @@ class PlotWindow(ctk.CTkToplevel, IPlotWindow):
             self.ax.set_xlabel('X')
             self.ax.set_ylabel('Y')
             self.ax.set_zlabel('Z')  # type: ignore
-            self.ax.set_title(self._plot_params.title)
+            if self._plot_params.to_show_title:
+                self.ax.set_title(self._plot_params.title)
 
             # Add legend if enabled and there are multiple structures or labels
             if self._plot_params.to_show_legend and data_type in ['multiple']:

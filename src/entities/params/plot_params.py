@@ -46,6 +46,7 @@ class PlotParams:
     # New visualization features
     to_show_grid: bool = True
     to_show_legend: bool = True
+    to_show_title: bool = True
     num_of_inter_atoms_layers: int = 1
 
     # Auto-scaling behavior (always fit to data, never store scale)
@@ -119,6 +120,7 @@ class PlotParams:
             to_show_plane_lengths=self.to_show_plane_lengths,
             to_show_grid=self.to_show_grid,
             to_show_legend=self.to_show_legend,
+            to_show_title=self.to_show_title,
             num_of_inter_atoms_layers=self.num_of_inter_atoms_layers,
             auto_scale_to_data=self.auto_scale_to_data,
         )
