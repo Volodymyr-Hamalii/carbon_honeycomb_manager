@@ -18,11 +18,6 @@ class IPoints(ABC):
 
     @property
     @abstractmethod
-    def __len__(self) -> int:
-        ...
-
-    @property
-    @abstractmethod
     def coordinate_limits(self) -> PCoordinateLimits:
         ...
 
