@@ -22,6 +22,9 @@
     "autopep8.args": ["--max-line-length", "120", "--experimental"],
     "code-runner.executorMap": {
       "python": "venv/bin/python3.12 -u"
-    }
+    },
+    "python.languageServer": "None",
+    "cursorpyright.analysis.inlayHints.functionReturnTypes": true,
+    "cursorpyright.analysis.inlayHints.variableTypes": true
   }
 }
