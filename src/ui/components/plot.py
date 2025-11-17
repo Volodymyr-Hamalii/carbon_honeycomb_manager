@@ -184,44 +184,6 @@ class PlotControls(ctk.CTkFrame, IPlotControls):
         # ctk.CTkCheckBox(channel_frame, text="Show plane lengths", variable=self.show_plane_lengths_var,
         #                 command=self._on_params_changed).pack(anchor="w", padx=SPACING.sm)
 
-        # Camera view parameters frame
-        camera_frame = ctk.CTkFrame(self)
-        camera_frame.pack(fill="x", padx=SPACING.sm, pady=SPACING.sm)
-
-        ctk.CTkLabel(camera_frame, text="Camera View", font=ctk.CTkFont(weight="bold")).pack(pady=SPACING.sm)
-
-        # Elevation
-        ctk.CTkLabel(camera_frame, text="Elevation:").pack(anchor="w", padx=SPACING.sm)
-        self.elevation_entry = ctk.CTkEntry(camera_frame, width=80)
-        self.elevation_entry.insert(0, str(self._default_params.camera_elevation))
-        self.elevation_entry.pack(anchor="w", padx=SPACING.sm)
-        self.elevation_entry.bind("<KeyRelease>", self._on_camera_changed)
-        self.elevation_entry.bind("<FocusOut>", self._on_camera_changed)
-
-        # Azimuth
-        ctk.CTkLabel(camera_frame, text="Azimuth:").pack(anchor="w", padx=SPACING.sm)
-        self.azimuth_entry = ctk.CTkEntry(camera_frame, width=80)
-        self.azimuth_entry.insert(0, str(self._default_params.camera_azimuth))
-        self.azimuth_entry.pack(anchor="w", padx=SPACING.sm)
-        self.azimuth_entry.bind("<KeyRelease>", self._on_camera_changed)
-        self.azimuth_entry.bind("<FocusOut>", self._on_camera_changed)
-
-        # Roll
-        ctk.CTkLabel(camera_frame, text="Roll:").pack(anchor="w", padx=SPACING.sm)
-        self.roll_entry = ctk.CTkEntry(camera_frame, width=80)
-        self.roll_entry.insert(0, str(self._default_params.camera_roll))
-        self.roll_entry.pack(anchor="w", padx=SPACING.sm)
-        self.roll_entry.bind("<KeyRelease>", self._on_camera_changed)
-        self.roll_entry.bind("<FocusOut>", self._on_camera_changed)
-
-        # Scale
-        ctk.CTkLabel(camera_frame, text="Scale:").pack(anchor="w", padx=SPACING.sm)
-        self.scale_entry = ctk.CTkEntry(camera_frame, width=80)
-        self.scale_entry.insert(0, str(self._default_params.plot_scale))
-        self.scale_entry.pack(anchor="w", padx=SPACING.sm)
-        self.scale_entry.bind("<KeyRelease>", self._on_camera_changed)
-        self.scale_entry.bind("<FocusOut>", self._on_camera_changed)
-
         # Action buttons
         button_frame = ctk.CTkFrame(self)
         button_frame.pack(fill="x", padx=SPACING.sm, pady=SPACING.md)
@@ -249,10 +211,6 @@ class PlotControls(ctk.CTkFrame, IPlotControls):
 
     def _on_inter_settings_changed(self, event=None) -> None:
         """Handle inter atom settings changes."""
-        self._on_params_changed()
-
-    def _on_camera_changed(self, event=None) -> None:
-        """Handle camera parameter changes."""
         self._on_params_changed()
 
     def _parse_float(self, value: str, default: float) -> float:
@@ -298,27 +256,6 @@ class PlotControls(ctk.CTkFrame, IPlotControls):
         except (ValueError, tk.TclError):
             inter_layers = 2
 
-        # Parse camera parameters
-        try:
-            elevation = float(self.elevation_entry.get())
-        except (ValueError, tk.TclError):
-            elevation = 60.0
-
-        try:
-            azimuth = float(self.azimuth_entry.get())
-        except (ValueError, tk.TclError):
-            azimuth: float = -100.0
-
-        try:
-            roll = float(self.roll_entry.get())
-        except (ValueError, tk.TclError):
-            roll: float = -10.0
-
-        try:
-            scale = float(self.scale_entry.get())
-        except (ValueError, tk.TclError):
-            scale = 0.0
-
         # Parse coordinate limits - debug raw UI values
         x_min_raw: str = self.x_min_entry.get()
         x_max_raw: str = self.x_max_entry.get()
@@ -341,10 +278,6 @@ class PlotControls(ctk.CTkFrame, IPlotControls):
             f"Parsed coordinates: x=[{x_min}, {x_max}], y=[{y_min}, {y_max}], z=[{z_min}, {z_max}], inter_layers={inter_layers}")
 
         return PlotParams(
-            camera_elevation=elevation,
-            camera_azimuth=azimuth,
-            camera_roll=roll,
-            plot_scale=scale,
             to_build_bonds=self.bonds_var.get(),
             to_show_coordinates=self.coords_var.get(),
             to_show_indexes=self.indexes_var.get(),
@@ -389,16 +322,6 @@ class PlotControls(ctk.CTkFrame, IPlotControls):
         self.skip_distances_spinbox.insert(0, str(params.skip_first_distances))
         self.inter_layers_spinbox.delete(0, 'end')
         self.inter_layers_spinbox.insert(0, str(params.num_of_inter_atoms_layers))
-
-        # Update camera parameters
-        self.elevation_entry.delete(0, 'end')
-        self.elevation_entry.insert(0, str(params.camera_elevation))
-        self.azimuth_entry.delete(0, 'end')
-        self.azimuth_entry.insert(0, str(params.camera_azimuth))
-        self.roll_entry.delete(0, 'end')
-        self.roll_entry.insert(0, str(params.camera_roll))
-        self.scale_entry.delete(0, 'end')
-        self.scale_entry.insert(0, str(params.plot_scale))
 
         # Handle infinite values for display
         inf = float('inf')
@@ -704,30 +627,13 @@ class PlotWindow(ctk.CTkToplevel, IPlotWindow):
         self.refresh_plot()
 
     def save_plot_state(self) -> None:
-        """Save current plot state (camera position, scale, etc.)."""
+        """Save current plot state (axis limits only)."""
         try:
             self._last_camera_state = {  # type: ignore
-                'elevation': self.ax.elev,  # type: ignore
-                'azimuth': self.ax.azim,  # type: ignore
                 'xlim': self.ax.get_xlim(),
                 'ylim': self.ax.get_ylim(),
                 'zlim': self.ax.get_zlim(),  # type: ignore
             }
-            # Update plot params with camera state from matplotlib
-            self._plot_params.camera_elevation = float(self.ax.elev)  # type: ignore
-            self._plot_params.camera_azimuth = float(self.ax.azim)  # type: ignore
-
-            # Also sync UI parameters with actual matplotlib state when user interacts with plot
-            if hasattr(self.ax, 'elev') and hasattr(self.ax, 'azim'):
-                self._plot_params.camera_elevation = float(self.ax.elev)  # type: ignore
-                self._plot_params.camera_azimuth = float(self.ax.azim)  # type: ignore
-                # Update UI controls to reflect the actual camera state
-                if hasattr(self, 'controls'):
-                    self.controls.elevation_entry.delete(0, 'end')
-                    self.controls.elevation_entry.insert(0, str(self.ax.elev))  # type: ignore
-                    self.controls.azimuth_entry.delete(0, 'end')
-                    self.controls.azimuth_entry.insert(0, str(self.ax.azim))  # type: ignore
-
         except Exception as e:
             logger.warning(f"Could not save plot state: {e}")
 
