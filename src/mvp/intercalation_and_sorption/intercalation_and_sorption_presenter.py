@@ -13,11 +13,14 @@ from src.interfaces import (
     IStructureVisualParams,
     PMvpParams,
 )
-from src.services import Logger, Constants, VisualizationParams
+from src.entities import Points
+from src.services import Logger, Constants, VisualizationParams, PathBuilder, FileWriter
 from src.projects.carbon_honeycomb_actions import CarbonHoneycombModeller
 from src.projects.intercalation_and_sorption import IntercalationAndSorption
+from src.projects.intercalation_and_sorption.intercalared_structure_cell_cutter import IntercalatedStructureCellCutter
 from src.ui.components import PlotWindow, PlotWindowFactory
 
+            
 logger = Logger("IntercalationAndSorptionPresenter")
 
 
@@ -45,6 +48,7 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
             "get_inter_chc_constants": self._handle_get_inter_chc_constants,
             "translate_inter_to_all_channels_plot": self._handle_translate_inter_to_all_channels_plot,
             "translate_inter_to_all_channels_generate": self._handle_translate_inter_to_all_channels_generate,
+            "cut_intercalated_structure_cell": self._handle_cut_intercalated_structure_cell,
             "file_selected": self._handle_file_selected,
             "refresh_files": self._handle_refresh_files,
         }
@@ -248,6 +252,112 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
         except Exception as e:
             logger.error(f"Failed to open plot window for translated structure: {e}")
             self.on_operation_failed("translate_inter_to_all_channels_plot", e)
+
+    def cut_intercalated_structure_cell(
+        self,
+        project_dir: str,
+        subproject_dir: str,
+        structure_dir: str,
+    ) -> tuple[Path, Path]:
+        """
+        Cut unit cell from intercalated structure and save results.
+
+        Returns:
+            Tuple of (carbon_file_path, intercalated_file_path)
+        """
+        try:
+            self.view.show_operation_progress("Cutting unit cell from structure...")
+
+            # Get MVP params
+            params: PMvpParams = self.model.get_mvp_params()
+
+            # Step 1: Read carbon structure
+            logger.info("Reading carbon structure...")
+            carbon_coords: NDArray[np.float64] = IntercalationAndSorption.get_carbon_coords(
+                project_dir, subproject_dir, structure_dir
+            )
+            coordinates_carbon = Points(carbon_coords)
+            logger.info(f"Loaded {len(carbon_coords)} carbon atoms")
+
+            # Step 2: Read intercalated structure file
+            selected_file: str = self.view.get_selected_file()
+            if not selected_file or selected_file == "No files found":
+                raise ValueError("No intercalated structure file selected")
+
+            logger.info(f"Reading intercalated structure from: {selected_file}")
+            inter_coords: NDArray[np.float64] | None = IntercalationAndSorption.get_inter_coords(
+                project_dir=project_dir,
+                subproject_dir=subproject_dir,
+                structure_dir=structure_dir,
+                file_name=selected_file
+            )
+
+            if inter_coords is None or len(inter_coords) == 0:
+                raise ValueError(f"No intercalated atoms found in file: {selected_file}")
+
+            coordinates_intercalated = Points(inter_coords)
+            logger.info(f"Loaded {len(inter_coords)} intercalated atoms")
+
+            # Step 3-5: Cut unit cell
+            filtered_carbon, filtered_intercalated = IntercalatedStructureCellCutter.cut_unit_cell(
+                coordinates_carbon=coordinates_carbon,
+                coordinates_intercalated=coordinates_intercalated,
+            )
+
+            # Step 6: Plot the results
+            logger.info("Plotting filtered structure...")
+            coords_list = [filtered_carbon.points, filtered_intercalated.points]
+            labels_list = ["Carbon (Cell)", "Intercalated (Cell)"]
+
+            # Get visual params
+            carbon_visual_params: IStructureVisualParams = VisualizationParams.carbon
+            inter_visual_params: IStructureVisualParams = VisualizationParams.intercalated_atoms_1_layer
+            visual_params_list: list[IStructureVisualParams] = [carbon_visual_params, inter_visual_params]
+
+            # Create plot window
+            plot_window: PlotWindow = PlotWindowFactory.create_plot_window_from_mvp_params(
+                master=self.view,
+                mvp_params=params,
+                title=f"Unit Cell - {structure_dir}",
+            )
+
+            # Show structures
+            plot_window.show_structures(coords_list, visual_params_list, labels_list)
+
+            # Step 7: Save files
+            cell_dir = PathBuilder.build_path_to_result_data_dir(
+                project_dir, subproject_dir, structure_dir
+            ) / "cell"
+            cell_dir.mkdir(exist_ok=True)
+
+            carbon_output_path = cell_dir / f"{structure_dir}_cell_carbon.dat"
+            inter_output_path = cell_dir / f"{structure_dir}_cell_intercalated.dat"
+
+            FileWriter.write_dat_file(
+                data_lines=filtered_carbon.points,
+                path_to_file=carbon_output_path,
+            )
+            FileWriter.write_dat_file(
+                data_lines=filtered_intercalated.points,
+                path_to_file=inter_output_path,
+            )
+
+            logger.info(f"Saved carbon cell to: {carbon_output_path}")
+            logger.info(f"Saved intercalated cell to: {inter_output_path}")
+
+            self.view.show_operation_success(
+                f"Unit cell cut successfully!\nCarbon: {len(filtered_carbon.points)} atoms\n"
+                f"Intercalated: {len(filtered_intercalated.points)} atoms\n"
+                f"Saved to: {cell_dir}",
+                result_path=cell_dir
+            )
+
+            return carbon_output_path, inter_output_path
+
+        except Exception as e:
+            logger.error(f"Failed to cut unit cell: {e}")
+            self.on_operation_failed("cut_intercalated_structure_cell", e)
+            raise
 
     def translate_inter_to_all_channels_generate_files(
         self,
@@ -587,6 +697,26 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
         """Handle translate inter to all channels generate files callback (alias)."""
         # This is an alias for the existing method to match expected naming
         self._handle_translate_inter_to_all_channels_generate()
+
+    def _handle_cut_intercalated_structure_cell(self) -> None:
+        """Handle cut intercalated structure cell callback."""
+        try:
+            if not self._current_context:
+                self.view.show_error_message("No context available. Please reload the window.")
+                return
+
+            # Show processing status
+            self.view.show_processing_message("Cutting unit cell from structure...")
+
+            # Call the public method
+            self.cut_intercalated_structure_cell(
+                project_dir=self._current_context["project_dir"],
+                subproject_dir=self._current_context["subproject_dir"],
+                structure_dir=self._current_context["structure_dir"],
+            )
+
+        except Exception as e:
+            self.on_operation_failed("cut_intercalated_structure_cell", e)
 
     def _handle_file_selected(self, file_name: str) -> None:
         """Handle file selection from dropdown."""

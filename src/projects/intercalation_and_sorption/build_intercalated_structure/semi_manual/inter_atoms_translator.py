@@ -47,7 +47,7 @@ class InterAtomsTranslator:
             inter_atoms_fininter_atoms = np.vstack(
                 (inter_atoms_fininter_atoms, inter_atoms.copy() + vector))
 
-        edge_channel_centers: list[np.ndarray] = cls._get_centers_of_edge_carbon_channels(coordinates_carbon)
+        edge_channel_centers: list[np.ndarray] = cls.get_centers_of_edge_carbon_channels(coordinates_carbon)
 
         logger.info(f"CHECK THE Z COORDINATES OF THE EDGE CHANNELS: {inter_atoms_center}, {edge_channel_centers}")
 
@@ -291,7 +291,7 @@ class InterAtomsTranslator:
         return var_result
 
     @staticmethod
-    def _get_centers_of_edge_carbon_channels(
+    def get_centers_of_edge_carbon_channels(
         coordinates_carbon: IPoints,
     ) -> list[np.ndarray]:
         """ 

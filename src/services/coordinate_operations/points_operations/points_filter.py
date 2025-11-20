@@ -27,15 +27,15 @@ class PointsFilter:
             result_points: np.ndarray = points.points[signed_distances >= min_distance]
         else:
             # Keep points below the plane at the minimum distance
-            result_points: np.ndarray = points.points[signed_distances <= -min_distance]
+            result_points = points.points[signed_distances <= -min_distance]
 
         return Points(result_points)
 
     @staticmethod
     def filter_by_min_max_z(
             points_to_filter: IPoints,
-            z_min: float,
-            z_max: float,
+            z_min: float | np.floating,
+            z_max: float | np.floating,
             move_align_z: bool = False,
     ) -> IPoints:
         """Filter points_to_filter by min and max z coordinate of points_with_min_max_z."""

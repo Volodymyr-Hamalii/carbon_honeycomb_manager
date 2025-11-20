@@ -467,7 +467,7 @@ class PlotWindow(ctk.CTkToplevel, IPlotWindow):
         self,
         coordinates_list: list[NDArray[np.float64]],
         structure_visual_params_list: list[IStructureVisualParams],
-        labels_list: list[str | None],
+        labels_list: list[str] | list[None],
     ) -> None:
         """Display multiple structures in the plot window."""
         self._current_data = {

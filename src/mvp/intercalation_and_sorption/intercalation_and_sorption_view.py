@@ -85,10 +85,10 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
             op_col1, "Generate plane coordinates",
             self._on_generate_inter_plane_coordinates
         )
-        # self.operation_buttons["update_inter_plane_coordinates"] = self.template.pack_button(
-        #     op_col1, "Update plane coordinates",
-        #     self._on_update_inter_plane_coordinates
-        # )
+        self.operation_buttons["get_distance_matrix"] = self.template.pack_button(
+            op_col1, "Get distance matrix",
+            self._on_get_distance_matrix
+        )
         self.operation_buttons["get_inter_chc_constants"] = self.template.pack_button(
             op_col1, "Get intercalation constants",
             self._on_get_inter_chc_constants
@@ -99,20 +99,16 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
             op_col2, "Plot channel with intercalated atoms",
             self._on_plot_inter_in_c_structure
         )
-        self.operation_buttons["get_distance_matrix"] = self.template.pack_button(
-            op_col2, "Get distance matrix",
-            self._on_get_distance_matrix
-        )
         self.operation_buttons["update_inter_channel_coordinates"] = self.template.pack_button(
             op_col2, "Update channel coordinates",
             self._on_update_inter_channel_coordinates
         )
-
-        ##### THIRD COLUMN #####
         self.operation_buttons["translate_inter_atoms"] = self.template.pack_button(
-            op_col3, "Translate atoms to other planes",
+            op_col2, "Translate atoms to other planes",
             self._on_translate_inter_atoms
         )
+
+        ##### THIRD COLUMN #####
         self.operation_buttons["translate_inter_to_all_channels_generate"] = self.template.pack_button(
             op_col3, "Generate all channels files",
             self._on_translate_inter_to_all_channels_generate
@@ -120,6 +116,10 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
         self.operation_buttons["translate_inter_to_all_channels_plot"] = self.template.pack_button(
             op_col3, "Plot all channels",
             self._on_translate_inter_to_all_channels_plot
+        )
+        self.operation_buttons["cut_intercalated_structure_cell"] = self.template.pack_button(
+            op_col3, "Cut intercalated structure cell",
+            self._on_cut_intercalated_structure_cell
         )
 
         # File selection section
@@ -512,6 +512,12 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
         """Handle translate inter to all channels generate button click."""
         if "translate_inter_to_all_channels_generate" in self.callbacks:
             self.callbacks["translate_inter_to_all_channels_generate"]()
+            self.refresh_files_after_action()
+
+    def _on_cut_intercalated_structure_cell(self) -> None:
+        """Handle cut intercalated structure cell button click."""
+        if "cut_intercalated_structure_cell" in self.callbacks:
+            self.callbacks["cut_intercalated_structure_cell"]()
             self.refresh_files_after_action()
 
     def _on_file_selected(self, file_name: str) -> None:
