@@ -87,6 +87,7 @@ class IStructureVisualizer(ABC):
             is_interactive_mode: bool,
             custom_indexes: list[int],
             coordinate_limits: PCoordinateLimits | None,
+            plot_as_polygon_balls: bool | None = None,
     ) -> PathCollection | None:
         ...
 

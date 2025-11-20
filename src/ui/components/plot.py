@@ -61,6 +61,7 @@ class PlotControls(ctk.CTkFrame, IPlotControls):
         self.edge_lines_var = ctk.BooleanVar(value=self._default_params.to_build_edge_vertical_lines)
         self.legend_var = ctk.BooleanVar(value=self._default_params.to_show_legend)
         self.title_var = ctk.BooleanVar(value=self._default_params.to_show_title)
+        self.polygon_balls_var = ctk.BooleanVar(value=self._default_params.plot_intercalated_as_polygon_balls)
 
         ctk.CTkCheckBox(viz_frame, text="Show Bonds", variable=self.bonds_var,
                         command=self._on_params_changed).pack(anchor="w", padx=SPACING.sm)
@@ -81,6 +82,8 @@ class PlotControls(ctk.CTkFrame, IPlotControls):
         # ctk.CTkCheckBox(viz_frame, text="Interactive Mode", variable=self.interactive_var,
         #                 command=self._on_params_changed).pack(anchor="w", padx=SPACING.sm)
         ctk.CTkCheckBox(viz_frame, text="Additional Lines", variable=self.additional_lines_var,
+                        command=self._on_params_changed).pack(anchor="w", padx=SPACING.sm)
+        ctk.CTkCheckBox(viz_frame, text="Plot Intercalated as Polygon Balls", variable=self.polygon_balls_var,
                         command=self._on_params_changed).pack(anchor="w", padx=SPACING.sm)
 
         # Bond settings frame
@@ -291,6 +294,7 @@ class PlotControls(ctk.CTkFrame, IPlotControls):
             to_show_title=self.title_var.get(),
             to_show_legend=self.legend_var.get(),
             num_of_inter_atoms_layers=inter_layers,
+            plot_intercalated_as_polygon_balls=self.polygon_balls_var.get(),
             # to_show_dists_to_plane=self.show_dists_to_plane_var.get(),
             # to_show_dists_to_edges=self.show_dists_to_edges_var.get(),
             # to_show_channel_angles=self.show_channel_angles_var.get(),
@@ -317,6 +321,7 @@ class PlotControls(ctk.CTkFrame, IPlotControls):
         self.title_var.set(params.to_show_title)
         self.edge_lines_var.set(params.to_build_edge_vertical_lines)
         self.legend_var.set(params.to_show_legend)
+        self.polygon_balls_var.set(params.plot_intercalated_as_polygon_balls)
         # self.show_dists_to_plane_var.set(params.to_show_dists_to_plane)
         # self.show_dists_to_edges_var.set(params.to_show_dists_to_edges)
         # self.show_channel_angles_var.set(params.to_show_channel_angles)
@@ -538,6 +543,12 @@ class PlotWindow(ctk.CTkToplevel, IPlotWindow):
                         self._plot_params.to_show_grid if i == len(coordinates_list) - 1 else None
                     )
 
+                    # Determine if this is an intercalated atom (not carbon)
+                    # If so, use the plot_intercalated_as_polygon_balls parameter
+                    plot_as_polygon_balls: bool | None = None
+                    if label and label != "Carbon":
+                        plot_as_polygon_balls = self._plot_params.plot_intercalated_as_polygon_balls
+
                     StructureVisualizer._plot_atoms_3d(
                         fig=self.figure,
                         ax=self.ax,
@@ -558,6 +569,7 @@ class PlotWindow(ctk.CTkToplevel, IPlotWindow):
                         to_show_dists_to_edges=self._plot_params.to_show_dists_to_edges,
                         to_show_channel_angles=self._plot_params.to_show_channel_angles,
                         to_show_plane_lengths=self._plot_params.to_show_plane_lengths,
+                        plot_as_polygon_balls=plot_as_polygon_balls,
                     )
 
             # Set labels and title

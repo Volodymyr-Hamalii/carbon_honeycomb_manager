@@ -273,6 +273,7 @@ class StructureVisualizer(IStructureVisualizer):
             to_show_dists_to_edges: bool = False,
             to_show_channel_angles: bool = False,
             to_show_plane_lengths: bool = False,
+            plot_as_polygon_balls: bool | None = None,
     ) -> PathCollection | None:
         if coordinates.size == 0:
             logger.warning(f"No points to plot for label={label}.")
@@ -336,7 +337,14 @@ class StructureVisualizer(IStructureVisualizer):
 
         scatter: PathCollection | None = None
 
-        if structure_visual_params.as_shaded_3d_spheres:
+        # Determine whether to render as polygon balls
+        # Use plot_as_polygon_balls if explicitly set, otherwise use structure_visual_params
+        render_as_polygon_balls: bool = (
+            plot_as_polygon_balls if plot_as_polygon_balls is not None
+            else structure_visual_params.as_shaded_3d_spheres
+        )
+
+        if render_as_polygon_balls:
             # Render atoms as shaded 3D spheres with thin outlines
             try:
                 radius: float = structure_visual_params.size / 300

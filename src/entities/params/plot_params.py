@@ -48,6 +48,7 @@ class PlotParams:
     to_show_legend: bool = True
     to_show_title: bool = True
     num_of_inter_atoms_layers: int = 1
+    plot_intercalated_as_polygon_balls: bool = False
 
     # Auto-scaling behavior (always fit to data, never store scale)
     auto_scale_to_data: bool = True
@@ -122,5 +123,6 @@ class PlotParams:
             to_show_legend=self.to_show_legend,
             to_show_title=self.to_show_title,
             num_of_inter_atoms_layers=self.num_of_inter_atoms_layers,
+            plot_intercalated_as_polygon_balls=self.plot_intercalated_as_polygon_balls,
             auto_scale_to_data=self.auto_scale_to_data,
         )
