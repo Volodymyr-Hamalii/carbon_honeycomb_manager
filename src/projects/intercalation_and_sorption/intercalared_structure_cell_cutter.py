@@ -258,7 +258,7 @@ class IntercalatedStructureCellCutter:
                 temp_filtered,
                 A=A, B=B, C=C, D=D,
                 direction=direction,
-                min_distance=0.00
+                min_distance=-0.1,  # small negative distance to include points on the plane
             )
 
             after_count = len(temp_filtered.points)
