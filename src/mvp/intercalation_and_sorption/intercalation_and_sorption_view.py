@@ -103,10 +103,10 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
             op_col2, "Update channel coordinates",
             self._on_update_inter_channel_coordinates
         )
-        self.operation_buttons["translate_inter_atoms"] = self.template.pack_button(
-            op_col2, "Translate atoms to other planes",
-            self._on_translate_inter_atoms
-        )
+        # self.operation_buttons["translate_inter_atoms"] = self.template.pack_button(
+        #     op_col2, "Translate atoms to other planes",
+        #     self._on_translate_inter_atoms
+        # )
 
         ##### THIRD COLUMN #####
         self.operation_buttons["translate_inter_to_all_channels_generate"] = self.template.pack_button(
@@ -472,11 +472,11 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
             self.callbacks["update_inter_plane_coordinates"]()
             self.refresh_files_after_action()
 
-    def _on_translate_inter_atoms(self) -> None:
-        """Handle translate inter atoms button click."""
-        if "translate_inter_atoms" in self.callbacks:
-            self.callbacks["translate_inter_atoms"]()
-            self.refresh_files_after_action()
+    # def _on_translate_inter_atoms(self) -> None:
+    #     """Handle translate inter atoms button click."""
+    #     if "translate_inter_atoms" in self.callbacks:
+    #         self.callbacks["translate_inter_atoms"]()
+    #         self.refresh_files_after_action()
 
     def _on_update_inter_channel_coordinates(self) -> None:
         """Handle update inter channel coordinates button click."""

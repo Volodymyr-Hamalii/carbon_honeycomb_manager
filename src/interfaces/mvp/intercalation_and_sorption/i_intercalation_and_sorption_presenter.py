@@ -39,15 +39,15 @@ class IIntercalationAndSorptionPresenter(IGeneralPresenter):
         """Update intercalated atoms plane coordinates file."""
         ...
 
-    @abstractmethod
-    def translate_inter_atoms_to_other_planes(
-        self,
-        project_dir: str,
-        subproject_dir: str,
-        structure_dir: str,
-    ) -> None:
-        """Translate intercalated atoms to other planes."""
-        ...
+    # @abstractmethod
+    # def translate_inter_atoms_to_other_planes(
+    #     self,
+    #     project_dir: str,
+    #     subproject_dir: str,
+    #     structure_dir: str,
+    # ) -> None:
+    #     """Translate intercalated atoms to other planes."""
+    #     ...
 
     @abstractmethod
     def update_inter_channel_coordinates(
@@ -107,24 +107,4 @@ class IIntercalationAndSorptionPresenter(IGeneralPresenter):
     @abstractmethod
     def on_operation_failed(self, operation_type: str, error: Exception) -> None:
         """Handle operation failure."""
-        ...
-
-    @abstractmethod
-    def plot_inter_in_c_structure(
-        self,
-        project_dir: str,
-        subproject_dir: str,
-        structure_dir: str,
-    ) -> None:
-        """Plot intercalated atoms in carbon structure in a new customizable plot window."""
-        ...
-
-    @abstractmethod
-    def translate_inter_to_all_channels_plot(
-        self,
-        project_dir: str,
-        subproject_dir: str,
-        structure_dir: str,
-    ) -> None:
-        """Plot intercalated atoms translated to all channels in a new customizable plot window."""
         ...

@@ -5,16 +5,13 @@ from pathlib import Path
 import numpy as np
 from numpy.typing import NDArray
 import pandas as pd
-from typing import cast
 
 from src.interfaces import (
     IPoints,
     ICarbonHoneycombChannel,
     PMvpParams,
-    PCoordinateLimits,
-    IStructureVisualParams,
 )
-from src.entities import Points, CoordinateLimits
+from src.entities import Points
 from src.services import (
     Constants,
     ConstantsAtomParams,
@@ -23,8 +20,6 @@ from src.services import (
     FileReader,
     FileWriter,
     PathBuilder,
-    StructureVisualizer,
-    VisualizationParams,
     DistanceMeasurer,
 )
 
@@ -164,25 +159,25 @@ class IntercalationAndSorption:
         if inter_atoms_full_channel_coordinates_df is None:
             raise IOError(f"Failed to read {params.file_name} Excel file")
 
-        inter_atoms_coordinates: IPoints = InterAtomsParser.parse_inter_atoms_coordinates_df(
-            inter_atoms_full_channel_coordinates_df
-        )
-        inter_atoms_coordinates = InterAtomsTranslator.translate_for_all_planes(
-            carbon_channel,
-            inter_atoms_coordinates,
-            params.number_of_planes,
-            params.to_to_try_to_reflect_inter_atoms,
-            atom_params,
-        )
+        # inter_atoms_coordinates: IPoints = InterAtomsParser.parse_inter_atoms_coordinates_df(
+        #     inter_atoms_full_channel_coordinates_df
+        # )
+        # inter_atoms_coordinates = InterAtomsTranslator.translate_for_all_planes(
+        #     carbon_channel,
+        #     inter_atoms_coordinates,
+        #     params.number_of_planes,
+        #     params.to_to_try_to_reflect_inter_atoms,
+        #     atom_params,
+        # )
 
-        if params.number_of_planes > 1:
-            # Build only specified planes
-            carbon_channel_points: NDArray[np.float64] = np.vstack(
-                [carbon_channel.planes[i].points for i in range(params.number_of_planes)]
-            )
-        else:
-            # Build all planes
-            carbon_channel_points: NDArray[np.float64] = carbon_channel.points
+        # if params.number_of_planes > 1:
+        #     # Build only specified planes
+        #     carbon_channel_points: NDArray[np.float64] = np.vstack(
+        #         [carbon_channel.planes[i].points for i in range(params.number_of_planes)]
+        #     )
+        # else:
+        #     # Build all planes
+        #     carbon_channel_points: NDArray[np.float64] = carbon_channel.points
 
         raise NotImplementedError("Not implemented fully")
 
@@ -226,7 +221,7 @@ class IntercalationAndSorption:
 
         # Convert the dictionary to a DataFrame
         intercalation_constants_df: pd.DataFrame = pd.DataFrame.from_dict(
-            intercalation_constants, orient='index', columns=['Value']
+            intercalation_constants, orient='index', columns=pd.Index(['Value'])
         ).reset_index().rename(columns={'index': 'Name'})
 
         return intercalation_constants_df
@@ -262,7 +257,7 @@ class IntercalationAndSorption:
         inter_atoms: IPoints = InterAtomsParser.parse_inter_atoms_coordinates_df(
             inter_atoms_full_channel_coordinates_df
         )
-        inter_atoms: IPoints = InterAtomsTranslator.translate_for_all_planes(
+        inter_atoms = InterAtomsTranslator.translate_for_all_planes(
             carbon_channel,
             inter_atoms,
             params.number_of_planes,
