@@ -889,14 +889,15 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
             # Use the existing intercalation logic to get structures
             params: PMvpParams = self.model.get_mvp_params()
 
+            carbon_coords: NDArray[np.float64]
             if only_one_channel:
                 carbon_channel: ICarbonHoneycombChannel = CarbonHoneycombModeller.build_carbon_channel(
                     project_dir, subproject_dir, structure_dir, file_name=Constants.file_names.INIT_DAT_FILE
                 )
-                carbon_coords: NDArray[np.float64] = carbon_channel.points
+                carbon_coords = carbon_channel.points
             else:
                 # Get full carbon structure (all atoms, not just one channel)
-                carbon_coords: NDArray[np.float64] = IntercalationAndSorption.get_carbon_coords(
+                carbon_coords = IntercalationAndSorption.get_carbon_coords(
                     project_dir, subproject_dir, structure_dir
                 )
 
@@ -906,8 +907,9 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
 
             # Get intercalated coordinates if they exist
             inter_coords_list: list[NDArray[np.float64]] = []
+            inter_coords: NDArray[np.float64] | None = None
             try:
-                inter_coords: NDArray[np.float64] | None = IntercalationAndSorption.get_inter_coords(
+                inter_coords = IntercalationAndSorption.get_inter_coords(
                     project_dir=project_dir,
                     subproject_dir=subproject_dir,
                     structure_dir=structure_dir,
@@ -928,7 +930,7 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
                         project_dir, subproject_dir, structure_dir, params
                     )
                     # Try to get the generated coordinates
-                    inter_coords: NDArray[np.float64] | None = IntercalationAndSorption.get_inter_coords(
+                    inter_coords = IntercalationAndSorption.get_inter_coords(
                         project_dir=project_dir,
                         subproject_dir=subproject_dir,
                         structure_dir=structure_dir,
@@ -941,10 +943,11 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
 
             # Prepare coordinates and labels - always include carbon
             coords_list: list[NDArray[np.float64]] = [carbon_coords]
+            labels_list: list[str]
             if only_one_channel:
-                labels_list: list[str] = ["Carbon Channel"]
+                labels_list = ["Carbon Channel"]
             else:
-                labels_list: list[str] = ["Carbon"]
+                labels_list = ["Carbon"]
 
             # Add intercalated atoms if available
             for i, inter_coords in enumerate(inter_coords_list):
@@ -994,7 +997,7 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
             # If no translated atoms available, try to use regular intercalated atoms
             if not translated_coords_list:
                 try:
-                    inter_coords: NDArray[np.float64] | None = IntercalationAndSorption.get_inter_coords(
+                    inter_coords = IntercalationAndSorption.get_inter_coords(
                         project_dir=project_dir,
                         subproject_dir=subproject_dir,
                         structure_dir=structure_dir,
