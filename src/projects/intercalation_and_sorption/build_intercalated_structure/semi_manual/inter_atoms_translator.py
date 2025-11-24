@@ -29,7 +29,7 @@ class InterAtomsTranslator:
     ) -> IPoints:
 
         inter_atoms: np.ndarray = inter_atoms_channel_coordinates.points
-        inter_atoms_fininter_atoms: np.ndarray = inter_atoms.copy()
+        all_inter_atoms: np.ndarray = inter_atoms.copy()
 
         # inter_atoms_center: np.ndarray = inter_atoms_channel_coordinates.center
         inter_atoms_center: np.ndarray = carbon_channels[0].center
@@ -44,8 +44,8 @@ class InterAtomsTranslator:
 
             # Translate on the vector from the channel center to the inter_atoms center
             vector: np.ndarray = channel_center - inter_atoms_center
-            inter_atoms_fininter_atoms = np.vstack(
-                (inter_atoms_fininter_atoms, inter_atoms.copy() + vector))
+            all_inter_atoms = np.vstack(
+                (all_inter_atoms, inter_atoms.copy() + vector))
 
         edge_channel_centers: list[np.ndarray] = cls.get_centers_of_edge_carbon_channels(coordinates_carbon)
 
@@ -56,10 +56,10 @@ class InterAtomsTranslator:
             center[2] = inter_atoms_center[2]
 
             vector: np.ndarray = center - inter_atoms_center
-            inter_atoms_fininter_atoms = np.vstack(
-                (inter_atoms_fininter_atoms, inter_atoms.copy() + vector))
+            all_inter_atoms = np.vstack(
+                (all_inter_atoms, inter_atoms.copy() + vector))
 
-        return Points(inter_atoms_fininter_atoms)
+        return Points(all_inter_atoms)
 
     @classmethod
     def translate_for_all_planes(

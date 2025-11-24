@@ -23,7 +23,7 @@ from src.services import (
     DistanceMeasurer,
 )
 
-from src.projects.carbon_honeycomb_actions import CarbonHoneycombModeller
+from src.projects.carbon_honeycomb_actions import CarbonHoneycombModeller, CarbonHoneycombActions
 from .build_intercalated_structure import (
     CoordinatesTableManager,
     InterAtomsParser,
@@ -396,18 +396,70 @@ class IntercalationAndSorption:
         params: PMvpParams,
     ) -> tuple[Path, Path]:
         """Generate files for intercalated atoms in all channels."""
-        # This would generate multiple files - for now, we'll create basic outputs
         atom_params: ConstantsAtomParams = ATOM_PARAMS_MAP[subproject_dir.lower()]
 
-        # Generate the main coordinates file
-        coords_path: Path = cls.generate_inter_plane_coordinates_file(
-            project_dir, subproject_dir, structure_dir, params
+        # 1. Read intercalated atoms from channel coordinates file
+        file_name: str | None = params.file_name
+        if file_name is None:
+            raise ValueError("File name is required")
+
+        path_to_file: Path = PathBuilder.build_path_to_result_data_file(
+            project_dir, subproject_dir, structure_dir, file_name=file_name
         )
 
-        # Generate the details file
+        inter_atoms_df: pd.DataFrame | None = FileReader.read_excel_file(
+            path_to_file=path_to_file, to_print_warning=False
+        )
+
+        if inter_atoms_df is None:
+            raise IOError(f"Failed to read {file_name} Excel file")
+
+        inter_atoms_channel: IPoints = InterAtomsParser.parse_inter_atoms_coordinates_df(
+            inter_atoms_df
+        )
+
+        # 2. Build carbon structure and channels
+        carbon_points: NDArray[np.float64] = FileReader.read_init_data_file(
+            project_dir=project_dir,
+            subproject_dir=subproject_dir,
+            structure_dir=structure_dir,
+            file_name=Constants.file_names.INIT_DAT_FILE,
+        )
+        coordinates_carbon: IPoints = Points(carbon_points)
+
+        carbon_channels: list[ICarbonHoneycombChannel] = (
+            CarbonHoneycombActions.split_init_structure_into_separate_channels(
+                coordinates_carbon=coordinates_carbon
+            )
+        )
+
+        # 3. Translate to all channels (full channels + edge channels)
+        all_channels_atoms: IPoints = InterAtomsTranslator.translate_for_all_channels(
+            coordinates_carbon=coordinates_carbon,
+            carbon_channels=carbon_channels,
+            inter_atoms_channel_coordinates=inter_atoms_channel,
+        )
+
+        # 4. Save translated coordinates
+        result_file_name: str = file_name.replace(".xlsx", "_all_channels.xlsx")
+        coords_path: Path = PathBuilder.build_path_to_result_data_file(
+            project_dir, subproject_dir, structure_dir, file_name=result_file_name
+        )
+
+        FileWriter.write_excel_file(
+            df=all_channels_atoms.to_df(columns=["i", "x_inter", "y_inter", "z_inter"]),
+            path_to_file=coords_path,
+            sheet_name="Intercalated atoms for all channels",
+        )
+
+        # 5. Generate distance matrix using the translated atoms
+        # (update params.file_name temporarily to use the new file)
+        original_file_name: str | None = params.file_name
+        params.file_name = result_file_name
         details_path: Path = cls.save_distance_matrix(
             project_dir, subproject_dir, structure_dir, params
         )
+        params.file_name = original_file_name
 
         return coords_path, details_path
 

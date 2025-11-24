@@ -641,6 +641,8 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
             selected_file: str = self.view.get_selected_file()
             if selected_file and selected_file != "No files found":
                 params.file_name = selected_file
+                # Save updated params back to model so _get_translated_structures can access it
+                self.model.set_mvp_params(params)
 
             self.translate_inter_to_all_channels_plot(
                 project_dir=self._current_context["project_dir"],
