@@ -39,6 +39,7 @@ This application is a comprehensive tool for computational modeling of carbon ho
 ## 🛠️ Technology Stack
 
 ### Core Technologies
+
 - **Python 3.x** - Primary development language
 - **CustomTkinter** - Modern GUI framework with native theming
 - **NumPy** - High-performance numerical computations and array operations
@@ -46,16 +47,19 @@ This application is a comprehensive tool for computational modeling of carbon ho
 - **Pandas** - Data manipulation and analysis
 
 ### Scientific Computing
+
 - **MDAnalysis** - Molecular dynamics trajectory analysis
 - **OpenPyXL** - Excel file manipulation for data export
 
 ### Architecture & Patterns
+
 - **MVP Architecture** - Complete separation of concerns with interface contracts
 - **Protocol-Oriented Design** - Type-safe abstractions using Python protocols
 - **Factory Pattern** - Dynamic object creation for UI components
 - **Observer Pattern** - Event-driven parameter synchronization
 
 ### Development Tools
+
 - **Pylance/Pyright** - Static type checking and linting
 - **PyInstaller** - Standalone application builds for macOS/Windows
 
@@ -81,35 +85,16 @@ This application is a comprehensive tool for computational modeling of carbon ho
 ```
 
 **Key Architectural Decisions:**
+
 - Interface-first development ensuring loose coupling
 - Dataclass-based parameter management for type safety
 - Service layer abstraction for testability
 - Template inheritance for UI consistency
 
-## 💼 Portfolio Highlights
-
-This project demonstrates:
-
-### Software Engineering Excellence
-✅ **Clean Code Principles** - SOLID principles, DRY, separation of concerns
-✅ **Type Safety** - Complete type annotations with static analysis
-✅ **Scalable Architecture** - Modular design supporting easy feature addition
-✅ **Documentation** - Comprehensive docstrings and architecture guides
-
-### Domain Expertise
-✅ **Scientific Computing** - Complex geometric algorithms and 3D transformations
-✅ **Data Visualization** - Interactive matplotlib integration with real-time updates
-✅ **Computational Chemistry** - Understanding of molecular structures and file formats
-
-### Full-Stack Desktop Development
-✅ **Modern GUI Design** - CustomTkinter with professional styling
-✅ **State Management** - Persistent configuration and UI state
-✅ **Cross-Platform** - macOS and Windows support with build scripts
-✅ **Performance** - Efficient handling of large coordinate datasets
-
 ## 🚀 Getting Started
 
 ### Prerequisites
+
 - Python 3.8+
 - pip package manager
 
@@ -147,6 +132,7 @@ build_app_for_windows.bat
 ## 🎓 Academic Context
 
 This tool supports research in:
+
 - Gas sorption and storage in nanomaterials
 - Intercalation phenomena in layered structures
 - Honeycomb lattice geometry analysis
@@ -162,11 +148,8 @@ This tool supports research in:
 ## 🔬 Technical Deep Dive
 
 The intercalation algorithm implements:
+
 - Voronoi-based channel detection
 - Lattice vector calculation for hexagonal geometries
 - Layer-by-layer atom placement with collision detection
 - Coordinate transformation and translation matrices
-
----
-
-**Note**: This project represents a complete production-ready desktop application with professional software engineering practices, suitable for both research applications and as a portfolio demonstration of advanced Python development skills.
