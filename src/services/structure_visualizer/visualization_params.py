@@ -67,7 +67,7 @@ class VisualizationParams(IVisualizationParams):
 
     intercalated_atoms_1_layer = StructureVisualParams(
         color_atoms=Colors.intercalated_atoms_colors_1_layer.atoms_color,
-        transparency=0.99,
+        transparency=0.5,
         as_shaded_3d_spheres=True,
         size=300,
 
@@ -82,7 +82,7 @@ class VisualizationParams(IVisualizationParams):
 
     intercalated_atoms_2_layer = StructureVisualParams(
         color_atoms=Colors.intercalated_atoms_colors_2_layer.atoms_color,
-        transparency=0.99,
+        transparency=0.5,
         as_shaded_3d_spheres=True,
         size=300,
 
@@ -97,7 +97,7 @@ class VisualizationParams(IVisualizationParams):
 
     intercalated_atoms_3_layer = StructureVisualParams(
         color_atoms=Colors.intercalated_atoms_colors_3_layer.atoms_color,
-        transparency=0.99,
+        transparency=0.5,
         as_shaded_3d_spheres=True,
         size=300,
 
