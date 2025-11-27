@@ -22,8 +22,9 @@ from src.services import (
     PathBuilder,
     DistanceMeasurer,
 )
-
+from src.services.coordinate_operations import PointsFilter
 from src.projects.carbon_honeycomb_actions import CarbonHoneycombModeller, CarbonHoneycombActions
+
 from .build_intercalated_structure import (
     CoordinatesTableManager,
     InterAtomsParser,
@@ -439,6 +440,17 @@ class IntercalationAndSorption:
             carbon_channels=carbon_channels,
             inter_atoms_channel_coordinates=inter_atoms_channel,
         )
+
+        # 3.5. Filter out atoms with min and max X coordinates if requested
+        if params.to_remove_inter_atoms_with_min_and_max_x_coordinates:
+            logger.info(
+                f"Removing atoms with min/max X coordinates. "
+                f"Before: {len(all_channels_atoms.points)} atoms"
+            )
+            all_channels_atoms = PointsFilter.remove_atoms_with_min_and_max_x_coordinates(
+                all_channels_atoms
+            )
+            logger.info(f"After filtering: {len(all_channels_atoms.points)} atoms")
 
         # 4. Save translated coordinates
         result_file_name: str = file_name.replace(".xlsx", "_all_channels.xlsx")

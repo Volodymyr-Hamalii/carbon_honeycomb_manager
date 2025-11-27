@@ -27,3 +27,10 @@ class IPointsFilter(ABC):
             move_align_z: bool,
     ) -> IPoints:
         ...
+
+    @staticmethod
+    @abstractmethod
+    def remove_atoms_with_min_and_max_x_coordinates(
+            points: IPoints,
+    ) -> IPoints:
+        ...
