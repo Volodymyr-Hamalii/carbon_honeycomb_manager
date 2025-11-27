@@ -86,7 +86,7 @@ class IntercalationAndSorption:
         )
 
         path_to_file_result: Path | None = FileWriter.write_excel_file(
-            df=inter_atoms_plane_coordinates.to_df(columns=["i", "x_inter", "y_inter", "z_inter"]),
+            df=inter_atoms_plane_coordinates.to_df(columns=["i", *InterAtomsParser.INTER_ATOMS_COORDINATES_COLUMNS]),
             path_to_file=path_to_file,
             sheet_name="Intercalated atoms for the plane",
         )
@@ -148,17 +148,16 @@ class IntercalationAndSorption:
             project_dir, subproject_dir, structure_dir, file_name=Constants.file_names.INIT_DAT_FILE
         )
 
-        path_to_file: Path = PathBuilder.build_path_to_result_data_file(
-            project_dir, subproject_dir, structure_dir, file_name=file_name
-        )
-
-        inter_atoms_full_channel_coordinates_df: pd.DataFrame | None = FileReader.read_excel_file(
-            path_to_file=path_to_file,
+        inter_atoms_full_channel_coordinates_df: pd.DataFrame | None = FileReader.read_result_data_file(
+            project_dir=project_dir,
+            subproject_dir=subproject_dir,
+            structure_dir=structure_dir,
+            file_name=file_name,
             to_print_warning=False,
         )
 
         if inter_atoms_full_channel_coordinates_df is None:
-            raise IOError(f"Failed to read {params.file_name} Excel file")
+            raise IOError(f"Failed to read {params.file_name} file")
 
         # inter_atoms_coordinates: IPoints = InterAtomsParser.parse_inter_atoms_coordinates_df(
         #     inter_atoms_full_channel_coordinates_df
@@ -243,17 +242,18 @@ class IntercalationAndSorption:
         )
 
         # Read the selected file
-        path_to_file: Path = PathBuilder.build_path_to_result_data_file(
-            project_dir, subproject_dir, structure_dir,
-            file_name=params.file_name or "intercalated-channel-coordinates.xlsx")
+        file_name: str = params.file_name or "intercalated-channel-coordinates.xlsx"
 
-        inter_atoms_full_channel_coordinates_df: pd.DataFrame | None = FileReader.read_excel_file(
-            path_to_file=path_to_file,
+        inter_atoms_full_channel_coordinates_df: pd.DataFrame | None = FileReader.read_result_data_file(
+            project_dir=project_dir,
+            subproject_dir=subproject_dir,
+            structure_dir=structure_dir,
+            file_name=file_name,
             to_print_warning=False,
         )
 
         if inter_atoms_full_channel_coordinates_df is None:
-            raise IOError(f"Failed to read {params.file_name} Excel file")
+            raise IOError(f"Failed to read {params.file_name} file")
 
         inter_atoms: IPoints = InterAtomsParser.parse_inter_atoms_coordinates_df(
             inter_atoms_full_channel_coordinates_df
@@ -266,8 +266,12 @@ class IntercalationAndSorption:
             atom_params,
         )
 
+        path_to_file: Path = PathBuilder.build_path_to_result_data_file(
+            project_dir, subproject_dir, structure_dir,
+            file_name=file_name)
+
         FileWriter.write_excel_file(
-            df=inter_atoms.to_df(columns=["i", "x_inter", "y_inter", "z_inter"]),
+            df=inter_atoms.to_df(columns=["i", *InterAtomsParser.INTER_ATOMS_COORDINATES_COLUMNS]),
             path_to_file=path_to_file,
             sheet_name="Intercalated atoms for the channel",
         )
@@ -315,17 +319,18 @@ class IntercalationAndSorption:
             project_dir, subproject_dir, structure_dir, file_name=Constants.file_names.INIT_DAT_FILE
         )
 
-        path_to_file: Path = PathBuilder.build_path_to_result_data_file(
-            project_dir, subproject_dir, structure_dir,
-            file_name=params.file_name or "intercalated-channel-coordinates.xlsx")
+        file_name: str = params.file_name or "intercalated-channel-coordinates.xlsx"
 
-        intercalated_coordinates_df: pd.DataFrame | None = FileReader.read_excel_file(
-            path_to_file=path_to_file,
+        intercalated_coordinates_df: pd.DataFrame | None = FileReader.read_result_data_file(
+            project_dir=project_dir,
+            subproject_dir=subproject_dir,
+            structure_dir=structure_dir,
+            file_name=file_name,
             to_print_warning=False,
         )
 
         if intercalated_coordinates_df is None:
-            raise IOError(f"Failed to read {params.file_name} Excel file")
+            raise IOError(f"Failed to read {params.file_name} file")
 
         inter_atoms: Points = InterAtomsParser.parse_inter_atoms_coordinates_df(
             intercalated_coordinates_df
@@ -402,16 +407,16 @@ class IntercalationAndSorption:
         if file_name is None:
             raise ValueError("File name is required")
 
-        path_to_file: Path = PathBuilder.build_path_to_result_data_file(
-            project_dir, subproject_dir, structure_dir, file_name=file_name
-        )
-
-        inter_atoms_df: pd.DataFrame | None = FileReader.read_excel_file(
-            path_to_file=path_to_file, to_print_warning=False
+        inter_atoms_df: pd.DataFrame | None = FileReader.read_result_data_file(
+            project_dir=project_dir,
+            subproject_dir=subproject_dir,
+            structure_dir=structure_dir,
+            file_name=file_name,
+            to_print_warning=False,
         )
 
         if inter_atoms_df is None:
-            raise IOError(f"Failed to read {file_name} Excel file")
+            raise IOError(f"Failed to read {file_name} file")
 
         inter_atoms_channel: IPoints = InterAtomsParser.parse_inter_atoms_coordinates_df(
             inter_atoms_df
@@ -457,7 +462,7 @@ class IntercalationAndSorption:
         )
 
         FileWriter.write_excel_file(
-            df=all_channels_atoms.to_df(columns=["i", "x_inter", "y_inter", "z_inter"]),
+            df=all_channels_atoms.to_df(columns=["i", *InterAtomsParser.INTER_ATOMS_COORDINATES_COLUMNS]),
             path_to_file=coords_path,
             sheet_name="Intercalated atoms for all channels",
         )
@@ -497,16 +502,12 @@ class IntercalationAndSorption:
     ) -> NDArray[np.float64] | None:
         """Get intercalated atoms coordinates."""
         try:
-            # Try to read existing intercalated coordinates file
-            path_to_file: Path = PathBuilder.build_path_to_result_data_file(
+            # Try to read existing intercalated coordinates file (supports .xlsx and .dat)
+            intercalated_coordinates_df: pd.DataFrame | None = FileReader.read_result_data_file(
                 project_dir=project_dir,
                 subproject_dir=subproject_dir,
                 structure_dir=structure_dir,
-                file_name=file_name
-            )
-
-            intercalated_coordinates_df: pd.DataFrame | None = FileReader.read_excel_file(
-                path_to_file=path_to_file,
+                file_name=file_name,
                 to_print_warning=False,
             )
 

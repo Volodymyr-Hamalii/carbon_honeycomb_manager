@@ -55,5 +55,5 @@ class IIntercalationAndSorptionModel(IGeneralModel):
 
     @abstractmethod
     def get_available_files(self, project_dir: str, subproject_dir: str, structure_dir: str) -> list[str]:
-        """Get list of available intercalated structure files (.xlsx) from result directory."""
+        """Get list of available intercalated structure files (.xlsx and .dat) from result directory."""
         ...

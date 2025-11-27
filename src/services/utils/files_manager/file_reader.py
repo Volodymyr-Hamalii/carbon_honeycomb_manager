@@ -3,6 +3,7 @@ from typing import Any
 from pathlib import Path
 
 import pandas as pd
+from pandas.core.indexes.base import Index
 import numpy as np
 import MDAnalysis as mda
 
@@ -33,8 +34,9 @@ class FileReader:
             logger.error(f"Failed to read list of directories in {folder_path}: {e}")
             return []
 
-    @staticmethod
+    @classmethod
     def read_list_of_files(
+            cls,
             folder_path: Path | str,
             format: str | None = None,
             to_include_nested_files: bool = False,
@@ -58,7 +60,7 @@ class FileReader:
 
                 if to_include_nested_files and file.is_dir():
                     file_names.extend(
-                        FileReader.read_list_of_files(
+                        cls.read_list_of_files(
                             file,
                             format=format,
                             to_include_nested_files=to_include_nested_files,
@@ -218,3 +220,46 @@ class FileReader:
             return carbon_points_df.to_numpy()
         else:
             raise ValueError(f"Unsupported file format: {file_format}")
+
+    @classmethod
+    def read_result_data_file(
+            cls,
+            project_dir: str,
+            subproject_dir: str,
+            structure_dir: str,
+            file_name: str,
+            to_print_warning: bool = True,
+    ) -> pd.DataFrame | None:
+        """
+        Read result data file (supports .xlsx and .dat formats).
+        Returns pandas DataFrame or None if file doesn't exist or fails to read.
+        """
+        path_to_file: Path = PathBuilder.build_path_to_result_data_file(
+            project_dir=project_dir,
+            subproject_dir=subproject_dir,
+            structure_dir=structure_dir,
+            file_name=file_name,
+        )
+
+        if not path_to_file.exists():
+            if to_print_warning:
+                logger.warning(f"File not found at {path_to_file}")
+            return None
+
+        file_format: str = file_name.split(".")[-1].lower()
+
+        if file_format == "xlsx":
+            return cls.read_excel_file(path_to_file, to_print_warning=to_print_warning)
+        elif file_format == "dat":
+            try:
+                coords: np.ndarray = cls.read_dat_file(path_to_file)
+                # Convert to DataFrame with standard column names
+                return pd.DataFrame(coords, columns=Index(["x_inter", "y_inter", "z_inter"]))
+            except Exception as e:
+                if to_print_warning:
+                    logger.error(f"Failed to read .dat file {path_to_file}: {e}")
+                return None
+        else:
+            if to_print_warning:
+                logger.error(f"Unsupported file format: {file_format}")
+            return None

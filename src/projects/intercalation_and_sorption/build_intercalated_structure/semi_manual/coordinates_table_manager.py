@@ -72,18 +72,23 @@ class CoordinatesTableManager:
             structure_dir: str,
     ) -> Path:
         file_name: str = Constants.file_names.FULL_CHANNEL_COORDINATES_XLSX_FILE
-        path_to_file = PathBuilder.build_path_to_result_data_file(
+        inter_channel_coordinates_df: pd.DataFrame | None = FileReader.read_result_data_file(
             project_dir=project_dir,
             subproject_dir=subproject_dir,
             structure_dir=structure_dir,
             file_name=file_name,
         )
 
-        inter_channel_coordinates_df: pd.DataFrame | None = FileReader.read_excel_file(path_to_file)
-
         if inter_channel_coordinates_df is None:
             raise FileNotFoundError(
-                f"Excel file withintercalated atoms for the full channel not found in {structure_dir}.")
+                f"File withintercalated atoms for the full channel not found in {structure_dir}.")
+
+        path_to_file = PathBuilder.build_path_to_result_data_file(
+            project_dir=project_dir,
+            subproject_dir=subproject_dir,
+            structure_dir=structure_dir,
+            file_name=file_name,
+        )
 
         inter_channel_coordinates: Points = InterAtomsParser.parse_inter_atoms_coordinates_df(
             inter_channel_coordinates_df)
@@ -128,9 +133,9 @@ class CoordinatesTableManager:
         # Prepare data for the DataFrame
         data: dict = {
             "i": np.arange(len(points)),  # Point index
-            "x_inter": points[:, 0],      # X-coordinates
-            "y_inter": points[:, 1],      # Y-coordinates
-            "z_inter": points[:, 2],      # Z-coordinates
+            InterAtomsParser.INTER_ATOMS_COORDINATES_COLUMNS[0]: points[:, 0],      # X-coordinates
+            InterAtomsParser.INTER_ATOMS_COORDINATES_COLUMNS[1]: points[:, 1],      # Y-coordinates
+            InterAtomsParser.INTER_ATOMS_COORDINATES_COLUMNS[2]: points[:, 2],      # Z-coordinates
             "min_dist_to_inter": min_dist_to_inter,  # Minimum distance to other points
         }
 

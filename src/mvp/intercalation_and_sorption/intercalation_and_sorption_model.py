@@ -64,26 +64,30 @@ class IntercalationAndSorptionModel(GeneralModel, IIntercalationAndSorptionModel
         })
 
     def get_available_files(self, project_dir: str, subproject_dir: str, structure_dir: str) -> list[str]:
-        """Get list of available intercalated structure files (.xlsx) from result directory."""
+        """Get list of available intercalated structure files (.xlsx and .dat) from result directory."""
         try:
-            # Look for .xlsx files in result_data directory (intercalated structure files)
+            # Look for .xlsx and .dat files in result_data directory (intercalated structure files)
             result_data_path: Path = PathBuilder.build_path_to_result_data_dir(
                 project_dir=project_dir,
                 subproject_dir=subproject_dir,
                 structure_dir=structure_dir,
             )
-            
+
             if not result_data_path.exists():
                 return ["No files found"]
-            
-            # Get .xlsx files specifically (intercalated structure files)
-            files: list[str] = FileReader.read_list_of_files(result_data_path, format=".xlsx", to_include_nested_files=True)
-            
+
+            # Get both .xlsx and .dat files (intercalated structure files)
+            xlsx_files: list[str] = FileReader.read_list_of_files(result_data_path, format=".xlsx", to_include_nested_files=True)
+            dat_files: list[str] = FileReader.read_list_of_files(result_data_path, format=".dat", to_include_nested_files=True)
+
+            # Combine both lists
+            files: list[str] = sorted(xlsx_files + dat_files)
+
             if not files:
                 return ["No files found"]
-            
+
             return files
-            
+
         except Exception as e:
             logger.error(f"Failed to get available files: {e}")
             return ["No files found"]
