@@ -395,7 +395,7 @@ class IntercalationAndSorption:
         subproject_dir: str,
         structure_dir: str,
         params: PMvpParams,
-    ) -> tuple[Path, Path | None]:
+    ) -> Path:
         """Generate files for intercalated atoms in all channels."""
         # 1. Read intercalated atoms from channel coordinates file
         file_name: str | None = params.file_name
@@ -470,9 +470,8 @@ class IntercalationAndSorption:
         #     project_dir, subproject_dir, structure_dir, params
         # )
         # params.file_name = original_file_name
-        details_path = None
 
-        return coords_path, details_path
+        return coords_path
 
     @staticmethod
     def get_carbon_coords(
