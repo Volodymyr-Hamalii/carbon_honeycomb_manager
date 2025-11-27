@@ -683,14 +683,14 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
                 # Save updated params to model
                 self.model.set_mvp_params(params)
 
-            coords_path, details_path = IntercalationAndSorption.translate_inter_to_all_channels_generate_files(
+            coords_path, _ = IntercalationAndSorption.translate_inter_to_all_channels_generate_files(
                 project_dir=self._current_context["project_dir"],
                 subproject_dir=self._current_context["subproject_dir"],
                 structure_dir=self._current_context["structure_dir"],
                 params=params,
             )
 
-            self.view.show_success_message(f"Files generated successfully: {coords_path}, {details_path}")
+            self.view.show_success_message(f"Files generated successfully: {coords_path}")
 
         except Exception as e:
             self.on_operation_failed("translate_inter_to_all_channels_generate", e)

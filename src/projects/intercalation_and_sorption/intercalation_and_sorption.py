@@ -395,10 +395,8 @@ class IntercalationAndSorption:
         subproject_dir: str,
         structure_dir: str,
         params: PMvpParams,
-    ) -> tuple[Path, Path]:
+    ) -> tuple[Path, Path | None]:
         """Generate files for intercalated atoms in all channels."""
-        atom_params: ConstantsAtomParams = ATOM_PARAMS_MAP[subproject_dir.lower()]
-
         # 1. Read intercalated atoms from channel coordinates file
         file_name: str | None = params.file_name
         if file_name is None:
@@ -464,14 +462,15 @@ class IntercalationAndSorption:
             sheet_name="Intercalated atoms for all channels",
         )
 
-        # 5. Generate distance matrix using the translated atoms
-        # (update params.file_name temporarily to use the new file)
-        original_file_name: str | None = params.file_name
-        params.file_name = result_file_name
-        details_path: Path = cls.save_distance_matrix(
-            project_dir, subproject_dir, structure_dir, params
-        )
-        params.file_name = original_file_name
+        # # 5. Generate distance matrix using the translated atoms
+        # # (update params.file_name temporarily to use the new file)
+        # original_file_name: str | None = params.file_name
+        # params.file_name = result_file_name
+        # details_path: Path = cls.save_distance_matrix(
+        #     project_dir, subproject_dir, structure_dir, params
+        # )
+        # params.file_name = original_file_name
+        details_path = None
 
         return coords_path, details_path
 
