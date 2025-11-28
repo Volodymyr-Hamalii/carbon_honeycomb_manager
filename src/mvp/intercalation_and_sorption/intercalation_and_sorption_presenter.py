@@ -20,7 +20,7 @@ from src.projects.intercalation_and_sorption import IntercalationAndSorption
 from src.projects.intercalation_and_sorption.intercalared_structure_cell_cutter import IntercalatedStructureCellCutter
 from src.ui.components import PlotWindow, PlotWindowFactory
 
-            
+
 logger = Logger("IntercalationAndSorptionPresenter")
 
 
@@ -324,10 +324,12 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
             # Show structures
             plot_window.show_structures(coords_list, visual_params_list, labels_list)
 
+            # Get structure type from file name
+
             # Step 7: Save files
+            cell_dir_name: str = self._get_structure_type_from_file_name(selected_file)
             cell_dir = PathBuilder.build_path_to_result_data_dir(
-                project_dir, subproject_dir, structure_dir
-            ) / "cell"
+                project_dir, subproject_dir, structure_dir) / cell_dir_name
             cell_dir.mkdir(exist_ok=True)
 
             carbon_output_path = cell_dir / f"{structure_dir}_cell_carbon.dat"
@@ -358,6 +360,22 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
             logger.error(f"Failed to cut unit cell: {e}")
             self.on_operation_failed("cut_intercalated_structure_cell", e)
             raise
+
+    @staticmethod
+    def _get_structure_type_from_file_name(file_name: str) -> str:
+        """Get structure type from file name."""
+        # Get structure type from file name
+        cell_dir_name = "cell"
+        try:
+            structure_type: str = file_name.split('.')[0].replace(
+                '_all_channels', '').replace('(', '').replace(')', '')
+            structure_type = "_".join(structure_type.split(' ')[1:])
+            structure_type = structure_type[:-1] if structure_type.endswith('_') else structure_type
+            if structure_type:
+                cell_dir_name: str = "cell_" + structure_type
+        except Exception:
+            pass
+        return cell_dir_name
 
     def translate_inter_to_all_channels_generate_files(
         self,
