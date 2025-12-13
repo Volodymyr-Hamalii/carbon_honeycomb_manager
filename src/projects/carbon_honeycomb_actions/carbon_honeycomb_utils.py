@@ -148,9 +148,10 @@ class CarbonHoneycombUtils:
     ) -> list[dict[tuple[np.float32, np.float32], np.ndarray]]:
         """
         Takes groups_by_the_xy_lines and split the group into separate
-        if there are some groups with the min distances more than max_distance_between_xy_groups.
+        if there are some groups with the min distances more than max_distance_between_xy_groups
+        (for example, if several channel planes lay inside the same plane).
         """
-        result: list[dict[tuple[np.float32, np.float32], np.ndarray]] = []
+        honeycomb_planes_groups: list[dict[tuple[np.float32, np.float32], np.ndarray]] = []
 
         for line_dict in groups_by_the_xy_lines:
             # Sort keys (usually by x then y)
@@ -162,14 +163,17 @@ class CarbonHoneycombUtils:
 
             # Build clusters based on max distance
             for i in range(1, len(keys)):
-                dist: float = DistanceMeasurer.calculate_distance_between_2_points(keys[i - 1], keys[i])
+                prev_point = keys[i - 1]
+                current_point = keys[i]
+
+                dist: float = DistanceMeasurer.calculate_distance_between_2_points(prev_point, current_point)
                 if dist <= max_distance_between_xy_groups:
                     # Same cluster
-                    current_cluster.append(keys[i])
+                    current_cluster.append(current_point)
                 else:
                     # New cluster starts here
                     clusters.append(current_cluster)
-                    current_cluster = [keys[i]]
+                    current_cluster = [current_point]
 
             # Append the last cluster if not empty
             if current_cluster:
@@ -181,9 +185,9 @@ class CarbonHoneycombUtils:
             # Convert each cluster back to a dict
             for cluster in filtered_clusters:
                 cluster_dict = {k: line_dict[k] for k in cluster}
-                result.append(cluster_dict)
+                honeycomb_planes_groups.append(cluster_dict)
 
-        return result
+        return honeycomb_planes_groups
 
     @staticmethod
     def split_groups_by_max_distances(
