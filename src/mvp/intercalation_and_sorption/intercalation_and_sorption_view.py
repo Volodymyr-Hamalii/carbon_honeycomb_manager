@@ -96,7 +96,7 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
 
         ##### SECOND COLUMN #####
         self.operation_buttons["plot_inter_in_c_structure"] = self.template.pack_button(
-            op_col2, "Plot channel with intercalated atoms",
+            op_col2, "Plot one channel",
             self._on_plot_inter_in_c_structure
         )
         self.operation_buttons["translate_inter_to_all_channels_plot"] = self.template.pack_button(
