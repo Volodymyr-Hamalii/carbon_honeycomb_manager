@@ -91,7 +91,8 @@ class IntercalatedStructureCellCutter:
         # Get 2 full channels
         carbon_channels: list[ICarbonHoneycombChannel] = (
             CarbonHoneycombActions.split_init_structure_into_separate_channels(
-                coordinates_carbon
+                coordinates_carbon,
+                clearance_dist_coefficient=2,
             )
         )
 
