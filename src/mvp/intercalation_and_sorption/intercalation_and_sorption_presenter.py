@@ -132,6 +132,7 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
             self.view.show_operation_progress("Updating intercalated atoms plane coordinates...")
 
             # TODO: Implement actual file update
+            raise NotImplementedError("update_inter_plane_coordinates_file is not implemented")
             output_path = Path(f"{project_dir}/{subproject_dir}/{structure_dir}/inter_plane_coords.dat")
 
             self.view.show_operation_success("Plane coordinates file updated", output_path)
