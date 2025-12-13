@@ -312,7 +312,7 @@ class InterAtomsTranslator:
         # Filter honeycomb_planes_groups groups with the same Y in the group
         honeycomb_planes_groups = [
             group for group in honeycomb_planes_groups
-            if list(group.keys())[0][1] == list(group.keys())[1][1]
+            if np.round(list(group.keys())[0][1], 3) == np.round(list(group.keys())[1][1], 3)
         ]
 
         # Keep only planes, that contains max or min X coordinate along the all groups
@@ -329,12 +329,12 @@ class InterAtomsTranslator:
 
         honeycomb_planes_groups_left = [
             group for group in honeycomb_planes_groups
-            if any(key[0] in [min_x] for key in group.keys())
+            if any(np.round(key[0], 3) == np.round(min_x, 3) for key in group.keys())
         ]
 
         honeycomb_planes_groups_right = [
             group for group in honeycomb_planes_groups
-            if any(key[0] in [max_x] for key in group.keys())
+            if any(np.round(key[0], 3) == np.round(max_x, 3) for key in group.keys())
         ]
 
         honeycomb_planes_groups_left_coordinates = [
