@@ -74,3 +74,7 @@ class Points(IPoints):
     def copy(self: T) -> T:
         """ Returns a new Points instance. """
         return replace(self, points=self.points.copy())
+
+    def sort(self: T, axis: int = 0) -> T:
+        """ Sorts self.points by the specified axis. """
+        return replace(self, points=self.points[np.lexsort((self.points[:, axis]))])

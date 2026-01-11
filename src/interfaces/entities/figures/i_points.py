@@ -38,3 +38,7 @@ class IPoints(ABC):
     @abstractmethod
     def copy(self: T) -> T:
         ...
+
+    @abstractmethod
+    def sort(self: T, axis: int = 0) -> T:
+        ...

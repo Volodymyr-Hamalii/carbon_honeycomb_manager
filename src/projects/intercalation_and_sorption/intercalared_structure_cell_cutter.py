@@ -58,7 +58,7 @@ class IntercalatedStructureCellCutter:
         logger.info(f"Prism centroid: {prism_centroid.tolist()}")
 
         # Step 4: Filter carbon atoms inside prism
-        filtered_carbon = cls._filter_points_inside_prism(
+        filtered_carbon: IPoints = cls._filter_points_inside_prism(
             coordinates_carbon, plane_params, z_min, z_max, prism_centroid
         )
         logger.info(f"Filtered carbon atoms: {len(filtered_carbon.points)} atoms")
@@ -77,6 +77,10 @@ class IntercalatedStructureCellCutter:
 
         if len(filtered_intercalated.points) == 0:
             logger.warning("No intercalated atoms found in prism")
+
+        # Sort filtered_carbon and filtered_intercalated by Z coordinate
+        filtered_carbon = filtered_carbon.sort(axis=2)
+        filtered_intercalated = filtered_intercalated.sort(axis=2)
 
         return filtered_carbon, filtered_intercalated
 
