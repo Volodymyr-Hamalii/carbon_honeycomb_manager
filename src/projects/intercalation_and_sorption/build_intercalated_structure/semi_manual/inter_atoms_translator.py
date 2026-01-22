@@ -290,64 +290,80 @@ class InterAtomsTranslator:
 
         return var_result
 
-    @staticmethod
+    @classmethod
     def get_centers_of_edge_carbon_channels(
+        cls,
         coordinates_carbon: IPoints,
     ) -> list[np.ndarray]:
-        """ 
-        Takes the lines with the pointns with the same Y coordinate, 
+        """
+        Takes the lines with the points with the same Y coordinate,
         takes left and right (with the min and max X coordinate) parallel segments from the lines
         and returns the centers of the segment pairs.
         """
+        # Get honeycomb planes groups filtered by same Y coordinate
+        honeycomb_planes_groups = cls._get_honeycomb_planes_groups(coordinates_carbon)
 
+        # Find X boundaries
+        all_x_coords = [key[0] for group in honeycomb_planes_groups for key in group.keys()]
+        min_x = min(all_x_coords)
+        max_x = max(all_x_coords)
+
+        # Get centers for left (min_x) and right (max_x) edge channels
+        left_center = cls._get_edge_channel_center(honeycomb_planes_groups, min_x)
+        right_center = cls._get_edge_channel_center(honeycomb_planes_groups, max_x)
+
+        return [left_center, right_center]
+
+    @staticmethod
+    def _get_honeycomb_planes_groups(
+        coordinates_carbon: IPoints,
+    ) -> list[dict[tuple[np.float32, np.float32], np.ndarray]]:
+        """Get honeycomb plane groups filtered by same Y coordinate within each group."""
         # Get the lines with the points with the same Y coordinate
-        groups_by_the_xy_lines: list[dict[tuple[np.float32, np.float32], np.ndarray]] = PointsOrganizer.group_by_the_xy_lines(
-            PointsOrganizer.group_by_unique_xy(coordinates_carbon.points), epsilon=1e-1, min_points_in_line=3)
-
-        honeycomb_planes_groups: list[
-            dict[tuple[np.float32, np.float32], np.ndarray]
-        ] = CarbonHoneycombUtils.split_xy_groups_by_max_distances(
-            groups_by_the_xy_lines, max_distance_between_xy_groups=3)
-
-        # Filter honeycomb_planes_groups groups with the same Y in the group
-        honeycomb_planes_groups = [
-            group for group in honeycomb_planes_groups
-            if np.round(list(group.keys())[0][1], 3) == np.round(list(group.keys())[1][1], 3)
-        ]
-
-        # Keep only planes, that contains max or min X coordinate along the all groups
-        max_x: np.floating = max(
-            subgroup[0]
-            for group in honeycomb_planes_groups
-            for subgroup in group.keys()
-        )
-        min_x: np.floating = min(
-            subgroup[0]
-            for group in honeycomb_planes_groups
-            for subgroup in group.keys()
+        groups_by_xy_lines = PointsOrganizer.group_by_the_xy_lines(
+            PointsOrganizer.group_by_unique_xy(coordinates_carbon.points),
+            epsilon=1e-1,
+            min_points_in_line=3,
         )
 
-        honeycomb_planes_groups_left = [
+        honeycomb_planes_groups = CarbonHoneycombUtils.split_xy_groups_by_max_distances(
+            groups_by_xy_lines, max_distance_between_xy_groups=3
+        )
+
+        # Filter groups where both keys have the same Y coordinate
+        return [
             group for group in honeycomb_planes_groups
-            if any(np.round(key[0], 3) == np.round(min_x, 3) for key in group.keys())
+            if len(group.keys()) >= 2
+            and np.round(list(group.keys())[0][1], 3) == np.round(list(group.keys())[1][1], 3)
         ]
 
-        honeycomb_planes_groups_right = [
+    @classmethod
+    def _get_edge_channel_center(
+        cls,
+        honeycomb_planes_groups: list[dict[tuple[np.float32, np.float32], np.ndarray]],
+        target_x: np.floating,
+    ) -> np.ndarray:
+        """Get the center of an edge channel at the specified X boundary."""
+        # Filter groups containing the target X coordinate
+        filtered_groups = [
             group for group in honeycomb_planes_groups
-            if any(np.round(key[0], 3) == np.round(max_x, 3) for key in group.keys())
+            if any(np.round(key[0], 3) == np.round(target_x, 3) for key in group.keys())
         ]
 
-        honeycomb_planes_groups_left_coordinates = [
-            point for group in honeycomb_planes_groups_left
-            for point in group.values()
-        ]
+        # Extract and concatenate all coordinates from filtered groups
+        coordinates = np.concatenate([
+            point for group in filtered_groups for point in group.values()
+        ])
 
-        honeycomb_planes_groups_right_coordinates = [
-            point for group in honeycomb_planes_groups_right
-            for point in group.values()
-        ]
+        return cls._calculate_center_from_unique_coordinates(coordinates)
 
-        left_centers = np.mean(np.concatenate(honeycomb_planes_groups_left_coordinates), axis=0)
-        right_centers = np.mean(np.concatenate(honeycomb_planes_groups_right_coordinates), axis=0)
+    @staticmethod
+    def _calculate_center_from_unique_coordinates(
+        coordinates: np.ndarray,
+    ) -> np.ndarray:
+        """Calculate center as mean of unique x, y, z coordinates (rounded to 4 decimals)."""
+        unique_x = np.unique(np.round(coordinates[:, 0], 4))
+        unique_y = np.unique(np.round(coordinates[:, 1], 4))
+        unique_z = np.unique(np.round(coordinates[:, 2], 4))
 
-        return [left_centers, right_centers]
+        return np.array([np.mean(unique_x), np.mean(unique_y), np.mean(unique_z)])
