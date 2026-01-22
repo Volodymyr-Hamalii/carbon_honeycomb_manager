@@ -17,6 +17,32 @@ class Points(IPoints):
     """ Template for any class with points array as a property. """
     points: np.ndarray
 
+    def __post_init__(self) -> None:
+        """Validate and ensure points array has correct shape (N, 3)."""
+        points = self.points
+
+        # Handle empty arrays
+        if points.size == 0:
+            if points.ndim != 2 or points.shape[1] != 3:
+                object.__setattr__(self, 'points', np.array([]).reshape(0, 3))
+            return
+
+        # Validate and fix shape
+        if points.ndim == 1:
+            if points.size % 3 == 0:
+                # Reshape from 1D to 2D: (N*3,) -> (N, 3)
+                reshaped = points.reshape(-1, 3)
+                object.__setattr__(self, 'points', reshaped)
+            else:
+                raise ValueError(
+                    f"Cannot create Points from 1D array of size {points.size}. "
+                    f"Size must be divisible by 3 for (N, 3) shape."
+                )
+        elif points.ndim != 2 or points.shape[1] != 3:
+            raise ValueError(
+                f"Points array must have shape (N, 3), got {points.shape}"
+            )
+
     def __len__(self) -> int:
         return len(self.points)
 
@@ -76,5 +102,7 @@ class Points(IPoints):
         return replace(self, points=self.points.copy())
 
     def sort(self: T, axis: int = 0) -> T:
-        """ Sorts self.points by the specified axis. """
-        return replace(self, points=self.points[np.lexsort((self.points[:, axis]))])
+        """Sorts self.points by the specified axis."""
+        # Note: (array,) creates a tuple; (array) is just parentheses
+        sort_indices = np.lexsort((self.points[:, axis],))
+        return replace(self, points=self.points[sort_indices])
