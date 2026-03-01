@@ -1,11 +1,11 @@
 """View for data converter functionality."""
 import customtkinter as ctk
-from typing import Any, Callable
+from typing import Callable
 from pathlib import Path
 
 from src.interfaces import IDataConverterView
 from src.mvp.general import GeneralView
-from src.ui.components import Button, DropdownList, InputField
+from src.ui.components import Button, DropdownList
 from src.services import Logger
 
 
@@ -76,12 +76,7 @@ class DataConverterView(GeneralView, IDataConverterView):
         )
         self.convert_btn.pack(pady=20)
 
-        # Status frame
-        status_frame = ctk.CTkFrame(main_frame)
-        status_frame.pack(fill="x", pady=(10, 0))
-
-        self.status_label = ctk.CTkLabel(status_frame, text="Ready to convert")
-        self.status_label.pack(pady=10)
+        # Note: Status label is provided by GeneralView at the bottom of the window
 
     def set_available_files(self, files: list[str]) -> None:
         """Set available files for conversion."""
@@ -155,5 +150,4 @@ class DataConverterView(GeneralView, IDataConverterView):
 
     def update_status(self, message: str) -> None:
         """Update status message."""
-        if hasattr(self, 'status_label'):
-            self.status_label.configure(text=message)
+        self.show_status_message(message)
