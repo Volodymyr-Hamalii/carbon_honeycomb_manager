@@ -29,21 +29,32 @@ class FileWriter:
             data_lines: list[str] | ndarray,
             path_to_file: Path,
             to_overwrite: bool = True,
+            raise_on_error: bool = True,
     ) -> None | Path:
         """
         Write .dat file.
         If data_lines is ndarray, it will be converted to list[str] using DataConverter.convert_ndarray_to_dat.
-        """
 
-        # TODO: refactor to use DataConverter.convert_ndarray_to_dat
+        Args:
+            data_lines: Data to write (list of strings or numpy array)
+            path_to_file: Path to the output file
+            to_overwrite: Whether to overwrite existing files
+            raise_on_error: Whether to raise exceptions on error (default: True)
+
+        Returns:
+            Path to the saved file, or None if writing failed
+
+        Raises:
+            Exception: If raise_on_error is True and an error occurs
+        """
         try:
             if len(data_lines) == 0:
                 logger.warning("No data for .dat file.")
-                return
+                return None
 
             if to_overwrite is False and path_to_file.exists():
-                # Don't to_overwrite existing file
-                return
+                # Don't overwrite existing file
+                return None
 
             if not path_to_file.suffix == ".dat":
                 # Set .dat extension
@@ -67,27 +78,42 @@ class FileWriter:
             return path_to_file
 
         except Exception as e:
-            logger.error(f".dat file not saved: {e}")
+            logger.error(f".dat file not saved: {e}", exc_info=True)
+            if raise_on_error:
+                raise
+            return None
 
     @staticmethod
     def write_pdb_file(
             data_lines: list[str] | ndarray,
             path_to_file: Path,
             to_overwrite: bool = True,
+            raise_on_error: bool = True,
     ) -> None | Path:
         """
         Write .pdb file.
         If data_lines is ndarray, it will be converted to list[str] using DataConverter.convert_ndarray_to_pdb.
-        """
 
+        Args:
+            data_lines: Data to write (list of strings or numpy array)
+            path_to_file: Path to the output file
+            to_overwrite: Whether to overwrite existing files
+            raise_on_error: Whether to raise exceptions on error (default: True)
+
+        Returns:
+            Path to the saved file, or None if writing failed
+
+        Raises:
+            Exception: If raise_on_error is True and an error occurs
+        """
         try:
             if len(data_lines) == 0:
-                logger.warning("No data for .dat file.")
-                return
+                logger.warning("No data for .pdb file.")
+                return None
 
             if to_overwrite is False and path_to_file.exists():
-                # Don't to_overwrite existing file
-                return
+                # Don't overwrite existing file
+                return None
 
             if not path_to_file.suffix == ".pdb":
                 # Set .pdb extension
@@ -109,7 +135,10 @@ class FileWriter:
             return path_to_file
 
         except Exception as e:
-            logger.error(f".pdb file not saved: {e}")
+            logger.error(f".pdb file not saved: {e}", exc_info=True)
+            if raise_on_error:
+                raise
+            return None
 
     @classmethod
     def write_excel_file(

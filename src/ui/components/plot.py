@@ -767,6 +767,13 @@ class PlotWindow(ctk.CTkToplevel, IPlotWindow):
         coordinates: NDArray[np.float64]
     ) -> list[tuple[NDArray[np.float64], NDArray[np.int64]]]:
         """Returns grouped coordinates with their original indices, grouped by rounded Z coordinate."""
+        # Validate coordinates array shape
+        if coordinates.ndim != 2 or coordinates.shape[1] != 3:
+            raise ValueError(
+                f"Expected coordinates array with shape (N, 3), got {coordinates.shape}. "
+                f"The array appears to be {coordinates.ndim}D instead of 2D."
+            )
+
         # Round Z values to the nearest integer or a desired precision
         rounded_z_values: NDArray[np.float64] = np.round(coordinates[:, 2], decimals=1)
 

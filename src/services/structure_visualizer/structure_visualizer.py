@@ -279,6 +279,13 @@ class StructureVisualizer(IStructureVisualizer):
             logger.warning(f"No points to plot for label={label}.")
             return
 
+        # Validate coordinates array shape
+        if coordinates.ndim != 2 or coordinates.shape[1] != 3:
+            raise ValueError(
+                f"Expected coordinates array with shape (N, 3), got {coordinates.shape} for label={label}. "
+                f"The array appears to be {coordinates.ndim}D instead of 2D."
+            )
+
         if coordinate_limits:
             logger.info(f"Filtering coordinates with limits: "
                         f"x=[{coordinate_limits.x_min}, {coordinate_limits.x_max}], "

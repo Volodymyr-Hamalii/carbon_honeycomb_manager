@@ -47,7 +47,25 @@ class DataConverter:
 
     @classmethod
     def convert_ndarray_to_dat(cls, coordinates: np.ndarray) -> list[str]:
-        """ Return list of strings with .dat file lines. """
+        """Return list of strings with .dat file lines."""
+        # Validate and ensure coordinates are 2D with shape (N, 3)
+        if coordinates.ndim == 1:
+            if coordinates.size % 3 == 0:
+                # Reshape from 1D to 2D: (N*3,) -> (N, 3)
+                coordinates = coordinates.reshape(-1, 3)
+                logger.warning(
+                    f"Reshaped 1D coordinates array to 2D: {coordinates.shape}"
+                )
+            else:
+                raise ValueError(
+                    f"Cannot convert 1D array of size {coordinates.size} to (N, 3) format. "
+                    f"Size must be divisible by 3."
+                )
+        elif coordinates.ndim != 2 or coordinates.shape[1] != 3:
+            raise ValueError(
+                f"Expected coordinates array with shape (N, 3), got {coordinates.shape}"
+            )
+
         first_line: str = cls._dat_file_first_line.format(num_of_atoms=len(coordinates))
         dat_lines: list[str] = [first_line]
 
@@ -63,7 +81,25 @@ class DataConverter:
             residue_seq_num: int = 1,
             chain_id: str = "A",
     ) -> list[str]:
-        """ Return list of strings with .pdb file lines. """
+        """Return list of strings with .pdb file lines."""
+        # Validate and ensure coordinates are 2D with shape (N, 3)
+        if coordinates.ndim == 1:
+            if coordinates.size % 3 == 0:
+                # Reshape from 1D to 2D: (N*3,) -> (N, 3)
+                coordinates = coordinates.reshape(-1, 3)
+                logger.warning(
+                    f"Reshaped 1D coordinates array to 2D: {coordinates.shape}"
+                )
+            else:
+                raise ValueError(
+                    f"Cannot convert 1D array of size {coordinates.size} to (N, 3) format. "
+                    f"Size must be divisible by 3."
+                )
+        elif coordinates.ndim != 2 or coordinates.shape[1] != 3:
+            raise ValueError(
+                f"Expected coordinates array with shape (N, 3), got {coordinates.shape}"
+            )
+
         first_line: str = cls._pdb_file_first_line.format(num_of_atoms=len(coordinates))
         pdb_lines: list[str] = [first_line]
 
