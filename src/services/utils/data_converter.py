@@ -19,7 +19,8 @@ class DataConverter:
     @classmethod
     def convert_df_to_dat(cls, df: pd.DataFrame) -> list[str]:
         """ Return list of strings with .dat file lines. """
-        dat_lines: list[str] = [cls._dat_file_first_line]
+        first_line: str = cls._dat_file_first_line.format(num_of_atoms=len(df))
+        dat_lines: list[str] = [first_line]
         for _, row in df.iterrows():
             dat_lines.append(f"{row[0]:.6f}\t{row[1]:.6f}\t{row[2]:.6f}\n")
         return dat_lines
@@ -33,7 +34,8 @@ class DataConverter:
             chain_id: str = "A",
     ) -> list[str]:
         """ Return list of strings with .pdb file lines. """
-        pdb_lines: list[str] = []
+        num_of_atoms: int = len(df)
+        pdb_lines: list[str] = [cls._pdb_file_first_line]
         for i, row in df.iterrows():
             pdb_line: str = cls._build_pdb_line(
                 row.to_numpy(),
@@ -43,6 +45,7 @@ class DataConverter:
                 chain_id
             )
             pdb_lines.append(pdb_line)
+        pdb_lines.append(cls._pdb_file_end_line.format(num_of_atoms=num_of_atoms))
         return pdb_lines
 
     @classmethod
