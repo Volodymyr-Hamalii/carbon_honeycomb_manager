@@ -333,8 +333,8 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
                 project_dir, subproject_dir, structure_dir) / cell_dir_name
             cell_dir.mkdir(exist_ok=True)
 
-            carbon_output_path = cell_dir / f"{structure_dir}_cell_carbon.dat"
-            inter_output_path = cell_dir / f"{structure_dir}_cell_intercalated.dat"
+            carbon_output_path: Path = cell_dir / f"{structure_dir}_cell_carbon.dat"
+            inter_output_path: Path = cell_dir / f"{structure_dir}_cell_{subproject_dir}_intercalated.dat"
 
             FileWriter.write_dat_file(
                 data_lines=filtered_carbon.points,
