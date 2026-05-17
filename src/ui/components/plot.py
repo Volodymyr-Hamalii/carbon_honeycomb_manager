@@ -533,7 +533,8 @@ class PlotWindow(ctk.CTkToplevel, IPlotWindow):
                 labels_list: list[str | None] = self._current_data['labels_list']
 
                 # Apply intercalated atom layer splitting based on current parameters
-                coordinates_list, labels_list = self._split_intercalated_atoms_into_layers(
+                # Also get original indices to preserve index numbering when split
+                coordinates_list, labels_list, original_indices_list = self._split_intercalated_atoms_into_layers(
                     coordinates_list, labels_list, self._plot_params.num_of_inter_atoms_layers
                 )
 
@@ -551,8 +552,17 @@ class PlotWindow(ctk.CTkToplevel, IPlotWindow):
                     # Determine if this is an intercalated atom (not carbon)
                     # If so, use the plot_intercalated_as_polygon_balls parameter
                     plot_as_polygon_balls: bool | None = None
-                    if label and label != "Carbon":
+                    is_carbon: bool = label in ("Carbon", "Carbon Channel")
+                    if label and not is_carbon:
                         plot_as_polygon_balls = self._plot_params.plot_intercalated_as_polygon_balls
+
+                    # Don't show indexes for carbon atoms
+                    # For intercalated atoms, show indexes if enabled
+                    to_show_indexes: bool = False if is_carbon else self._plot_params.to_show_indexes
+
+                    # Get custom indexes for this structure (original indices from before splitting)
+                    original_indices: list[int] | None = original_indices_list[i]
+                    custom_indexes: list[int] = original_indices if original_indices is not None else []
 
                     StructureVisualizer._plot_atoms_3d(
                         fig=self.figure,
@@ -563,11 +573,11 @@ class PlotWindow(ctk.CTkToplevel, IPlotWindow):
                         to_build_bonds=self._plot_params.to_build_bonds if i == 0 else False,
                         to_set_equal_scale=self._plot_params.to_set_equal_scale if i == 0 else False,
                         to_show_coordinates=self._plot_params.to_show_coordinates,
-                        to_show_indexes=self._plot_params.to_show_indexes,
+                        to_show_indexes=to_show_indexes,
                         to_show_grid=to_show_grid,
                         num_of_min_distances=self._plot_params.num_of_min_distances,
                         skip_first_distances=self._plot_params.skip_first_distances,
-                        is_interactive_mode=self._plot_params.is_interactive_mode if label != "Carbon" else False,
+                        is_interactive_mode=self._plot_params.is_interactive_mode if not is_carbon else False,
                         coordinate_limits=coordinate_limits,
                         to_build_edge_vertical_lines=self._plot_params.to_build_edge_vertical_lines,
                         to_show_dists_to_plane=self._plot_params.to_show_dists_to_plane,
@@ -575,6 +585,7 @@ class PlotWindow(ctk.CTkToplevel, IPlotWindow):
                         to_show_channel_angles=self._plot_params.to_show_channel_angles,
                         to_show_plane_lengths=self._plot_params.to_show_plane_lengths,
                         plot_as_polygon_balls=plot_as_polygon_balls,
+                        custom_indexes=custom_indexes,
                     )
 
             # Set labels and title
@@ -694,18 +705,24 @@ class PlotWindow(ctk.CTkToplevel, IPlotWindow):
         coordinates_list: list[NDArray[np.float64]],
         labels_list: list[str | None],
         num_layers: int
-    ) -> tuple[list[NDArray[np.float64]], list[str | None]]:
-        """Split intercalated atoms into multiple layers based on z-coordinates."""
+    ) -> tuple[list[NDArray[np.float64]], list[str | None], list[list[int] | None]]:
+        """Split intercalated atoms into multiple layers based on z-coordinates.
+
+        Returns:
+            Tuple of (coordinates_list, labels_list, original_indices_list).
+            original_indices_list contains the original indices for each structure,
+            or None for structures that weren't split (like carbon).
+        """
         try:
             # If no intercalated atoms (only carbon), return as-is
             if len(coordinates_list) <= 1:
                 logger.info("No intercalated atoms to split into layers")
-                return coordinates_list, labels_list
+                return coordinates_list, labels_list, [None] * len(coordinates_list)
 
             # If num_layers is 1, return as-is (don't split)
             if num_layers == 1:
                 logger.info("num_layers=1, keeping all intercalated atoms together")
-                return coordinates_list, labels_list
+                return coordinates_list, labels_list, [None] * len(coordinates_list)
 
             # Extract carbon coordinates (first item) and intercalated atoms (second item)
             carbon_coords: NDArray[np.float64] = coordinates_list[0]
@@ -720,6 +737,8 @@ class PlotWindow(ctk.CTkToplevel, IPlotWindow):
             # Create new coordinates and labels lists
             new_coords_list: list[NDArray[np.float64]] = [carbon_coords]
             new_labels_list: list[str | None] = [carbon_label]
+            # Store original indices for each layer (None for carbon)
+            original_indices_list: list[list[int] | None] = [None]
 
             # Add layers based on indices
             for i, indices in enumerate(layer_indices):
@@ -727,7 +746,9 @@ class PlotWindow(ctk.CTkToplevel, IPlotWindow):
                     layer_atoms: NDArray[np.float64] = intercalated_coords[indices]
                     new_coords_list.append(layer_atoms)
                     new_labels_list.append(f"Intercalated Layer {i+1}")
-                    logger.info(f"Layer {i+1}: {len(layer_atoms)} atoms")
+                    # Store the original indices for this layer
+                    original_indices_list.append(indices)
+                    logger.info(f"Layer {i+1}: {len(layer_atoms)} atoms with original indices")
 
             # Verify all atoms are included
             total_atoms_check = len(intercalated_coords)
@@ -739,14 +760,14 @@ class PlotWindow(ctk.CTkToplevel, IPlotWindow):
                 logger.error(
                     f"ATOM COUNT MISMATCH: Expected {total_atoms_check}, distributed {total_atoms_distributed}")
                 # Return original data to avoid losing atoms
-                return coordinates_list, labels_list
+                return coordinates_list, labels_list, [None] * len(coordinates_list)
 
-            return new_coords_list, new_labels_list
+            return new_coords_list, new_labels_list, original_indices_list
 
         except Exception as e:
             logger.error(f"Error splitting intercalated atoms into layers: {e}")
             # Return original data on error
-            return coordinates_list, labels_list
+            return coordinates_list, labels_list, [None] * len(coordinates_list)
 
     def _get_layer_indices(
         self,
