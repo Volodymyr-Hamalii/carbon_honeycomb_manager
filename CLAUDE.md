@@ -42,9 +42,10 @@ The application follows a strict MVP (Model-View-Presenter) architecture with co
 ### Current MVP Modules
 
 1. **`main`** - Main application window with project navigation
-2. **`init_data`** - Initial carbon structure visualization and analysis
-3. **`intercalation_and_sorption`** - Complex intercalation modeling with channel analysis
-4. **`data_converter`** - Data format conversion utilities
+2. **`general`** - Base MVP module providing shared functionality for all other modules
+3. **`init_data`** - Initial carbon structure visualization and analysis (implements `IShowInitData*` interfaces)
+4. **`intercalation_and_sorption`** - Complex intercalation modeling with channel analysis
+5. **`data_converter`** - Data format conversion utilities
 
 ### Project Structure
 
@@ -239,7 +240,7 @@ The application features an enhanced plot component system for structure visuali
 - **PlotWindow** (`src/ui/components/plot.py`): Enhanced plot window with embedded matplotlib and customization controls
 - **PlotControls**: Sidebar panel with real-time plot parameter controls
 - **PlotParams** (`src/entities/params/plot_params.py`): Dataclass for plot configuration and state management
-- **PlotWindowFactory** (`src/services/utils/plot_window_factory.py`): Factory for creating plot windows from MVP parameters
+- **PlotWindowFactory** (`src/ui/components/plot_window_factory.py`): Factory for creating plot windows from MVP parameters
 
 #### Key Features
 
@@ -281,7 +282,7 @@ plot_window.show_structures(coords_list, params_list, labels_list)
 
 ### Current Architecture Status
 
-- **MVP Modules**: `main`, `init_data`, `intercalation_and_sorption`, `data_converter`
+- **MVP Modules**: `main`, `general`, `init_data`, `intercalation_and_sorption`, `data_converter`
 - **Interface Segregation**: Complete separation of concerns with full contracts
 - **Centralized Styling**: All UI styling managed through `src/ui/styles/`
 - **Scrolling Infrastructure**: `ScrollableMixin` provides universal scrolling support
