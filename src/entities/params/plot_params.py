@@ -33,6 +33,7 @@ class PlotParams:
 
     # Plot window settings
     title: str = "Structure Plot"
+    subtitle: str = ""  # Second line in title, typically the filename
     figsize: tuple[float, float] = (12, 9)
 
     # Interactive features
@@ -112,6 +113,7 @@ class PlotParams:
             z_min=self.z_min,
             z_max=self.z_max,
             title=self.title,
+            subtitle=self.subtitle,
             figsize=self.figsize,
             is_interactive_mode=self.is_interactive_mode,
             to_build_edge_vertical_lines=self.to_build_edge_vertical_lines,

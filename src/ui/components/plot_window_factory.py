@@ -104,6 +104,9 @@ class PlotWindowFactory:
     @staticmethod
     def _convert_mvp_to_plot_params(mvp_params: PMvpParams, title: str) -> PlotParams:
         """Convert MVP parameters to plot parameters."""
+        # Get filename from MVP params to use as subtitle
+        file_name: str = getattr(mvp_params, 'file_name', '') or ''
+
         # Check if there are any saved plot params in the MVP params
         plot_params = PlotParams(
             to_build_bonds=mvp_params.to_build_bonds,
@@ -118,6 +121,7 @@ class PlotWindowFactory:
             z_min=mvp_params.z_min,
             z_max=mvp_params.z_max,
             title=title,
+            subtitle=file_name,
             to_set_equal_scale=getattr(mvp_params, 'to_set_equal_scale', True),
             is_interactive_mode=getattr(mvp_params, 'is_interactive_mode', False),
             to_build_edge_vertical_lines=getattr(mvp_params, 'to_build_edge_vertical_lines', False),

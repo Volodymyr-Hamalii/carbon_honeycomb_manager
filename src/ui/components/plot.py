@@ -410,7 +410,11 @@ class PlotWindow(ctk.CTkToplevel, IPlotWindow):
         self.ax.set_ylabel('Y')
         self.ax.set_zlabel('Z')  # type: ignore
         if self._plot_params.to_show_title:
-            self.ax.set_title(self._plot_params.title)
+            # Build title with optional subtitle (filename) as second line
+            full_title: str = self._plot_params.title
+            if self._plot_params.subtitle:
+                full_title = f"{self._plot_params.title}\n{self._plot_params.subtitle}"
+            self.ax.set_title(full_title)
         # Apply initial camera from default PlotParams so the first frame uses correct view
         try:
             # Prefer roll if available (Matplotlib >= 3.6), fallback otherwise
@@ -433,8 +437,9 @@ class PlotWindow(ctk.CTkToplevel, IPlotWindow):
                     f"y=[{params.y_min}, {params.y_max}], z=[{params.z_min}, {params.z_max}], "
                     f"bonds=[{params.num_of_min_distances}, {params.skip_first_distances}]")
 
-        # Preserve properties not controlled by UI (title, camera params, figsize)
+        # Preserve properties not controlled by UI (title, subtitle, camera params, figsize)
         params.title = self._plot_params.title
+        params.subtitle = self._plot_params.subtitle
         params.figsize = self._plot_params.figsize
         params.camera_elevation = self._plot_params.camera_elevation
         params.camera_azimuth = self._plot_params.camera_azimuth
@@ -577,7 +582,11 @@ class PlotWindow(ctk.CTkToplevel, IPlotWindow):
             self.ax.set_ylabel('Y')
             self.ax.set_zlabel('Z')  # type: ignore
             if self._plot_params.to_show_title:
-                self.ax.set_title(self._plot_params.title)
+                # Build title with optional subtitle (filename) as second line
+                full_title: str = self._plot_params.title
+                if self._plot_params.subtitle:
+                    full_title = f"{self._plot_params.title}\n{self._plot_params.subtitle}"
+                self.ax.set_title(full_title)
 
             # Add legend if enabled and there are multiple structures or labels
             if self._plot_params.to_show_legend and data_type in ['multiple']:
