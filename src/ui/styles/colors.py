@@ -33,6 +33,26 @@ class Colors:
     GREEN300: str = "#00d11d"
     GREEN400: str = "#99ff99"
 
+    PURPLE100: str = "#3d0066"
+    PURPLE200: str = "#6b0099"
+    PURPLE300: str = "#9933cc"
+    PURPLE400: str = "#cc99ff"
+
+    CYAN100: str = "#004d4d"
+    CYAN200: str = "#008080"
+    CYAN300: str = "#00cccc"
+    CYAN400: str = "#99ffff"
+
+    YELLOW100: str = "#665200"
+    YELLOW200: str = "#997a00"
+    YELLOW300: str = "#cca300"
+    YELLOW400: str = "#ffeb99"
+
+    MAGENTA100: str = "#660033"
+    MAGENTA200: str = "#990066"
+    MAGENTA300: str = "#cc0099"
+    MAGENTA400: str = "#ff99cc"
+
 
 @dataclass(frozen=True)
 class StatusColors:

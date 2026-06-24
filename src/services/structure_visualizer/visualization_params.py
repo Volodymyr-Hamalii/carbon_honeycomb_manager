@@ -30,7 +30,6 @@ class PlotAtomParams(IPlotAtomParams):
 
 
 class Colors(IColors):
-    # TODO: move to the data/configs/colors.json
     carbon_colors: PlotAtomParams = PlotAtomParams(
         atoms_color=UI_Colors.BLUE200,
         bonds_color=UI_Colors.BLUE100,
@@ -46,6 +45,22 @@ class Colors(IColors):
     intercalated_atoms_colors_3_layer: PlotAtomParams = PlotAtomParams(
         atoms_color=UI_Colors.BLUE400,
         bonds_color=UI_Colors.BLUE300,
+    )
+    intercalated_atoms_colors_4_layer: PlotAtomParams = PlotAtomParams(
+        atoms_color=UI_Colors.PURPLE300,
+        bonds_color=UI_Colors.PURPLE100,
+    )
+    intercalated_atoms_colors_5_layer: PlotAtomParams = PlotAtomParams(
+        atoms_color=UI_Colors.CYAN300,
+        bonds_color=UI_Colors.CYAN100,
+    )
+    intercalated_atoms_colors_6_layer: PlotAtomParams = PlotAtomParams(
+        atoms_color=UI_Colors.YELLOW300,
+        bonds_color=UI_Colors.YELLOW100,
+    )
+    intercalated_atoms_colors_7_layer: PlotAtomParams = PlotAtomParams(
+        atoms_color=UI_Colors.MAGENTA300,
+        bonds_color=UI_Colors.MAGENTA100,
     )
 
 
@@ -102,6 +117,66 @@ class VisualizationParams(IVisualizationParams):
         size=300,
 
         color_bonds=Colors.intercalated_atoms_colors_3_layer.bonds_color,
+        transparency_bonds=1,
+        bonds_width=1,
+
+        to_set_equal_scale=False,
+        to_show_coordinates=False,
+        to_show_indexes=True,
+    )
+
+    intercalated_atoms_4_layer = StructureVisualParams(
+        color_atoms=Colors.intercalated_atoms_colors_4_layer.atoms_color,
+        transparency=0.5,
+        as_shaded_3d_spheres=True,
+        size=300,
+
+        color_bonds=Colors.intercalated_atoms_colors_4_layer.bonds_color,
+        transparency_bonds=1,
+        bonds_width=1,
+
+        to_set_equal_scale=False,
+        to_show_coordinates=False,
+        to_show_indexes=True,
+    )
+
+    intercalated_atoms_5_layer = StructureVisualParams(
+        color_atoms=Colors.intercalated_atoms_colors_5_layer.atoms_color,
+        transparency=0.5,
+        as_shaded_3d_spheres=True,
+        size=300,
+
+        color_bonds=Colors.intercalated_atoms_colors_5_layer.bonds_color,
+        transparency_bonds=1,
+        bonds_width=1,
+
+        to_set_equal_scale=False,
+        to_show_coordinates=False,
+        to_show_indexes=True,
+    )
+
+    intercalated_atoms_6_layer = StructureVisualParams(
+        color_atoms=Colors.intercalated_atoms_colors_6_layer.atoms_color,
+        transparency=0.5,
+        as_shaded_3d_spheres=True,
+        size=300,
+
+        color_bonds=Colors.intercalated_atoms_colors_6_layer.bonds_color,
+        transparency_bonds=1,
+        bonds_width=1,
+
+        to_set_equal_scale=False,
+        to_show_coordinates=False,
+        to_show_indexes=True,
+    )
+
+    intercalated_atoms_7_layer = StructureVisualParams(
+        color_atoms=Colors.intercalated_atoms_colors_7_layer.atoms_color,
+        transparency=0.5,
+        as_shaded_3d_spheres=True,
+        size=300,
+
+        color_bonds=Colors.intercalated_atoms_colors_7_layer.bonds_color,
         transparency_bonds=1,
         bonds_width=1,
 

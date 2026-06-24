@@ -74,12 +74,16 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
             # Get MVP parameters to access plot settings (pass to Plot window)
             mvp_params: PMvpParams = self.model.get_mvp_params()
 
-            # Create visual parameters for each structure
+            # Create visual parameters for each structure (up to 7 layers)
             visual_params_list: list[IStructureVisualParams] = [
                 VisualizationParams.carbon,
                 VisualizationParams.intercalated_atoms_1_layer,
                 VisualizationParams.intercalated_atoms_2_layer,
                 VisualizationParams.intercalated_atoms_3_layer,
+                VisualizationParams.intercalated_atoms_4_layer,
+                VisualizationParams.intercalated_atoms_5_layer,
+                VisualizationParams.intercalated_atoms_6_layer,
+                VisualizationParams.intercalated_atoms_7_layer,
             ]
 
             # Create and show plot window
@@ -225,14 +229,16 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
                 logger.warning("No translated structures to display")
                 return
 
-            # Create visual parameters for each structure
-
-            # Create visual parameters for each structure
+            # Create visual parameters for each structure (up to 7 layers)
             visual_params_list: list[IStructureVisualParams] = [
                 VisualizationParams.carbon,
                 VisualizationParams.intercalated_atoms_1_layer,
                 VisualizationParams.intercalated_atoms_2_layer,
                 VisualizationParams.intercalated_atoms_3_layer,
+                VisualizationParams.intercalated_atoms_4_layer,
+                VisualizationParams.intercalated_atoms_5_layer,
+                VisualizationParams.intercalated_atoms_6_layer,
+                VisualizationParams.intercalated_atoms_7_layer,
             ]
 
             # Create and show plot window

@@ -18,6 +18,10 @@ class IColors(Protocol):
     intercalated_atoms_colors_1_layer: IPlotAtomParams
     intercalated_atoms_colors_2_layer: IPlotAtomParams
     intercalated_atoms_colors_3_layer: IPlotAtomParams
+    intercalated_atoms_colors_4_layer: IPlotAtomParams
+    intercalated_atoms_colors_5_layer: IPlotAtomParams
+    intercalated_atoms_colors_6_layer: IPlotAtomParams
+    intercalated_atoms_colors_7_layer: IPlotAtomParams
 
 
 class IStructureVisualParams(Protocol):
@@ -42,3 +46,7 @@ class IVisualizationParams(Protocol):
     intercalated_atoms_1_layer: IStructureVisualParams
     intercalated_atoms_2_layer: IStructureVisualParams
     intercalated_atoms_3_layer: IStructureVisualParams
+    intercalated_atoms_4_layer: IStructureVisualParams
+    intercalated_atoms_5_layer: IStructureVisualParams
+    intercalated_atoms_6_layer: IStructureVisualParams
+    intercalated_atoms_7_layer: IStructureVisualParams

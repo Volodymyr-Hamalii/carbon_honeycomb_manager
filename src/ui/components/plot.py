@@ -775,8 +775,8 @@ class PlotWindow(ctk.CTkToplevel, IPlotWindow):
         num_layers: int
     ) -> list[list[int]]:
         """Get indices for each layer by splitting atoms along Z-axis."""
-        if num_layers > 3:
-            raise NotImplementedError(f"Number of layers {num_layers} is not implemented")
+        if num_layers > 7:
+            raise NotImplementedError(f"Number of layers {num_layers} is not implemented (max 7)")
 
         al_groups_with_indices: list[tuple[NDArray[np.float64], NDArray[np.int64]]] = (
             self._split_atoms_along_z_axis(inter_atoms)
