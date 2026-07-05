@@ -14,6 +14,7 @@ __all__: list[str] = [
     "ConstantsAtomParams",
     "ConstantsAlParams",
     "ConstantsArParams",
+    "ConstantsKrParams",
     "ATOM_PARAMS_MAP",
 ]
 
@@ -78,6 +79,12 @@ class ConstantsArParams(ConstantsAtomParams):
     ATOM_SYMBOL: str = "Ar"
 
 
+class ConstantsKrParams(ConstantsAtomParams):
+    """ Krypton params """
+    ATOMS_NAME: str = "Krypton"
+    ATOM_SYMBOL: str = "Kr"
+
+
 class ConstantsXeParams(ConstantsAtomParams):
     """ Xenon params """
     ATOMS_NAME: str = "Xenon"
@@ -87,5 +94,6 @@ class ConstantsXeParams(ConstantsAtomParams):
 ATOM_PARAMS_MAP: dict = {
     ConstantsAlParams.ATOM_SYMBOL.lower(): ConstantsAlParams(),  # Aluminium
     ConstantsArParams.ATOM_SYMBOL.lower(): ConstantsArParams(),  # Argon
+    ConstantsKrParams.ATOM_SYMBOL.lower(): ConstantsKrParams(),  # Krypton
     ConstantsXeParams.ATOM_SYMBOL.lower(): ConstantsXeParams(),  # Xenon
 }
