@@ -48,7 +48,7 @@ class InterAtomsFilter:
             coordinates_atoms_result = atoms_filtered
             max_atoms_result = len(coordinates_atoms_result.points)
 
-            # Update min distances betweenintercalated atoms
+            # Update min distances between intercalated atoms
             min_dist_between_atoms_sum_result = cls._calculate_min_dist_between_inter_atoms_sum(
                 atoms_filtered)
 
@@ -58,13 +58,13 @@ class InterAtomsFilter:
             if num_of_atoms > 1:
                 logger.info(f"Number ofintercalated atoms: {num_of_atoms}")
 
-                # Print average min distance betweenintercalated atoms
+                # Print average min distance between intercalated atoms
                 ave_min_dist: float = round(min_dist_between_atoms_sum_result / max_atoms_result, 4)
-                logger.info(f"Average min distance betweenintercalated atoms: {ave_min_dist}")
+                logger.info(f"Average min distance between intercalated atoms: {ave_min_dist}")
 
         elif num_of_atoms > 0 and num_of_atoms == max_atoms:
 
-            # Calculate min distances betweenintercalated atoms
+            # Calculate min distances between intercalated atoms
             current_min_dist: float = cls._calculate_min_dist_between_inter_atoms_sum(
                 atoms_filtered)
 
@@ -74,9 +74,9 @@ class InterAtomsFilter:
                 max_atoms_result = len(coordinates_atoms_result.points)
                 min_dist_between_atoms_sum_result = current_min_dist
 
-                # Print average min distance betweenintercalated atoms
+                # Print average min distance between intercalated atoms
                 ave_min_dist: float = round(min_dist_between_atoms_sum_result / max_atoms_result, 4)
-                logger.info(f"Average min distance betweenintercalated atoms: {ave_min_dist}")
+                logger.info(f"Average min distance between intercalated atoms: {ave_min_dist}")
 
                 # Reset dist_and_rotation_variance
                 dist_and_rotation_variance_result = 0
