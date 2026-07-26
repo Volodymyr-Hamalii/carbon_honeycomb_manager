@@ -100,13 +100,13 @@ class PlotControls(ctk.CTkFrame, IPlotControls):
         self.min_distances_spinbox.bind("<KeyRelease>", self._on_bond_settings_changed)
         self.min_distances_spinbox.bind("<FocusOut>", self._on_bond_settings_changed)
 
-        # Skip distances
-        ctk.CTkLabel(bonds_frame, text="Skip First Distances:").pack(anchor="w", padx=SPACING.sm)
-        self.skip_distances_spinbox = ctk.CTkEntry(bonds_frame, width=80)
-        self.skip_distances_spinbox.insert(0, str(self._default_params.skip_first_distances))
-        self.skip_distances_spinbox.pack(anchor="w", padx=SPACING.sm)
-        self.skip_distances_spinbox.bind("<KeyRelease>", self._on_bond_settings_changed)
-        self.skip_distances_spinbox.bind("<FocusOut>", self._on_bond_settings_changed)
+        # # Skip distances
+        # ctk.CTkLabel(bonds_frame, text="Skip First Distances:").pack(anchor="w", padx=SPACING.sm)
+        # self.skip_distances_spinbox = ctk.CTkEntry(bonds_frame, width=80)
+        # self.skip_distances_spinbox.insert(0, str(self._default_params.skip_first_distances))
+        # self.skip_distances_spinbox.pack(anchor="w", padx=SPACING.sm)
+        # self.skip_distances_spinbox.bind("<KeyRelease>", self._on_bond_settings_changed)
+        # self.skip_distances_spinbox.bind("<FocusOut>", self._on_bond_settings_changed)
 
         # Coordinate limits frame
         limits_frame = ctk.CTkFrame(self)
