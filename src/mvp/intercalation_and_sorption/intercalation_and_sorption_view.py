@@ -308,9 +308,9 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
             try:
                 settings["bonds_num_of_min_distances"] = int(self.bonds_num_input.get_value())
             except ValueError:
-                settings["bonds_num_of_min_distances"] = 2
+                settings["bonds_num_of_min_distances"] = 3
         else:
-            settings["bonds_num_of_min_distances"] = 2
+            settings["bonds_num_of_min_distances"] = 3
 
         if self.bonds_skip_input:
             try:

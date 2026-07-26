@@ -102,17 +102,37 @@ class PlotWindowFactory:
         return plot_window
 
     @staticmethod
-    def _convert_mvp_to_plot_params(mvp_params: PMvpParams, title: str) -> PlotParams:
+    def _get_default_num_of_min_distances(structure_dir: str) -> int:
+        """Get default num_of_min_distances based on structure type.
+
+        Returns 2 for B-structures (structure_dir starts with 'B'), 3 otherwise.
+        """
+        if structure_dir and structure_dir.upper().startswith("B"):
+            return 2
+        return 3
+
+    @classmethod
+    def _convert_mvp_to_plot_params(cls, mvp_params: PMvpParams, title: str) -> PlotParams:
         """Convert MVP parameters to plot parameters."""
         # Get filename from MVP params to use as subtitle
         file_name: str = getattr(mvp_params, 'file_name', '') or ''
+
+        # Determine num_of_min_distances based on structure type
+        structure_dir: str = mvp_params.current_selection.get("structure_dir", "")
+        default_num_of_min_distances: int = cls._get_default_num_of_min_distances(structure_dir)
+
+        # Use structure-specific default if mvp_params has the general default (3)
+        # This allows user-set values to be preserved
+        num_of_min_distances: int = mvp_params.bonds_num_of_min_distances
+        if num_of_min_distances == 3 and default_num_of_min_distances == 2:
+            num_of_min_distances = 2
 
         # Check if there are any saved plot params in the MVP params
         plot_params = PlotParams(
             to_build_bonds=mvp_params.to_build_bonds,
             to_show_coordinates=mvp_params.to_show_coordinates,
             to_show_indexes=mvp_params.to_show_c_indexes,  # Use carbon indexes as default
-            num_of_min_distances=mvp_params.bonds_num_of_min_distances,
+            num_of_min_distances=num_of_min_distances,
             skip_first_distances=mvp_params.bonds_skip_first_distances,
             x_min=mvp_params.x_min,
             x_max=mvp_params.x_max,

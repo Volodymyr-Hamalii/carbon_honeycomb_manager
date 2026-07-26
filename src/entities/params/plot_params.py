@@ -20,7 +20,7 @@ class PlotParams:
     to_show_coordinates: bool = False
     to_show_indexes: bool = False
     to_set_equal_scale: bool = True
-    num_of_min_distances: int = 2
+    num_of_min_distances: int = 3
     skip_first_distances: int = 0
 
     # Coordinate limits

@@ -51,7 +51,7 @@ class MvpParams(PMvpParams):
         self.z_min = limits.z_min
         self.z_max = limits.z_max
 
-    bonds_num_of_min_distances: int = 2
+    bonds_num_of_min_distances: int = 3
     bonds_skip_first_distances: int = 0
 
     to_show_dists_to_plane: bool = False
