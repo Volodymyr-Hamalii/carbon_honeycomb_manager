@@ -96,6 +96,116 @@ class IntercalationAndSorption:
 
         return path_to_file_result
 
+    @classmethod
+    def generate_opposite_centers_coordinates_file(
+        cls,
+        project_dir: str,
+        subproject_dir: str,
+        structure_dir: str,
+        params: PMvpParams,
+    ) -> Path:
+        """Generate intercalated atoms placed opposite the polygon centers."""
+        atom_params: ConstantsAtomParams = ATOM_PARAMS_MAP[subproject_dir.lower()]
+
+        carbon_channel: ICarbonHoneycombChannel = CarbonHoneycombModeller.build_carbon_channel(
+            project_dir, subproject_dir, structure_dir, file_name=Constants.file_names.INIT_DAT_FILE
+        )
+
+        inter_atoms: IPoints = InterAtomsParser.build_inter_atoms_opposite_centers_coordinates(
+            carbon_channel,
+            num_of_planes=params.number_of_planes,
+            atom_params=atom_params,
+        )
+
+        return cls._write_inter_plane_coordinates(
+            inter_atoms=inter_atoms,
+            params=params,
+            project_dir=project_dir,
+            subproject_dir=subproject_dir,
+            structure_dir=structure_dir,
+            file_name=Constants.file_names.OPPOSITE_CENTERS_COORDINATES_XLSX_FILE,
+            sheet_name="Opposite centers atoms",
+        )
+
+    @classmethod
+    def generate_opposite_faces_coordinates_file(
+        cls,
+        project_dir: str,
+        subproject_dir: str,
+        structure_dir: str,
+        params: PMvpParams,
+    ) -> Path:
+        """Generate intercalated atoms placed opposite the polygon vertices and edge midpoints."""
+        atom_params: ConstantsAtomParams = ATOM_PARAMS_MAP[subproject_dir.lower()]
+
+        carbon_channel: ICarbonHoneycombChannel = CarbonHoneycombModeller.build_carbon_channel(
+            project_dir, subproject_dir, structure_dir, file_name=Constants.file_names.INIT_DAT_FILE
+        )
+
+        inter_atoms: IPoints = InterAtomsParser.build_inter_atoms_opposite_faces_coordinates(
+            carbon_channel,
+            num_of_planes=params.number_of_planes,
+            atom_params=atom_params,
+        )
+
+        return cls._write_inter_plane_coordinates(
+            inter_atoms=inter_atoms,
+            params=params,
+            project_dir=project_dir,
+            subproject_dir=subproject_dir,
+            structure_dir=structure_dir,
+            file_name=Constants.file_names.OPPOSITE_FACES_COORDINATES_XLSX_FILE,
+            sheet_name="Opposite faces atoms",
+        )
+
+    @staticmethod
+    def _write_inter_plane_coordinates(
+        inter_atoms: IPoints,
+        params: PMvpParams,
+        project_dir: str,
+        subproject_dir: str,
+        structure_dir: str,
+        file_name: str,
+        sheet_name: str,
+    ) -> Path:
+        """Filter by coordinate limits, sort by z and write the intercalated atoms to an Excel file."""
+        # Filter out atoms with min and max coordinates
+        coordinates: NDArray[np.float64] = inter_atoms.points
+        coordinates_filtered: NDArray[np.float64] = coordinates[
+            (coordinates[:, 0] >= params.x_min) &
+            (coordinates[:, 0] <= params.x_max) &
+            (coordinates[:, 1] >= params.y_min) &
+            (coordinates[:, 1] <= params.y_max) &
+            (coordinates[:, 2] >= params.z_min) &
+            (coordinates[:, 2] <= params.z_max)
+        ]
+
+        # Sort by z coordinate
+        coordinates_filtered = coordinates_filtered[
+            np.lexsort((
+                coordinates_filtered[:, 0],
+                coordinates_filtered[:, 1],
+                coordinates_filtered[:, 2],
+            ))]
+
+        inter_atoms = Points(points=coordinates_filtered)
+
+        path_to_file: Path = PathBuilder.build_path_to_result_data_file(
+            project_dir, subproject_dir, structure_dir,
+            file_name=file_name,
+        )
+
+        path_to_file_result: Path | None = FileWriter.write_excel_file(
+            df=inter_atoms.to_df(columns=["i", *InterAtomsParser.INTER_ATOMS_COORDINATES_COLUMNS]),
+            path_to_file=path_to_file,
+            sheet_name=sheet_name,
+        )
+
+        if path_to_file_result is None:
+            raise IOError(f"Failed to write {file_name} file.")
+
+        return path_to_file_result
+
     @staticmethod
     def update_inter_plane_coordinates_file(
         project_dir: str,

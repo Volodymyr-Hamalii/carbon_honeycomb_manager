@@ -54,6 +54,8 @@ class _ConstantsFilenames:
 
     # Intercalation and sorption paths
     PLANE_COORDINATES_XLSX_FILE: str = "sorbed-plane-coordinates.xlsx"
+    OPPOSITE_CENTERS_COORDINATES_XLSX_FILE: str = "sorbed-opposite-centers-coordinates.xlsx"
+    OPPOSITE_FACES_COORDINATES_XLSX_FILE: str = "sorbed-opposite-faces-coordinates.xlsx"
     CHANNEL_COORDINATES_XLSX_FILE: str = "sorbed-channel-coordinates.xlsx"
     FULL_CHANNEL_COORDINATES_XLSX_FILE: str = "intercalated-channel-coordinates.xlsx"
     ALL_CHANNELS_COORDINATES_XLSX_FILE: str = "intercalated-all-channels-coordinates.xlsx"

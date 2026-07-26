@@ -40,6 +40,8 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
         callbacks: dict[str, Callable[..., None]] = {
             "plot_inter_in_c_structure": self._handle_plot_inter_in_c_structure,
             "generate_inter_plane_coordinates": self._handle_generate_inter_plane_coordinates,
+            "generate_opposite_centers": self._handle_generate_opposite_centers,
+            "generate_opposite_faces": self._handle_generate_opposite_faces,
             "update_inter_plane_coordinates": self._handle_update_inter_plane_coordinates,
             "translate_inter_atoms": self._handle_translate_inter_atoms,
             "update_inter_channel_coordinates": self._handle_update_inter_channel_coordinates,
@@ -503,6 +505,58 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
 
         except Exception as e:
             self.on_operation_failed("generate_inter_plane_coordinates", e)
+
+    def _handle_generate_opposite_centers(self) -> None:
+        """Handle generate opposite centers callback."""
+        try:
+            if not self._current_context:
+                self.view.show_error_message("No context available. Please reload the window.")
+                return
+
+            # Show processing status
+            self.view.show_processing_message("Generating intercalated atoms opposite polygon centers...")
+
+            # Get current MVP params
+            params: PMvpParams = self.model.get_mvp_params()
+            logger.info(f">>> _handle_generate_opposite_centers mvp_params: {params}")
+
+            output_path: Path = IntercalationAndSorption.generate_opposite_centers_coordinates_file(
+                project_dir=self._current_context["project_dir"],
+                subproject_dir=self._current_context["subproject_dir"],
+                structure_dir=self._current_context["structure_dir"],
+                params=params,
+            )
+
+            self.view.show_success_message(f"File generated successfully: {output_path}")
+
+        except Exception as e:
+            self.on_operation_failed("generate_opposite_centers", e)
+
+    def _handle_generate_opposite_faces(self) -> None:
+        """Handle generate opposite faces callback."""
+        try:
+            if not self._current_context:
+                self.view.show_error_message("No context available. Please reload the window.")
+                return
+
+            # Show processing status
+            self.view.show_processing_message("Generating intercalated atoms opposite polygon faces...")
+
+            # Get current MVP params
+            params: PMvpParams = self.model.get_mvp_params()
+            logger.info(f">>> _handle_generate_opposite_faces mvp_params: {params}")
+
+            output_path: Path = IntercalationAndSorption.generate_opposite_faces_coordinates_file(
+                project_dir=self._current_context["project_dir"],
+                subproject_dir=self._current_context["subproject_dir"],
+                structure_dir=self._current_context["structure_dir"],
+                params=params,
+            )
+
+            self.view.show_success_message(f"File generated successfully: {output_path}")
+
+        except Exception as e:
+            self.on_operation_failed("generate_opposite_faces", e)
 
     def _handle_update_inter_plane_coordinates(self) -> None:
         """Handle update inter plane coordinates callback."""

@@ -66,6 +66,16 @@ class ConstantsAtomParams(ABC):
     def DIST_TO_REPLACE_NEARBY_ATOMS(self) -> float:
         return self.DIST_BETWEEN_ATOMS / 3
 
+    @property
+    def PLACE_OPPOSITE_CENTERS_DIST(self) -> float:
+        """ Distance to place an intercalated atom opposite a polygon center (along the face normal). """
+        return _phys_constants["intercalation_properties"]["place_opposite_centers"][self.ATOM_SYMBOL.lower()]
+
+    @property
+    def PLACE_OPPOSITE_FACES_DIST(self) -> float:
+        """ Distance to place intercalated atoms opposite polygon vertices and edge midpoints. """
+        return _phys_constants["intercalation_properties"]["place_opposite_faces"][self.ATOM_SYMBOL.lower()]
+
 
 class ConstantsAlParams(ConstantsAtomParams):
     """ Aluminium params """

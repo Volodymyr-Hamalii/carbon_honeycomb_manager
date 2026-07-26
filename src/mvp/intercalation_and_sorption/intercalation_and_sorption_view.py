@@ -82,16 +82,16 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
 
         ##### FIRST COLUMN #####
         self.operation_buttons["generate_inter_plane_coordinates"] = self.template.pack_button(
-            op_col1, "Generate plane coordinates",
+            op_col1, "Generate near planes",
             self._on_generate_inter_plane_coordinates
         )
-        self.operation_buttons["get_distance_matrix"] = self.template.pack_button(
-            op_col1, "Get distance matrix",
-            self._on_get_distance_matrix
+        self.operation_buttons["generate_opposite_centers"] = self.template.pack_button(
+            op_col1, "Generate opposite centers",
+            self._on_generate_opposite_centers
         )
-        self.operation_buttons["get_inter_chc_constants"] = self.template.pack_button(
-            op_col1, "Get intercalation constants",
-            self._on_get_inter_chc_constants
+        self.operation_buttons["generate_opposite_faces"] = self.template.pack_button(
+            op_col1, "Generate opposite faces",
+            self._on_generate_opposite_faces
         )
 
         ##### SECOND COLUMN #####
@@ -102,6 +102,14 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
         self.operation_buttons["translate_inter_to_all_channels_plot"] = self.template.pack_button(
             op_col2, "Plot all channels",
             self._on_translate_inter_to_all_channels_plot
+        )
+        self.operation_buttons["get_distance_matrix"] = self.template.pack_button(
+            op_col2, "Get distance matrix",
+            self._on_get_distance_matrix
+        )
+        self.operation_buttons["get_inter_chc_constants"] = self.template.pack_button(
+            op_col2, "Get intercalation constants",
+            self._on_get_inter_chc_constants
         )
         # self.operation_buttons["translate_inter_atoms"] = self.template.pack_button(
         #     op_col2, "Translate atoms to other planes",
@@ -464,6 +472,18 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
         """Handle generate inter plane coordinates button click."""
         if "generate_inter_plane_coordinates" in self.callbacks:
             self.callbacks["generate_inter_plane_coordinates"]()
+            self.refresh_files_after_action()
+
+    def _on_generate_opposite_centers(self) -> None:
+        """Handle generate opposite centers button click."""
+        if "generate_opposite_centers" in self.callbacks:
+            self.callbacks["generate_opposite_centers"]()
+            self.refresh_files_after_action()
+
+    def _on_generate_opposite_faces(self) -> None:
+        """Handle generate opposite faces button click."""
+        if "generate_opposite_faces" in self.callbacks:
+            self.callbacks["generate_opposite_faces"]()
             self.refresh_files_after_action()
 
     def _on_update_inter_plane_coordinates(self) -> None:

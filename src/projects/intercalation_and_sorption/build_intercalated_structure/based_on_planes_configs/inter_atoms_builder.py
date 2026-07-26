@@ -69,6 +69,156 @@ class InterAtomsBuilder:
         return Points(points=np.array(inter_atoms))
 
     @classmethod
+    def build_inter_atoms_opposite_centers(
+            cls,
+            carbon_channel: ICarbonHoneycombChannel,
+            atom_params: ConstantsAtomParams,
+            planes_limit: int | None = None,
+    ) -> IPoints:
+        """
+        Build intercalated atoms opposite the centers of the carbon honeycomb polygons
+        (hexagons and pentagons).
+
+        For each polygon a single atom is placed on the perpendicular to the polygon plane,
+        drawn from the polygon center, at the distance atom_params.PLACE_OPPOSITE_CENTERS_DIST.
+        The atom is placed on the side pointing towards the channel center (inside the channel).
+        There is no atoms filtering or checking the distance between atoms here
+        (that is done during the following steps).
+        """
+
+        inter_atoms: list[np.ndarray] = []
+        carbon_channel_center: np.ndarray = carbon_channel.channel_center
+        distance: float = atom_params.PLACE_OPPOSITE_CENTERS_DIST
+        logger.info(f"Distance to place atoms opposite polygon centers: {distance}")
+
+        for i, plane in enumerate(carbon_channel.planes):
+            if planes_limit is not None and i == planes_limit:
+                # To build only part of the planes
+                break
+
+            polygons: list[IFlatFigure] = [*plane.hexagons, *plane.pentagons]  # type: ignore
+            for polygon in polygons:
+                normal_vector: np.ndarray = cls._get_polygon_normal(polygon)
+                intercalated_atom: np.ndarray = cls._place_point_towards_center(
+                    point=polygon.center,
+                    normal_vector=normal_vector,
+                    carbon_channel_center=carbon_channel_center,
+                    distance=distance,
+                )
+                inter_atoms.append(intercalated_atom)
+
+        return Points(points=np.array(inter_atoms))
+
+    @classmethod
+    def build_inter_atoms_opposite_faces(
+            cls,
+            carbon_channel: ICarbonHoneycombChannel,
+            atom_params: ConstantsAtomParams,
+            planes_limit: int | None = None,
+    ) -> IPoints:
+        """
+        Build intercalated atoms opposite the faces of the carbon honeycomb polygons
+        (hexagons and pentagons).
+
+        For each polygon the atoms are placed opposite 2 kinds of points:
+        the polygon vertices and the midpoints of the polygon edges.
+        Every atom is placed on the perpendicular to the polygon plane, drawn from the
+        corresponding point, at the distance atom_params.PLACE_OPPOSITE_FACES_DIST, on the
+        side pointing towards the channel center (inside the channel).
+        There is no atoms filtering or checking the distance between atoms here
+        (that is done during the following steps).
+        """
+
+        inter_atoms: list[np.ndarray] = []
+        carbon_channel_center: np.ndarray = carbon_channel.channel_center
+        distance: float = atom_params.PLACE_OPPOSITE_FACES_DIST
+        logger.info(f"Distance to place atoms opposite polygon faces: {distance}")
+
+        for i, plane in enumerate(carbon_channel.planes):
+            if planes_limit is not None and i == planes_limit:
+                # To build only part of the planes
+                break
+
+            polygons: list[IFlatFigure] = [*plane.hexagons, *plane.pentagons]  # type: ignore
+            for polygon in polygons:
+                normal_vector: np.ndarray = cls._get_polygon_normal(polygon)
+
+                # The points opposite which the atoms are placed: vertices and edge midpoints
+                vertices: np.ndarray = polygon.points
+                edge_midpoints: np.ndarray = cls._calculate_polygon_edge_midpoints(vertices)
+
+                source_points: np.ndarray = (
+                    np.vstack([vertices, edge_midpoints]) if len(edge_midpoints) > 0 else vertices
+                )
+
+                for source_point in source_points:
+                    intercalated_atom: np.ndarray = cls._place_point_towards_center(
+                        point=source_point,
+                        normal_vector=normal_vector,
+                        carbon_channel_center=carbon_channel_center,
+                        distance=distance,
+                    )
+                    inter_atoms.append(intercalated_atom)
+
+        return Points(points=np.array(inter_atoms))
+
+    @staticmethod
+    def _get_polygon_normal(polygon: IFlatFigure) -> np.ndarray:
+        """ Return the normalized normal vector to the polygon plane. """
+        plane_params: tuple[float, float, float, float] = polygon.plane_params  # A, B, C, D
+        normal_vector: np.ndarray = np.array(plane_params[:3])
+        return normal_vector / np.linalg.norm(normal_vector)
+
+    @staticmethod
+    def _place_point_towards_center(
+            point: np.ndarray,
+            normal_vector: np.ndarray,
+            carbon_channel_center: np.ndarray,
+            distance: float,
+    ) -> np.ndarray:
+        """
+        Offset the point along the normal vector by the given distance, choosing the
+        direction that points towards the carbon channel center (inside the channel).
+        """
+        candidate1: np.ndarray = point + normal_vector * distance
+        candidate2: np.ndarray = point - normal_vector * distance
+
+        if np.sum(np.abs(candidate1 - carbon_channel_center)) < np.sum(np.abs(candidate2 - carbon_channel_center)):
+            return candidate1
+        return candidate2
+
+    @staticmethod
+    def _calculate_polygon_edge_midpoints(polygon_points: np.ndarray) -> np.ndarray:
+        """
+        Calculate the midpoints of the polygon edges.
+
+        The edges are defined as pairs of vertices separated by the polygon side length
+        (the minimal distance between vertices). Returns an array of midpoints.
+        """
+        if len(polygon_points) < 2:
+            return np.empty((0, 3))
+
+        dist_matrix: np.ndarray = cdist(polygon_points, polygon_points)
+
+        # The polygon side length is the minimal non-zero distance between vertices
+        non_zero_dists: np.ndarray = dist_matrix[dist_matrix > 0]
+        if len(non_zero_dists) == 0:
+            return np.empty((0, 3))
+        side_length: float = float(np.min(non_zero_dists))
+
+        # Allow a small clearance to treat a pair of vertices as an edge
+        max_edge_dist: float = side_length * 1.25
+
+        midpoints: list[np.ndarray] = []
+        num_points: int = len(polygon_points)
+        for i in range(num_points):
+            for j in range(i + 1, num_points):
+                if dist_matrix[i, j] <= max_edge_dist:
+                    midpoints.append((polygon_points[i] + polygon_points[j]) / 2)
+
+        return np.array(midpoints) if midpoints else np.empty((0, 3))
+
+    @classmethod
     def _build_inter_atoms_near_polygons(
             cls,
             polygons: list[IFlatFigure],

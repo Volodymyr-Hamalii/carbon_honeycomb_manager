@@ -1,4 +1,5 @@
 import numpy as np
+from numpy.typing import NDArray
 
 from src.interfaces import IPoints
 from src.entities import Points
@@ -10,6 +11,26 @@ logger = Logger("AtomsFilter")
 
 
 class InterAtomsFilter:
+    @staticmethod
+    def remove_atoms_too_close_to_carbon(
+            inter_atoms: IPoints,
+            carbon_channel_points: NDArray[np.float64],
+            min_allowed_dist: float,
+    ) -> IPoints:
+        """
+        Remove intercalated atoms that are closer to any carbon atom than min_allowed_dist.
+
+        Returns the updated inter_atoms (with too close to carbon atoms removed).
+        """
+        if len(inter_atoms.points) == 0:
+            return inter_atoms
+
+        min_dists_to_carbon: NDArray[np.float64] = DistanceMeasurer.calculate_min_distances(
+            inter_atoms.points, carbon_channel_points)
+
+        mask: NDArray[np.bool_] = min_dists_to_carbon >= min_allowed_dist
+        return Points(points=inter_atoms.points[mask])
+
     @classmethod
     # @execution_time_logger
     def replace_nearby_atoms_with_one_atom(

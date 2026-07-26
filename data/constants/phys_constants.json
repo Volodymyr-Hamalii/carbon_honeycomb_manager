@@ -4,5 +4,19 @@
     "kr": 4.12,
     "ar": 5.31,
     "xe": 6.2
+  },
+  "intercalation_properties": {
+    "place_opposite_centers": {
+      "al": 1.0,
+      "kr": 1.0,
+      "ar": 3.27,
+      "xe": 1.0
+    },
+    "place_opposite_faces": {
+      "al": 1.0,
+      "kr": 1.0,
+      "ar": 3.37,
+      "xe": 1.0
+    }
   }
 }

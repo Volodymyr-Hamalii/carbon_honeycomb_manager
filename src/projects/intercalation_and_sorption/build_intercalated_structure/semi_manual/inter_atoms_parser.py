@@ -168,6 +168,59 @@ class InterAtomsParser:
         return Points(points=coordinates_inter_atoms.sorted_points)
 
     @classmethod
+    def build_inter_atoms_opposite_centers_coordinates(
+            cls,
+            carbon_channel: ICarbonHoneycombChannel,
+            num_of_planes: int,
+            atom_params: ConstantsAtomParams,
+    ) -> IPoints:
+        """ Build intercalated atoms opposite the polygon centers and filter them. """
+        coordinates_inter_atoms: IPoints = InterAtomsBuilder.build_inter_atoms_opposite_centers(
+            carbon_channel, planes_limit=num_of_planes, atom_params=atom_params)
+
+        return cls._filter_generated_inter_atoms(coordinates_inter_atoms, carbon_channel, atom_params)
+
+    @classmethod
+    def build_inter_atoms_opposite_faces_coordinates(
+            cls,
+            carbon_channel: ICarbonHoneycombChannel,
+            num_of_planes: int,
+            atom_params: ConstantsAtomParams,
+    ) -> IPoints:
+        """ Build intercalated atoms opposite the polygon vertices and edge midpoints and filter them. """
+        coordinates_inter_atoms: IPoints = InterAtomsBuilder.build_inter_atoms_opposite_faces(
+            carbon_channel, planes_limit=num_of_planes, atom_params=atom_params)
+
+        return cls._filter_generated_inter_atoms(coordinates_inter_atoms, carbon_channel, atom_params)
+
+    @staticmethod
+    def _filter_generated_inter_atoms(
+            coordinates_inter_atoms: IPoints,
+            carbon_channel: ICarbonHoneycombChannel,
+            atom_params: ConstantsAtomParams,
+    ) -> IPoints:
+        """
+        Filter the generated intercalated atoms:
+        1. Remove the atoms that are closer to the carbon atoms than
+           (atom_params.DIST_BETWEEN_ATOMS + dist_between_carbon_atoms) / 2.
+        2. Replace the too close (to each other) atoms with one atom.
+        Rounds and sorts the resulting coordinates.
+        """
+        dist_between_carbon_atoms: float = float(carbon_channel.ave_dist_between_closest_atoms)
+        min_dist_to_carbon: float = (atom_params.DIST_BETWEEN_ATOMS + dist_between_carbon_atoms) / 2
+
+        coordinates_inter_atoms = InterAtomsFilter.remove_atoms_too_close_to_carbon(
+            coordinates_inter_atoms, carbon_channel.points, min_dist_to_carbon)
+
+        coordinates_inter_atoms = InterAtomsFilter.replace_nearby_atoms_with_one_atom(
+            coordinates_inter_atoms, atom_params)
+
+        # Round coordinates to 3 decimal places
+        coordinates_inter_atoms = Points(points=np.round(coordinates_inter_atoms.points, 3))
+
+        return Points(points=coordinates_inter_atoms.sorted_points)
+
+    @classmethod
     def parse_inter_atoms_coordinates_df(
             cls,
             inter_atoms_plane_coordinates_df: pd.DataFrame,
