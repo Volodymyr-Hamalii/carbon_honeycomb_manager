@@ -63,6 +63,11 @@ class StructureValidator(IStructureValidator):
             atoms, planes, targets.opposite_position_tolerance
         )
 
+        # Only the atoms sitting near a wall are held to the intercalated-carbon equilibrium
+        # distance. The atoms filling the middle of a wide channel are legitimately much further
+        # from carbon - their spacing is governed by the intercalated-intercalated target instead.
+        is_near_wall: NDArray[np.bool_] = dists_to_planes <= targets.near_wall_dist_to_plane_limit
+
         atom_rows: list[dict[str, Any]] = []
         for i, atom in enumerate(atoms):
             atom_rows.append({
@@ -83,6 +88,7 @@ class StructureValidator(IStructureValidator):
                 ),
                 "min_dist_to_plane": round(float(dists_to_planes[i]), cls.ROUND_DECIMALS),
                 "nearest_plane_index": int(nearest_plane_indexes[i]),
+                "is_near_wall": bool(is_near_wall[i]),
                 "nearest_carbon_distances": [
                     round(float(value), cls.ROUND_DECIMALS) for value in nearest_carbon_dists[i]
                 ],
@@ -100,6 +106,10 @@ class StructureValidator(IStructureValidator):
             values=dists_to_carbon,
             lower_bound=targets.dist_to_carbon_lower_bound,
             upper_bound=targets.dist_to_carbon_upper_bound,
+            mask=is_near_wall,
+        )
+        carbon_corridor_check["near_wall_dist_to_plane_limit"] = round(
+            targets.near_wall_dist_to_plane_limit, 4
         )
         inter_corridor_check: dict[str, Any] = cls._check_corridor(
             values=dists_to_inter,
@@ -133,6 +143,7 @@ class StructureValidator(IStructureValidator):
                 dists_to_inter=dists_to_inter,
                 dists_to_planes=dists_to_planes,
                 nearest_carbon_spreads=nearest_carbon_dists.max(axis=1) - nearest_carbon_dists.min(axis=1),
+                is_near_wall=is_near_wall,
                 opposite_features=opposite_features,
                 targets=targets,
             ),
@@ -500,18 +511,33 @@ class StructureValidator(IStructureValidator):
             values: NDArray[np.float64],
             lower_bound: float,
             upper_bound: float,
+            mask: NDArray[np.bool_] | None = None,
     ) -> dict[str, Any]:
-        """Check how many measured distances fall outside the allowed deviation corridor."""
-        finite_mask: NDArray[np.bool_] = ~np.isnan(values)
-        below: list[int] = [int(i) for i in np.where(finite_mask & (values < lower_bound))[0]]
-        above: list[int] = [int(i) for i in np.where(finite_mask & (values > upper_bound))[0]]
+        """
+        Check how many measured distances fall outside the allowed deviation corridor.
+
+        `mask` selects the atoms the corridor applies to; the rest are reported as exempt and do not
+        count as violations.
+        """
+        checked_mask: NDArray[np.bool_] = ~np.isnan(values)
+
+        if mask is not None:
+            exempt: list[int] = [int(i) for i in np.where(~mask)[0]]
+            checked_mask = checked_mask & mask
+        else:
+            exempt = []
+
+        below: list[int] = [int(i) for i in np.where(checked_mask & (values < lower_bound))[0]]
+        above: list[int] = [int(i) for i in np.where(checked_mask & (values > upper_bound))[0]]
 
         return {
             "lower_bound": round(lower_bound, 4),
             "upper_bound": round(upper_bound, 4),
-            "num_of_atoms_inside": int(np.sum(finite_mask)) - len(below) - len(above),
+            "num_of_atoms_checked": int(np.sum(checked_mask)),
+            "num_of_atoms_inside": int(np.sum(checked_mask)) - len(below) - len(above),
             "atom_indexes_below": below,
             "atom_indexes_above": above,
+            "atom_indexes_exempt": exempt,
             "passed": not below and not above,
         }
 
@@ -548,6 +574,7 @@ class StructureValidator(IStructureValidator):
             dists_to_inter: NDArray[np.float64],
             dists_to_planes: NDArray[np.float64],
             nearest_carbon_spreads: NDArray[np.float64],
+            is_near_wall: NDArray[np.bool_],
             opposite_features: list[dict[str, Any]],
             targets: PValidationTargets,
     ) -> dict[str, Any]:
@@ -557,11 +584,21 @@ class StructureValidator(IStructureValidator):
             key: str = feature["opposite_feature"] or "none"
             feature_counts[key] += 1
 
+        dev_from_target_carbon: NDArray[np.float64] = cls._deviation_percents(
+            dists_to_carbon, targets.target_dist_to_carbon
+        )
+
         return {
+            "num_of_near_wall_atoms": int(np.sum(is_near_wall)),
+            "num_of_central_atoms": int(np.sum(~is_near_wall)),
             "min_dist_to_carbon": cls._describe_values(dists_to_carbon),
-            "dev_from_target_carbon_percent": cls._describe_values(
-                cls._deviation_percents(dists_to_carbon, targets.target_dist_to_carbon)
+            "dev_from_target_carbon_percent": cls._describe_values(dev_from_target_carbon),
+            # The values that rule 1 is actually judged on, and the central atoms it exempts.
+            "min_dist_to_carbon_near_wall": cls._describe_values(dists_to_carbon[is_near_wall]),
+            "dev_from_target_carbon_percent_near_wall": cls._describe_values(
+                dev_from_target_carbon[is_near_wall]
             ),
+            "min_dist_to_carbon_central": cls._describe_values(dists_to_carbon[~is_near_wall]),
             "min_dist_to_inter": cls._describe_values(dists_to_inter),
             "dev_from_target_inter_percent": cls._describe_values(
                 cls._deviation_percents(dists_to_inter, targets.target_dist_between_inter_atoms)

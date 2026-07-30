@@ -224,25 +224,59 @@ before the server starts. If you add code to the server, log - do not print.
 
 `validate_structure` returns, per atom: coordinates; minimum distance to carbon and its deviation
 from the target in percent; minimum distance to the nearest intercalated atom and its deviation;
-minimum distance to a wall plane and which plane; the distances to the 6 nearest carbon atoms and
-their spread; and which wall feature (hexagon center, pentagon center, edge hole) the atom sits
-opposite to, at what normal distance and with what in-plane offset.
+minimum distance to a wall plane and which plane; whether the atom sits near a wall; the distances to
+the 6 nearest carbon atoms and their spread; and which wall feature (hexagon center, pentagon center,
+edge hole) the atom sits opposite to, at what normal distance and with what in-plane offset.
 
-Aggregated: min / max / mean / median of each of those, the z range, and how many atoms sit opposite
-each kind of feature.
+Aggregated: min / max / mean / median of each of those, the near-wall and central carbon distances
+separately, the z range, and how many atoms sit opposite each kind of feature.
 
 Plus four checks:
 
 - `hard_floor_check` - no pair of intercalated atoms closer than the physical minimum, with the
   offending pairs listed.
 - `dist_to_carbon_corridor_check` and `dist_between_inter_atoms_corridor_check` - which atoms fall
-  below or above the allowed deviation corridor.
+  below or above the allowed deviation corridor. The carbon one applies to near-wall atoms only (see
+  below); the intercalated-intercalated one applies to every atom.
 - `z_periodicity_check` - the smallest number `N` of carbon z periods after which the structure maps
   onto itself, the resulting repeat length, whether the match could be **verified against overlapping
   atoms**, and the tiling `seam` distances.
 
 And two summaries: `violations` (a list of the checks that failed) and `compromise` (`both`,
 `rule_4_over_corridor`, `corridor_over_rule_4`, `neither`).
+
+#### Near-wall atoms versus central atoms
+
+The intercalated-carbon equilibrium distance only constrains the atoms that actually touch a wall. The
+atoms filling the middle of a wide channel are held in place by their intercalated neighbours, so they
+sit far above `target_dist_to_carbon` - and that is correct, not a defect.
+
+An atom counts as **near-wall** when its perpendicular distance to the closest wall plane is at most
+`near_wall_max_dist_to_plane`, which defaults to `dist_to_carbon_upper_bound` (the upper edge of the
+carbon corridor). The rationale for the default: an atom already further from the wall than the
+largest acceptable intercalated-carbon distance cannot be at equilibrium with that wall.
+
+Only near-wall atoms are checked against the carbon corridor. The rest appear in
+`dist_to_carbon_corridor_check.atom_indexes_exempt` and never produce a violation. Note the split is
+safe in the other direction: an atom that is *too close* to a wall necessarily has a small distance to
+the plane, so it is always classified near-wall and always checked.
+
+Measured on the shipped references (argon, `target_dist_to_carbon` about 2.60 Å, near-wall limit about
+2.86 Å):
+
+| structure | near-wall | dist to plane | dev from target | central | dist to plane | dev from target |
+| --- | --- | --- | --- | --- | --- | --- |
+| `C2-7_h3` v1-ABAB | 18 | 2.504-2.604 | -0.1% .. +1.6% | 9 | 3.984-6.834 | +54% .. +163% |
+| `B4-7_h7` v1-ABAB | 16 | 2.674-2.675 | +2.9% .. +7.5% | 21 | 3.421-6.549 | +32% .. +152% |
+| `A3-7_h3` v1-ABAB | 18 | 2.160-2.168 | about 0% | 9 | 3.648-6.620 | +43% .. +161% |
+| `B1-7_h7` v1-ABAB | 12 | 2.500-2.572 | about 0% | 0 | - | - |
+
+No atom in any reference lands between about 2.7 and 3.4 Å from a wall, so the two populations are
+cleanly separated and the default limit is comfortably inside the gap.
+
+Report `summary.min_dist_to_carbon_near_wall` for rule 1, not `summary.min_dist_to_carbon` - the
+latter mixes both populations and looks alarming for a perfectly good structure (`B4-7_h7` reads a
+mean deviation of +45% undivided, versus +5% across the atoms rule 1 actually constrains).
 
 #### How the z self-repeat check works
 

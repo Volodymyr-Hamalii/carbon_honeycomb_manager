@@ -32,10 +32,26 @@ Let `TARGET_C` = `Average {element}-C distance (Å)`, `TARGET_INTER` = `Distance
 and `HARD_MIN` = `Distance to remove too close atoms (Å)`, all from
 `get_intercalation_constants`.
 
-1. **Distances to carbon.** The distance from each intercalated atom to its nearest carbon atom
-   should be as close as possible to `TARGET_C`.
+1. **Distances to carbon - for the atoms near the walls only.** The distance from a **near-wall**
+   intercalated atom to its nearest carbon atom should be as close as possible to `TARGET_C`.
+
+   **This rule does not apply to the central atoms** - the ones filling the middle of a wide channel,
+   away from the walls. They are legitimately much further from carbon than the equilibrium distance,
+   and that is correct, not a defect. In `ar/C2-7_h3/final_one_ch-v1-ABAB.xlsx` the 18 near-wall
+   atoms sit at 2.60-2.64 Å from carbon (0 to +2% off target) while the 9 central atoms sit at
+   4.00-6.84 Å (+54% to +163%) - and that file is a good structure. Same shape in
+   `ar/A3-7_h3/final_one_ch-v1-ABAB.xlsx` and `ar/B4-7_h7/final_one_ch-v1-ABAB-Volod.xlsx`.
+
+   `validate_structure` implements this split: an atom counts as near-wall when its distance to the
+   nearest wall plane is at most `near_wall_max_dist_to_plane` (default: the upper edge of the carbon
+   corridor). Central atoms appear in `dist_to_carbon_corridor_check.atom_indexes_exempt` and never
+   count as violations. Read `summary.min_dist_to_carbon_near_wall` for rule 1 - **not**
+   `summary.min_dist_to_carbon`, which mixes both populations and looks alarming for no reason.
+
+   The central atoms are governed by rule 2 instead.
 2. **Distances between intercalated atoms.** The distance from each intercalated atom to its nearest
-   intercalated neighbour should be as close as possible to `TARGET_INTER`.
+   intercalated neighbour should be as close as possible to `TARGET_INTER`. This applies to **all**
+   atoms, near-wall and central alike, and it is the only distance criterion for the central ones.
 3. **Placement opposite wall features.** Intercalated atoms - the ones near the walls in particular -
    normally sit on the normal to a wall, opposite a polygon center or an edge hole. The structure
    should be roughly symmetric.
@@ -49,8 +65,10 @@ and `HARD_MIN` = `Distance to remove too close atoms (Å)`, all from
 
 Satisfying all five at once is usually impossible. At least one of rules 1 and 2 must hold well:
 
-- **few atoms (narrow channel)** - rule 1 wins (distances to the nearest carbon);
-- **many atoms (wide channel)** - rule 2 wins (distances between intercalated atoms);
+- **few atoms (narrow channel)** - rule 1 wins (distances to the nearest carbon). In a narrow channel
+  every atom is a near-wall atom, so rule 1 covers the whole structure;
+- **many atoms (wide channel)** - rule 2 wins (distances between intercalated atoms). Here the
+  structure splits: the near-wall shell is still held to rule 1, and rule 2 carries the interior;
 - otherwise, aim for most atoms being close to both targets.
 
 ### Allowed deviations
@@ -58,6 +76,9 @@ Satisfying all five at once is usually impossible. At least one of rules 1 and 2
 Compression up to 8% and expansion up to 10% from the equilibrium distances, i.e. the corridor
 `[TARGET × 0.92, TARGET × 1.10]`. `HARD_MIN` (= `TARGET_INTER × 0.7`) is a physical floor: **never
 write a structure that puts two intercalated atoms closer than that.**
+
+The corridor around `TARGET_C` applies to the near-wall atoms only (see rule 1). The corridor around
+`TARGET_INTER` applies to every atom.
 
 Large uniform stretching is unlikely physically, so distances close to `TARGET_C` are preferable to
 distances that merely stay inside the corridor.
@@ -89,7 +110,10 @@ user can compare for themselves.
    `move_atoms_along_plane_normal` / `move_atoms_to_channel_center` / `move_atoms_on_vector` to pull
    distances towards the targets. Re-run `validate_structure` after each round.
 5. **Fill the channel interior** for wide channels: `add_atoms` with explicit coordinates, spaced by
-   `TARGET_INTER`, kept symmetric around the channel axis (rule 3, rule 5).
+   `TARGET_INTER`, kept symmetric around the channel axis (rule 3, rule 5). Space these atoms by
+   `TARGET_INTER` from each other and from the near-wall shell - do **not** try to bring them closer
+   to carbon. Their distance to the walls follows from the packing and will be far above `TARGET_C`;
+   in the references it reaches +160%. Judge them by rule 2 only.
 6. **Make it repeat along z.** Build one belt or one elementary cell, then
    `translate_atoms_along_z` to fill the channel height. Confirm with the `z_periodicity_check`
    section of the report: `min_period_multiplier` must not be null, and
@@ -123,8 +147,11 @@ Targets (element {E}, structure {S}):
   Distance between atoms      {TARGET_INTER} Å   corridor [{lo}, {hi}]
   Hard minimum                {HARD_MIN} Å
 
-Rule 1  dist to C      min {..} / mean {..} / max {..}   deviation {..}% .. {..}%
-Rule 2  dist to inter  min {..} / mean {..} / max {..}   deviation {..}% .. {..}%
+Atoms: {n} near the walls / {n} central
+
+Rule 1  dist to C (near-wall only)  min {..} / mean {..} / max {..}   deviation {..}% .. {..}%
+        central atoms (exempt)      min {..} / mean {..} / max {..}
+Rule 2  dist to inter (all atoms)   min {..} / mean {..} / max {..}   deviation {..}% .. {..}%
 Rule 3  opposite       {n} hexagon / {n} pentagon / {n} edge hole / {n} none
         nearest-carbon spread  mean {..} Å
 Rule 4  repeats after {k} carbon z periods ({length} Å); seam {..} Å vs interior {..} Å

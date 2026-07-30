@@ -147,6 +147,106 @@ def test_distance_above_the_corridor_is_reported(report_for) -> None:
     assert check["atom_indexes_below"] == []
 
 
+### NEAR-WALL VS CENTRAL ATOMS (rule 1 applies to the near-wall ones only) ###
+
+
+def test_near_wall_atom_is_flagged_as_such(report_for) -> None:
+    # targets.target_dist_to_carbon is 3.0 with +10% expansion, so the near-wall limit is 3.3 A.
+    report: dict[str, Any] = report_for(
+        [build_atom_opposite(WALL_0_HEXAGON_CENTERS[0], NORMAL_DISTANCE)]
+    )
+
+    assert report["atoms"][0]["is_near_wall"] is True
+    assert report["summary"]["num_of_near_wall_atoms"] == 1
+    assert report["summary"]["num_of_central_atoms"] == 0
+
+
+def test_atom_on_the_channel_axis_is_central(report_for) -> None:
+    # The channel axis is about 6 A from every wall - far beyond the 3.3 A near-wall limit.
+    report: dict[str, Any] = report_for([[0.0, 0.0, 5.04]])
+    atom: dict[str, Any] = report["atoms"][0]
+
+    assert atom["is_near_wall"] is False
+    assert atom["min_dist_to_plane"] > 3.3
+    assert report["summary"]["num_of_central_atoms"] == 1
+
+
+def test_central_atom_is_exempt_from_the_carbon_corridor(report_for) -> None:
+    # The shape of the `ar/C2-7_h3` reference: a near-wall shell plus a central atom that sits far
+    # above the carbon corridor. The central atom must not be reported as a violation.
+    report: dict[str, Any] = report_for([
+        build_atom_opposite(WALL_0_HEXAGON_CENTERS[0], NORMAL_DISTANCE),
+        [0.0, 0.0, 5.04],
+    ])
+    check: dict[str, Any] = report["dist_to_carbon_corridor_check"]
+
+    assert report["atoms"][1]["min_dist_to_carbon"] > check["upper_bound"]
+    assert check["atom_indexes_exempt"] == [1]
+    assert check["atom_indexes_above"] == []
+    assert check["num_of_atoms_checked"] == 1
+    assert check["passed"] is True
+    assert "dist_to_carbon_corridor" not in report["violations"]
+
+
+def test_near_wall_atom_outside_the_carbon_corridor_is_still_a_violation(report_for) -> None:
+    # 1.0 A from the wall: near-wall, and far below the corridor - this must be caught.
+    report: dict[str, Any] = report_for(
+        [build_atom_opposite(WALL_0_HEXAGON_CENTERS[0], 1.0)]
+    )
+    check: dict[str, Any] = report["dist_to_carbon_corridor_check"]
+
+    assert report["atoms"][0]["is_near_wall"] is True
+    assert check["atom_indexes_below"] == [0]
+    assert check["passed"] is False
+    assert "dist_to_carbon_corridor" in report["violations"]
+
+
+def test_summary_splits_the_carbon_distances_by_population(report_for) -> None:
+    report: dict[str, Any] = report_for([
+        build_atom_opposite(WALL_0_HEXAGON_CENTERS[0], NORMAL_DISTANCE),
+        [0.0, 0.0, 5.04],
+    ])
+    summary: dict[str, Any] = report["summary"]
+
+    near_wall_dist: float = report["atoms"][0]["min_dist_to_carbon"]
+    central_dist: float = report["atoms"][1]["min_dist_to_carbon"]
+
+    assert summary["min_dist_to_carbon_near_wall"]["max"] == pytest.approx(near_wall_dist, abs=1e-3)
+    assert summary["min_dist_to_carbon_central"]["min"] == pytest.approx(central_dist, abs=1e-3)
+    # The undivided statistic still covers both, which is why rule 1 must not be read off it.
+    assert summary["min_dist_to_carbon"]["max"] == pytest.approx(central_dist, abs=1e-3)
+
+
+def test_near_wall_limit_can_be_overridden(
+        synthetic_channel: ICarbonHoneycombChannel,
+        targets: ValidationTargets,
+        points_factory: PointsFactory,
+) -> None:
+    # Raising the limit past the channel radius makes every atom near-wall again.
+    wide_targets: ValidationTargets = replace(targets, near_wall_max_dist_to_plane=10.0)
+
+    report: dict[str, Any] = StructureValidator.build_report(
+        carbon_channel=synthetic_channel,
+        inter_atoms=points_factory([[0.0, 0.0, 5.04]]),
+        targets=wide_targets,
+    )
+
+    assert report["atoms"][0]["is_near_wall"] is True
+    assert report["dist_to_carbon_corridor_check"]["atom_indexes_exempt"] == []
+    assert report["dist_to_carbon_corridor_check"]["passed"] is False
+    assert report["targets"]["near_wall_dist_to_plane_limit"] == 10.0
+
+
+def test_near_wall_limit_defaults_to_the_carbon_corridor_upper_bound(report_for) -> None:
+    report: dict[str, Any] = report_for(
+        [build_atom_opposite(WALL_0_HEXAGON_CENTERS[0], NORMAL_DISTANCE)]
+    )
+
+    assert report["targets"]["near_wall_dist_to_plane_limit"] == report["targets"][
+        "dist_to_carbon_upper_bound"
+    ]
+
+
 def test_compromise_is_both_when_no_trade_off_is_needed(report_for) -> None:
     report: dict[str, Any] = report_for([
         build_atom_opposite(WALL_0_HEXAGON_CENTERS[0], NORMAL_DISTANCE),

@@ -42,6 +42,7 @@ class ValidationTargetsBuilder:
             z_period_tolerance: float = 0.1,
             max_z_period_multiplier: int = 10,
             opposite_position_tolerance: float | None = None,
+            near_wall_max_dist_to_plane: float | None = None,
     ) -> ValidationTargets:
         """Build the validation targets, filling every unset value with the project default."""
         constants: dict[str, float] = cls.get_constants(project_dir, subproject_dir, structure_dir)
@@ -73,6 +74,7 @@ class ValidationTargetsBuilder:
             max_expansion_percent=max_expansion_percent,
             z_period_tolerance=z_period_tolerance,
             max_z_period_multiplier=max_z_period_multiplier,
+            near_wall_max_dist_to_plane=near_wall_max_dist_to_plane,
         )
 
     @staticmethod

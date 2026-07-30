@@ -30,6 +30,17 @@ class PValidationTargets(ABC):
     # In-plane offset within which an atom counts as placed opposite a polygon center or an edge hole.
     opposite_position_tolerance: float
 
+    # Distance to the nearest wall plane up to which an atom counts as sitting near a wall. Only
+    # those atoms are held to the intercalated-carbon equilibrium distance; the atoms in the middle
+    # of a wide channel are legitimately much further from carbon. None resolves to
+    # `dist_to_carbon_upper_bound`.
+    near_wall_max_dist_to_plane: float | None
+
+    @property
+    @abstractmethod
+    def near_wall_dist_to_plane_limit(self) -> float:
+        ...
+
     @property
     @abstractmethod
     def dist_to_carbon_lower_bound(self) -> float:

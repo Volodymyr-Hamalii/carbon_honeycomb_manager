@@ -609,6 +609,7 @@ def validate_structure(
         z_period_tolerance: float = 0.1,
         max_z_period_multiplier: int = 10,
         opposite_position_tolerance: float | None = None,
+        near_wall_max_dist_to_plane: float | None = None,
         project_dir: str = ChannelProvider.DEFAULT_PROJECT_DIR,
 ) -> dict[str, Any]:
     """
@@ -616,10 +617,16 @@ def validate_structure(
 
     Reports, per atom and aggregated: min distance to carbon and its deviation from
     `target_dist_to_carbon`; min distance to the nearest intercalated atom and its deviation from
-    `target_dist_between_inter_atoms`; min distance to a wall plane; which wall feature (hexagon /
-    pentagon center or edge hole) the atom sits opposite to and at what normal distance; whether any
-    pair breaks `hard_min_dist_between_inter_atoms`; and the smallest number of carbon z periods
-    after which the structure maps onto itself.
+    `target_dist_between_inter_atoms`; min distance to a wall plane; whether the atom sits near a
+    wall; which wall feature (hexagon / pentagon center or edge hole) it sits opposite to and at what
+    normal distance; whether any pair breaks `hard_min_dist_between_inter_atoms`; and the smallest
+    number of carbon z periods after which the structure maps onto itself.
+
+    The intercalated-carbon corridor is only applied to atoms that sit **near a wall**, i.e. whose
+    distance to the nearest wall plane is at most `near_wall_max_dist_to_plane` (default: the upper
+    edge of the carbon corridor). Atoms filling the middle of a wide channel are legitimately much
+    further from carbon, are listed under `atom_indexes_exempt`, and never count as violations -
+    their spacing is judged by `target_dist_between_inter_atoms` instead.
 
     Every target is optional and defaults to the value from `get_intercalation_constants` for this
     element + structure, so the caller can validate the same structure against a different set of
@@ -644,6 +651,7 @@ def validate_structure(
         z_period_tolerance=z_period_tolerance,
         max_z_period_multiplier=max_z_period_multiplier,
         opposite_position_tolerance=opposite_position_tolerance,
+        near_wall_max_dist_to_plane=near_wall_max_dist_to_plane,
     )
 
     report: dict[str, Any] = StructureValidator.build_report(
