@@ -5,4 +5,11 @@ from .build_intercalated_structure import (
     InterAtomsTranslator,
     FullChannelBuilder,
 )
+from .structure_operations import (
+    StructureTranslator,
+    InterAtomsOptimizer,
+    InterAtomsEditor,
+    InterAtomsFileManager,
+)
+from .validation import StructureValidator
 from .intercalation_and_sorption import IntercalationAndSorption

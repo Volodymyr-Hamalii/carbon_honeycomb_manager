@@ -9,6 +9,21 @@ from .plane_polygons import CarbonHoneycombPolygon, CarbonHoneycombPentagon, Car
 
 
 class CarbonHoneycombPlaneActions:
+    # A pair of plane atoms is treated as a polygon edge (a C-C bond) when the distance between them
+    # does not exceed the shortest interatomic distance in the plane multiplied by this coefficient.
+    #
+    # The walls are slightly distorted, so the real bond lengths are not identical: in the shipped
+    # structures they spread from 1.440 to 1.540 A (+6.9% over the shortest one). The shortest
+    # non-bonded pair (the two atoms flanking an edge hole of an armchair-oriented wall, e.g. in the
+    # C-family structures) is 1.641 A (+14.0%), so 1.1 separates bonds from non-bonds with a margin
+    # on both sides.
+    #
+    # NOTE: this used to be `max(min_distance_per_point) * 1.25`, which resolved to 1.863 A and
+    # therefore accepted those 1.641 A non-bonded pairs as edges. The spurious edges short-circuited
+    # the real hexagons of the C-family walls into 5-cycles, which is why `ar/C0-7_h3` used to report
+    # 17 pentagons and 0 hexagons per plane.
+    BOND_LENGTH_CLEARANCE_COEFFICIENT: float = 1.1
+
     @classmethod
     def define_plane_pentagons(cls, points: np.ndarray) -> Sequence[CarbonHoneycombPentagon]:
         points_grouped_by_lines, plane_polygon_indexes = cls._define_point_for_plane_polygon(
@@ -35,8 +50,9 @@ class CarbonHoneycombPlaneActions:
 
         distances_between_points: np.ndarray = DistanceMeasurer.calculate_min_distances_between_points(points)
 
-        clearance_dist_coefficient = 1.25
-        max_distance_between_points: np.floating = np.max(distances_between_points) * clearance_dist_coefficient
+        max_distance_between_points: np.floating = (
+            np.min(distances_between_points) * cls.BOND_LENGTH_CLEARANCE_COEFFICIENT
+        )
 
         points_grouped_by_lines = CarbonHoneycombUtils.split_groups_by_max_distances(
             points_grouped_by_lines, max_distance_between_points)

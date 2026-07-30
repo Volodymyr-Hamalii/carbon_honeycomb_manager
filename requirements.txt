@@ -27,3 +27,5 @@ tqdm==4.66.4
 pandas==2.2.3
 openpyxl==3.1.5
 customtkinter==5.2.2
+mcp==2.0.0
+pytest==9.1.1

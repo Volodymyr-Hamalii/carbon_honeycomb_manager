@@ -144,11 +144,37 @@ class CarbonHoneycombChannelActions:
 
     @staticmethod
     def calculate_ave_dist_between_closest_hexagon_centers(planes: list[ICarbonHoneycombPlane]) -> np.floating:
+        """
+        Average distance between the closest hexagon centers of all the channel planes.
+
+        Falls back to all polygon centers (hexagons and pentagons) when the planes hold no hexagons,
+        and returns NaN when there are fewer than 2 polygon centers in total: some walls (the
+        armchair-oriented C-family ones, e.g. `C0-7_h3`) have all their hexagons straddling the
+        channel edges, so no polygon fits entirely into a single plane and the metric is undefined.
+        """
         hexagon_centers: list[NDArray[np.float64]] = [
             hexagon.center
             for plane in planes
             for hexagon in plane.hexagons
         ]
+
+        if len(hexagon_centers) < 2:
+            logger.warning(
+                f"Found {len(hexagon_centers)} hexagon centers in the channel planes; "
+                "falling back to all polygon centers."
+            )
+            hexagon_centers = [
+                polygon.center
+                for plane in planes
+                for polygon in (*plane.hexagons, *plane.pentagons)
+            ]
+
+        if len(hexagon_centers) < 2:
+            logger.warning(
+                "Cannot calculate the average distance between polygon centers: "
+                f"found {len(hexagon_centers)} polygon centers in the channel planes."
+            )
+            return np.float64(np.nan)
 
         dists_between_centers: np.ndarray = DistanceMeasurer.calculate_min_distances_between_points(
             points=np.array(hexagon_centers))

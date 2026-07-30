@@ -23,7 +23,7 @@ class PointsMover:
         if "y" in axis:
             translated_inner_points.points[:, 1] += vector[1]
         if "z" in axis:
-            translated_inner_points.points[:, 1] += vector[2]
+            translated_inner_points.points[:, 2] += vector[2]
 
         return translated_inner_points
 

@@ -28,6 +28,30 @@ python main.py
 build_app_for_windows.bat
 ```
 
+### Running the Tests
+
+```bash
+venv/bin/python -m pytest tests/ -q
+```
+
+The suite runs against a synthetic carbon channel built in `tests/conftest.py`, not against the data
+files in `data/projects`, so it stays fast (under a second) and deterministic.
+
+### MCP Server
+
+The project ships an MCP server that exposes the domain layer to AI agents. It is registered in
+`.mcp.json` and started as `python -m src.mcp_server` over stdio.
+
+**Read [`docs/mcp_description.md`](docs/mcp_description.md) before changing anything under
+`src/mcp_server/`.** Two rules govern it: the server is *rule-agnostic* (validation targets and
+tolerances are tool arguments, never constants in the code) and *element-agnostic* (`element` is a
+required argument and every physical constant resolves through `ATOM_PARAMS_MAP`). The rules a
+structure must satisfy live in the skill under
+`.claude/skills/calculate-intercalation-structure-related-carbone-atoms/`.
+
+Because stdio uses stdout for the protocol, **never `print()`** anywhere reachable from the server -
+use `Logger`, which writes to stderr.
+
 ## Architecture Overview
 
 ### MVP Pattern Implementation
@@ -69,11 +93,14 @@ src/
 │   ├── coordinate_operations/       # Geometric calculations
 │   ├── structure_visualizer/       # Visualization engine
 │   └── utils/                      # File I/O, logging, constants
+├── mcp_server/       # MCP server exposing the domain layer to AI agents (see docs/)
 └── ui/               # UI infrastructure
     ├── components/   # Reusable UI widgets (including enhanced PlotWindow)
     ├── styles/       # Centralized styling system
     └── templates/    # UI templates and mixins
 ```
+
+`src/mcp_server/` depends on the domain layer; nothing in the domain layer depends on it.
 
 ### Data Structure
 

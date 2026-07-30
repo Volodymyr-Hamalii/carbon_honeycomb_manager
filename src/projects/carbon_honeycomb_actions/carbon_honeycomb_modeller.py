@@ -392,6 +392,41 @@ class CarbonHoneycombModeller:
             hexagon for plane in carbon_channel.planes
             for hexagon in plane.hexagons
         ]
+
+        carbon_channel_constants: dict[str, float] = {
+            "Average distance between atoms (Å)": round(float(min_dist_between_atoms), 4),
+            "Min distance between hexagon layers (Å)": cls._calculate_min_dist_between_hexagon_layers(
+                hexagons=hexagons,
+                structure_dir=structure_dir,
+            ),
+        }
+
+        # Convert the dictionary to a DataFrame
+        carbon_channel_constants_df: pd.DataFrame = pd.DataFrame.from_dict(
+            carbon_channel_constants, orient='index', columns=pd.Index(['Value'])
+        ).reset_index().rename(columns={'index': 'Name'})
+
+        return carbon_channel_constants_df
+
+    @staticmethod
+    def _calculate_min_dist_between_hexagon_layers(
+        hexagons: list[ICarbonHoneycombHexagon],
+        structure_dir: str,
+    ) -> float:
+        """
+        Min distance between two distinct Z layers of hexagon centers.
+
+        Returns NaN when the channel planes hold fewer than 2 hexagon center layers: the walls of the
+        armchair-oriented C-family structures (e.g. `C0-7_h3`) have all their hexagons straddling the
+        channel edges, so no hexagon fits entirely into a single plane and the metric is undefined.
+        """
+        if len(hexagons) < 2:
+            logger.warning(
+                f"Found {len(hexagons)} hexagons in the channel planes of {structure_dir}; "
+                "cannot calculate the distance between hexagon layers."
+            )
+            return float("nan")
+
         hexagon_centers: NDArray[np.float64] = np.array([hexagon.center for hexagon in hexagons])
         hexagon_centers_z_coords: NDArray[np.float64] = np.sort(
             np.round(np.unique(hexagon_centers[:, 2]), 3)
@@ -402,21 +437,18 @@ class CarbonHoneycombModeller:
         dists_between_hexagon_center_layers: NDArray[np.float64] = np.abs(
             hexagon_centers_z_coords[:, None] - hexagon_centers_z_coords[None, :]
         )
-        min_dists_between_hexagon_layers: np.floating = np.min(
-            dists_between_hexagon_center_layers[dists_between_hexagon_center_layers > 0.01]
-        )
+        dists_between_layers: NDArray[np.float64] = dists_between_hexagon_center_layers[
+            dists_between_hexagon_center_layers > 0.01
+        ]
 
-        carbon_channel_constants: dict[str, float] = {
-            "Average distance between atoms (Å)": round(float(min_dist_between_atoms), 4),
-            "Min distance between hexagon layers (Å)": round(float(min_dists_between_hexagon_layers), 4),
-        }
+        if len(dists_between_layers) == 0:
+            logger.warning(
+                f"All hexagon centers of {structure_dir} lie in the same Z layer; "
+                "cannot calculate the distance between hexagon layers."
+            )
+            return float("nan")
 
-        # Convert the dictionary to a DataFrame
-        carbon_channel_constants_df: pd.DataFrame = pd.DataFrame.from_dict(
-            carbon_channel_constants, orient='index', columns=['Value']
-        ).reset_index().rename(columns={'index': 'Name'})
-
-        return carbon_channel_constants_df
+        return round(float(np.min(dists_between_layers)), 4)
 
     @staticmethod
     def build_carbon_coordinates(
