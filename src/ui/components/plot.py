@@ -252,10 +252,8 @@ class PlotControls(ctk.CTkFrame, IPlotControls):
         except (ValueError, tk.TclError):
             num_min_distances = 2
 
-        try:
-            skip_distances = int(self.skip_distances_spinbox.get())
-        except (ValueError, tk.TclError):
-            skip_distances = 0
+        # The skip distances spinbox is not shown in the UI, keep the value from params
+        skip_distances: int = self._default_params.skip_first_distances
 
         try:
             inter_layers = int(self.inter_layers_spinbox.get())
@@ -328,8 +326,7 @@ class PlotControls(ctk.CTkFrame, IPlotControls):
         # self.show_plane_lengths_var.set(params.to_show_plane_lengths)
         self.min_distances_spinbox.delete(0, 'end')
         self.min_distances_spinbox.insert(0, str(params.num_of_min_distances))
-        self.skip_distances_spinbox.delete(0, 'end')
-        self.skip_distances_spinbox.insert(0, str(params.skip_first_distances))
+        # The skip distances spinbox is not shown in the UI
         self.inter_layers_spinbox.delete(0, 'end')
         self.inter_layers_spinbox.insert(0, str(params.num_of_inter_atoms_layers))
 
