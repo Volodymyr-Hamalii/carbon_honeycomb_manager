@@ -1,0 +1,10 @@
+[mcp_servers.carbon-honeycomb-manager]
+command = "venv/bin/python"
+args = [
+    "-m",
+    "src.mcp_server",
+]
+
+[mcp_servers.carbon-honeycomb-manager.env]
+MPLBACKEND = "Agg"
+LEVEL = "30"

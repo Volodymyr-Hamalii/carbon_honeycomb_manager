@@ -1,0 +1,317 @@
+# AGENTS.md
+
+This file provides guidance to Codex (Codex.ai/code) when working with code in this repository.
+
+## Project Overview
+
+This is a Python application for building honeycomb carbon models from `.dat` or `.pdb` files, with capabilities for intercalation with other structures. The application is built using a GUI with CustomTkinter and follows a strict MVP (Model-View-Presenter) architecture pattern with comprehensive interface contracts.
+
+## Development Commands
+
+### Running the Application
+
+```bash
+# Install dependencies
+pip install -r requirements.txt
+
+# Run the application
+python main.py
+```
+
+### Building the Application
+
+```bash
+# For macOS
+./build_app_for_mac.sh
+
+# For Windows
+build_app_for_windows.bat
+```
+
+### Running the Tests
+
+```bash
+venv/bin/python -m pytest tests/ -q
+```
+
+The suite runs against a synthetic carbon channel built in `tests/conftest.py`, not against the data
+files in `data/projects`, so it stays fast (under a second) and deterministic.
+
+### MCP Server
+
+The project ships an MCP server that exposes the domain layer to AI agents. It is registered in
+`.mcp.json` and started as `python -m src.mcp_server` over stdio.
+
+**Read [`docs/mcp_description.md`](docs/mcp_description.md) before changing anything under
+`src/mcp_server/`.** Two rules govern it: the server is *rule-agnostic* (validation targets and
+tolerances are tool arguments, never constants in the code) and *element-agnostic* (`element` is a
+required argument and every physical constant resolves through `ATOM_PARAMS_MAP`). The rules a
+structure must satisfy live in the skill under
+`.Codex/skills/calculate-intercalation-structure-related-carbone-atoms/`.
+
+Because stdio uses stdout for the protocol, **never `print()`** anywhere reachable from the server -
+use `Logger`, which writes to stderr.
+
+## Architecture Overview
+
+### MVP Pattern Implementation
+
+The application follows a strict MVP (Model-View-Presenter) architecture with complete interface segregation:
+
+- **Models**: Located in `src/mvp/*/` - Handle data management and business logic
+- **Views**: Located in `src/mvp/*/` - Handle UI components using CustomTkinter with centralized styling
+- **Presenters**: Located in `src/mvp/*/` - Handle communication between Model and View, parameter binding
+- **Interfaces**: Located in `src/interfaces/mvp/` - Define complete contracts for all MVP components
+
+### Current MVP Modules
+
+1. **`main`** - Main application window with project navigation
+2. **`general`** - Base MVP module providing shared functionality for all other modules
+3. **`init_data`** - Initial carbon structure visualization and analysis (implements `IShowInitData*` interfaces)
+4. **`intercalation_and_sorption`** - Complex intercalation modeling with channel analysis
+5. **`data_converter`** - Data format conversion utilities
+
+### Project Structure
+
+```
+src/
+├── entities/           # Data models and parameter classes
+│   ├── figures/       # Geometric entities (points, lattices)
+│   └── params/        # Configuration dataclasses (MvpParams, CoordinateLimits)
+├── interfaces/        # Complete interface definitions
+│   ├── entities/      # Data model protocols
+│   ├── mvp/          # MVP component interfaces
+│   ├── projects/     # Project logic interfaces
+│   ├── services/     # Service layer interfaces
+│   └── ui/           # UI component interfaces
+├── mvp/              # MVP implementation modules
+├── projects/         # Domain-specific business logic
+│   ├── carbon_honeycomb_actions/    # Core carbon structure operations
+│   ├── intercalation_and_sorption/  # Intercalation algorithms
+│   └── data_manipulation/           # Data processing
+├── services/         # Utility services
+│   ├── coordinate_operations/       # Geometric calculations
+│   ├── structure_visualizer/       # Visualization engine
+│   └── utils/                      # File I/O, logging, constants
+├── mcp_server/       # MCP server exposing the domain layer to AI agents (see docs/)
+└── ui/               # UI infrastructure
+    ├── components/   # Reusable UI widgets (including enhanced PlotWindow)
+    ├── styles/       # Centralized styling system
+    └── templates/    # UI templates and mixins
+```
+
+`src/mcp_server/` depends on the domain layer; nothing in the domain layer depends on it.
+
+### Data Structure
+
+```
+data/
+├── configs/mvp_params/      # JSON configuration files per MVP module
+├── constants/               # Physical and mathematical constants
+└── projects/               # Project data organized by element and type
+    └── {element}/
+        ├── init_data/      # Initial structure files (.pdb, .dat)
+        ├── result_data/    # Generated analysis results (.xlsx)
+        └── al-inter-fixed/ # Intercalated structure data
+```
+
+### Key Dependencies
+
+- **CustomTkinter**: Modern GUI framework with dark/light themes
+- **NumPy**: Numerical computations and array operations
+- **Pandas**: Data manipulation and Excel I/O
+- **Matplotlib**: Scientific plotting and visualization
+- **OpenPyXL**: Excel file handling
+- **MDAnalysis**: Molecular dynamics analysis
+
+## Development Patterns
+
+### MVP Component Creation
+
+1. **Define Interfaces First**: Create complete interface contracts in `src/interfaces/mvp/{component_name}/`
+2. **Follow Naming Conventions**:
+   - Interfaces: `I{Name}Model`, `I{Name}View`, `I{Name}Presenter`
+   - Protocols: `P{Name}Params`, `P{Name}Limits`
+3. **Implement Concrete Classes**: Create implementations in `src/mvp/{component_name}/`
+4. **Ensure Complete Interface Compliance**: All methods used must be defined in interfaces
+
+### Configuration Management
+
+- **Central Configuration**: Use `MvpParams` dataclass for all MVP parameters
+- **Automatic Persistence**: Configurations saved as JSON in `data/configs/mvp_params/`
+- **Parameter Binding**: Full bidirectional binding between UI components and MVP state
+- **State Restoration**: UI loads from saved MVP parameters on window open
+
+### UI Development
+
+- **Centralized Styling**: All styles defined in `src/ui/styles/` (colors, spacing, themes)
+- **Component Reuse**: Use components from `src/ui/components/` with consistent styling
+- **Scrolling Support**: Use `ScrollableMixin` for keyboard and touchpad scrolling
+- **Template Inheritance**: Extend `GeneralView` and `ScrollableToplevel` for consistent behavior
+
+### File Operations
+
+- **Service Layer**: Use `FileReader` and `FileWriter` from `src/services/utils/files_manager/`
+- **Path Management**: Constants defined in `src/services/utils/constants.py`
+- **Multi-Format Support**: Handle `.xlsx`, `.dat`, `.pdb` files through unified interface
+
+### Error Handling
+
+- **Structured Logging**: Use `src.services.utils.logger.Logger` throughout
+- **Graceful Degradation**: Try-catch blocks with fallback to default values
+- **User Feedback**: Consistent error messaging through `GeneralView` base methods
+
+## Code Style & Quality Guidelines
+
+**CRITICAL: Codex must automatically follow these guidelines for ALL code work. No exceptions.**
+
+### Mandatory Pre-Work Checklist
+
+Codex MUST always:
+
+1. **Read AGENTS.md First**: Automatically apply all project-specific guidelines
+2. **Check Interface Compliance**: Verify all methods exist in their respective interfaces
+3. **Validate Type Safety**: Ensure all method signatures match exactly
+4. **Run Mental Compilation**: Simulate code execution to catch errors before responding.
+    If there are some errors - fix them and run all checks one more time.
+
+### Core Quality Standards
+
+#### Type Safety (Non-Negotiable)
+
+- **Complete Type Annotations**: Every function, variable, and parameter must be typed
+- **Interface Compliance**: All methods used must exist in their respective interfaces
+- **No Type Mismatches**: Method signatures must match interface definitions exactly
+
+```python
+# ✅ Correct
+def process_data(data: list[str], config: PMvpParams) -> dict[str, Any]:
+    """Process data using MVP parameters."""
+    ...
+
+# ❌ Incorrect - missing types
+def process_data(data, config):
+    ...
+```
+
+#### Linting (Zero Tolerance)
+
+**Default linter:** Pylance (via Pyright)
+
+**Must have:**
+
+- No unused imports or variables
+- No missing or mismatched types
+- No shadowed or ambiguous names
+- Explicit return types on all functions
+
+#### Interface-First Development
+
+- **Check Interface Definition**: Before using any method, verify it exists in the interface
+- **Add Missing Methods**: If a method is needed but not in interface, add it first
+- **Complete Implementation**: All interface methods must be implemented
+
+#### Documentation Standards
+
+- **Concise Docstrings**: Single-line summaries preferred
+- **Clear Parameter Description**: For complex functions only
+- **No Redundant Comments**: Code should be self-documenting
+
+```python
+def load_ui_from_params(self) -> None:
+    """Load UI components from current MVP parameters."""
+    # Implementation here - no additional comments needed
+```
+
+### MVP-Specific Rules
+
+#### Parameter Binding
+
+- **Bidirectional Binding**: UI ↔ MVP parameter synchronization required
+- **State Persistence**: All UI state must be restorable from MVP parameters
+- **Complete Coverage**: Every UI component must map to an MVP parameter
+
+#### UI Consistency
+
+- **Use Centralized Styles**: Import from `src/ui/styles/`
+- **Extend Base Classes**: Inherit from `GeneralView`, use `ScrollableMixin`
+- **Consistent Error Handling**: Use `GeneralView` messaging methods
+
+### Quality Verification Process
+
+Codex MUST perform this verification before any response:
+
+1. **Interface Check**: ✅ All used methods exist in interfaces
+2. **Type Safety**: ✅ All functions have complete type annotations
+3. **Import Validation**: ✅ All imports are available and correct
+4. **Method Signatures**: ✅ All calls match interface definitions
+5. **Mental Execution**: ✅ Code logic flows correctly
+6. **MVP Compliance**: ✅ Parameter binding is bidirectional and complete
+
+### Error Recovery Protocol
+
+If Codex detects any quality issues:
+
+1. **Fix Interface First**: Add missing methods to interfaces
+2. **Update Implementation**: Ensure all methods are properly implemented
+3. **Verify Types**: Check all type annotations are correct
+4. **Test Compilation**: Simulate import and execution
+5. **Document Changes**: Explain what was fixed and why
+
+### Plot Component Architecture
+
+The application features an enhanced plot component system for structure visualization:
+
+#### Core Components
+
+- **PlotWindow** (`src/ui/components/plot.py`): Enhanced plot window with embedded matplotlib and customization controls
+- **PlotControls**: Sidebar panel with real-time plot parameter controls
+- **PlotParams** (`src/entities/params/plot_params.py`): Dataclass for plot configuration and state management
+- **PlotWindowFactory** (`src/ui/components/plot_window_factory.py`): Factory for creating plot windows from MVP parameters
+
+#### Key Features
+
+- **Real-time Customization**: Interactive controls for bonds, coordinates, limits, distances
+- **Camera State Persistence**: Maintains viewing angles between plot updates
+- **Auto-scaling Behavior**: Always fits to data on new structure load (scale not persisted)
+- **Matplotlib Toolbar**: Full matplotlib navigation toolbar (zoom, pan, save, etc.)
+- **Enhanced Controls**: Additional options including:
+  - Additional lines visualization
+  - Channel analysis (distances to plane/edges, angles, lengths)
+  - Interactive mode toggle
+  - Equal scale toggle
+- **MVP Integration**: Seamless conversion between MVP parameters and plot parameters
+- **Multiple Visualization Modes**: Support for single, dual, and multiple structure plots
+- **Responsive UI**: Scrollable sidebar with organized control sections
+
+#### Usage Patterns
+
+```python
+# Create plot window from MVP parameters
+plot_window = PlotWindowFactory.create_plot_window_from_mvp_params(
+    master=self.view,
+    mvp_params=self.model.mvp_params,
+    title="Structure Visualization"
+)
+
+# Show single structure
+plot_window.show_structure(coordinates, visual_params, label="Carbon")
+
+# Show multiple structures
+plot_window.show_structures(coords_list, params_list, labels_list)
+```
+
+#### Interface Integration
+
+- **MVP Presenters**: Extended with `*_in_plot_window` methods for enhanced visualization
+- **Plot Controls**: Bidirectional parameter binding with real-time updates
+- **State Management**: Full integration with MVP parameter persistence system
+
+### Current Architecture Status
+
+- **MVP Modules**: `main`, `general`, `init_data`, `intercalation_and_sorption`, `data_converter`
+- **Interface Segregation**: Complete separation of concerns with full contracts
+- **Centralized Styling**: All UI styling managed through `src/ui/styles/`
+- **Scrolling Infrastructure**: `ScrollableMixin` provides universal scrolling support
+- **Parameter Binding**: Full bidirectional UI ↔ MVP state synchronization
+- **Enhanced Visualization**: Standalone plot windows with customization controls

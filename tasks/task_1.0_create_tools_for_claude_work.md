@@ -192,9 +192,9 @@
    - дозволяє отримувати інші необхідні метадані (константи (як в команді
      `Get intercalation constants`), параметри каналу (як в команді `Get Channel Parameters`), якісь
      інші метадані, які можуть бути потрібними).
-2. Робимо окремий Claude skill типу `/calculate-intercalation-structure-related-carbone-atoms`,
+2. Робимо окремий Claude skill типу `/calculate-intercalation-structure-related-carbon-atoms`,
    який буде використовувати цей MCP конектор для побудови структур. Наприклад, я викликаю в Claude
-   Code / Cowork промпт "/calculate-intercalation-structure-related-carbone-atoms Розрахуй
+   Code / Cowork промпт "/calculate-intercalation-structure-related-carbon-atoms Розрахуй
    структуру для Ar A1-7_h3", і з використанням скіллу та інструментів MCP конектора ти генеруєш та
    валідуєш файли типу `final_one_ch-v{i}-{stacking}-Claude.xlsx`. Готові файли я перевіряю і по
    ним сам далі згенерую `final_all_ch-v{i}-{stacking}.xlsx` якщо все вірно.
@@ -288,7 +288,7 @@ presenter'и та GUI). Замість цього в MCP-шарі створює
 
 ### 6.5. Claude skill
 
-Робимо окремий Claude skill (`/calculate-intercalation-structure-related-carbone-atoms`), який
+Робимо окремий Claude skill (`/calculate-intercalation-structure-related-carbon-atoms`), який
 використовує цей MCP конектор для побудови структур. Скіл має:
 
 - приймати елемент і структуру (наприклад, `Ar A1-7_h3` або `Xe C0-7_h3`) - працювати з будь-яким
