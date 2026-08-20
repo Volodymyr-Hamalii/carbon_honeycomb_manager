@@ -61,8 +61,8 @@ class MvpParams(PMvpParams):
 
     data_dir: Path = Path()  # Default to an empty Path
     file_name: str | None = None
-    file_format: str | None = None  # "xlsx", "dat", "pdb"
-    available_formats: list[str] = field(default_factory=lambda: ["xlsx", "dat", "pdb"])
+    file_format: str | None = None  # "csv", "xlsx", "dat", "pdb"
+    available_formats: list[str] = field(default_factory=lambda: ["csv", "xlsx", "dat", "pdb"])
     excel_file_name: str | None = None
     dat_file_name: str | None = None
     pdb_file_name: str | None = None

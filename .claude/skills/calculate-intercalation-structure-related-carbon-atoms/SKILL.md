@@ -1,12 +1,12 @@
 ---
-name: calculate-intercalation-structure-related-carbone-atoms
-description: Build and validate the positions of intercalated atoms inside a carbon honeycomb channel. Use when the user asks to calculate, build or check an intercalated structure for an element + carbon structure pair (e.g. "Розрахуй структуру для Ar A1-7_h3", "build the structure for Xe C0-7_h3"), producing final_one_ch-v{i}[-{stacking}]-Claude.xlsx files.
+name: calculate-intercalation-structure-related-carbon-atoms
+description: Build and validate the positions of intercalated atoms inside a carbon honeycomb channel. Use when the user asks to calculate, build or check an intercalated structure for an element + carbon structure pair (e.g. "Розрахуй структуру для Ar A1-7_h3", "build the structure for Xe C0-7_h3"), producing final_one_ch-v{i}[-{stacking}]-Claude.csv files.
 ---
 
 # Calculate intercalated atom positions
 
 Build the coordinates of intercalated atoms inside one carbon honeycomb channel, validate them
-numerically and write them as `final_one_ch-v{i}[-{stacking}]-Claude.xlsx`.
+numerically and write them as `final_one_ch-v{i}[-{stacking}]-Claude.csv`.
 
 All geometry, measurement and file access goes through the `carbon-honeycomb-manager` MCP server
 (see `docs/mcp_description.md`). The server measures and edits but never judges: **the rules below
@@ -49,6 +49,7 @@ and `HARD_MIN` = `Distance to remove too close atoms (Å)`, all from
    `summary.min_dist_to_carbon`, which mixes both populations and looks alarming for no reason.
 
    The central atoms are governed by rule 2 instead.
+
 2. **Distances between intercalated atoms.** The distance from each intercalated atom to its nearest
    intercalated neighbour should be as close as possible to `TARGET_INTER`. This applies to **all**
    atoms, near-wall and central alike, and it is the only distance criterion for the central ones.
@@ -90,23 +91,48 @@ state in the report which trade-off each version makes.
 
 ### Existing reference files are context, not a target
 
-`{element}/result_data/{structure}/final_one_ch-*.xlsx` files show what an acceptable structure looks
+Legacy `final_one_ch-*.xlsx` and new `final_one_ch-*.csv` files under the structure's result directory
+show what an acceptable structure looks
 like. Your structures are **not required to match them** - a different, or even better, structure is a
 normal and expected outcome. Judge your result **only by the rules above**. Show the numbers so the
 user can compare for themselves.
 
 ## Procedure
 
+### Search loop and stopping policy
+
+- Explore at most **5 structurally distinct candidate branches**. A branch is one starting packing
+  pattern plus its iterative corrections; do not count ordinary corrections as new candidates.
+- There is no fixed maximum number of correction iterations and no required number of accepted
+  variants. Continue improving a candidate while the deterministic validation metrics improve.
+- Track `iterations_without_improvement`. Reset it to 0 after a meaningful improvement; abandon the
+  current candidate after **4 consecutive** validation rounds without improvement, then try the next
+  distinct branch if fewer than 5 have been attempted.
+- An iteration improves when it fixes a higher-priority failed check, reduces its violations or
+  deviation without materially worsening a higher-priority rule, improves seam repeatability, or
+  increases filling without breaking an already satisfied hard constraint. Record the compared
+  metrics in the checkpoint; do not claim improvement from visual intuition alone.
+- Before accepting a variant, compare it with every accepted variant using `compare_structures`,
+  passing `carbon_z_period` and `distinct_rmsd_threshold=0.4`. A different atom count is distinct;
+  otherwise the permutation- and z-period-aware RMSD must exceed the threshold.
+- Create a `run_id` and call `save_run_checkpoint` after the baseline and every meaningful
+  generate/edit/validate round. Store the current `atoms` and `atom_ids`, attempted and accepted
+  candidates, latest metrics, `iterations_without_improvement`, last change, next hypothesis and
+  status. On a resumed task, use `list_run_checkpoints` / `load_run_checkpoint` instead of rebuilding
+  state from chat context.
+
 1. **Scope the channel.** `get_channel_params(element, structure)` and
    `get_intercalation_constants(element, structure)`. Note `num_of_planes`, `carbon_z_period`, the z
    limits, the channel radius implied by `coordinate_limits`, and `hexagons_per_plane` /
    `edge_holes_per_plane`.
 2. **Generate candidate positions near the walls.** `generate_atoms_near_planes(element, structure)`
-   - the equivalent of the GUI `Generate near planes`. This is the starting point, not the answer.
+   - the equivalent of the GUI `Generate near planes`. This pure tool writes no intermediate file;
+   its returned coordinates are the starting point, not the answer.
 3. **Measure what you got.** `validate_structure(element, structure, atoms=<candidates>)`. Read the
    per-atom rows: which atoms are near their targets, which are too close to each other, which sit
    opposite a wall feature.
-4. **Thin out and adjust.** Use `delete_atoms` to drop the atoms that crowd their neighbours, and
+4. **Thin out and adjust.** Prefer stable `selected_atom_ids` over indexes. Use `delete_atoms` to drop
+   the atoms that crowd their neighbours, and
    `move_atoms_along_plane_normal` / `move_atoms_to_channel_center` / `move_atoms_on_vector` to pull
    distances towards the targets. Re-run `validate_structure` after each round.
 5. **Fill the channel interior** for wide channels: `add_atoms` with explicit coordinates, spaced by
@@ -122,8 +148,8 @@ user can compare for themselves.
 7. **Build every reasonable variant** (rule 5), plus the two trade-off versions whenever rule 4 and
    the corridor conflict.
 8. **Validate before writing.** Run `validate_structure` on the final coordinates of each variant.
-   **Refuse to write** any structure whose `hard_floor_check.passed` is false - fix it or drop the
-   variant instead.
+   `write_final_structure` recomputes validation and defaults to requiring `hard_floor_check`; still
+   inspect the report first and fix or drop a variant that fails it.
 9. **Write.** `write_final_structure(element, structure, atoms, stacking=..., author="Claude")`.
    Omit `stacking` unless the built structure clearly has one (`AA`, `ABAB`, `ABC`, `ABCD`); narrow
    structures without a stacking pattern take no suffix. `version` defaults to the next free number
@@ -131,16 +157,16 @@ user can compare for themselves.
 10. **Report to the user in chat**, one block per version (see below). Do not write a separate report
     file unless the user asks.
 
-Work iteratively and keep the coordinate list in the conversation: every edit tool accepts `atoms`
-inline and returns the new coordinates. It re-sorts them by z, y, x after each edit, so **re-read the
-returned list before choosing indexes for the next edit**.
+Work iteratively with the returned `atoms`, `coordinates` and `atom_ids`. Pass `atoms=` together with
+the aligned `atom_ids=` on the next call and select atoms by ID. Indexes remain a legacy fallback.
+The explicit checkpoint, not chat context alone, is the source of truth for resumable work.
 
 ## Report format
 
 Per written version:
 
 ```
-### final_one_ch-v{i}[-{stacking}]-Claude.xlsx  ({N} atoms)
+### final_one_ch-v{i}[-{stacking}]-Claude.csv  ({N} atoms)
 
 Targets (element {E}, structure {S}):
   Average {E}-C distance      {TARGET_C} Å

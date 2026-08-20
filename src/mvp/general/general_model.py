@@ -187,7 +187,7 @@ class GeneralModel(IGeneralModel):
                 "excel_file_name": None,
                 "dat_file_name": None,
                 "pdb_file_name": None,
-                "available_formats": ["xlsx", "dat", "pdb"],
+                "available_formats": ["csv", "xlsx", "dat", "pdb"],
             }
             
             # Apply safe defaults for missing fields

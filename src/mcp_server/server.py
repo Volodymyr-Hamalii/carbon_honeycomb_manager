@@ -13,10 +13,12 @@ from src.interfaces import (
     ICarbonHoneycombPlane,
     IPoints,
     PMvpParams,
+    PValidationTargets,
 )
 from src.services import ATOM_PARAMS_MAP, Constants, FileReader, PathBuilder
 from src.projects.carbon_honeycomb_actions import CarbonHoneycombModeller
 from src.projects.intercalation_and_sorption import (
+    CandidateComparator,
     InterAtomsEditor,
     InterAtomsFileManager,
     IntercalationAndSorption,
@@ -25,7 +27,14 @@ from src.projects.intercalation_and_sorption import (
 
 from .channel_provider import ChannelProvider
 from .mvp_params_adapter import MvpParamsAdapter
-from .serializers import df_to_records, list_to_points, name_value_df_to_dict, points_to_list
+from .run_checkpoint_store import RunCheckpointStore
+from .serializers import (
+    df_to_records,
+    list_to_points,
+    name_value_df_to_dict,
+    points_to_atom_records,
+    points_to_list,
+)
 from .validation_targets_builder import ValidationTargetsBuilder
 
 
@@ -39,9 +48,9 @@ rules a structure has to follow belong to the calling skill, not to this server.
 It is also element-agnostic: `element` is a required argument of every structure tool and all
 physical constants are resolved from it, so the same tools work for ar, xe, kr and al.
 
-Coordinates are always lists of `[x, y, z]` triples in angstroms. Atom indexes refer to the position
-in the coordinate list that a tool returned; every edit tool re-sorts its result by z, y, x (the
-order used in the xlsx files), so re-read the returned list before the next edit.
+Coordinates are lists of `[x, y, z]` triples in angstroms. Every result also returns stable
+`atom_id` values; prefer `selected_atom_ids` over indexes when editing. New coordinate files are CSV
+with `atom_id,x_inter,y_inter,z_inter` columns. Legacy XLSX and DAT files remain readable.
 """.strip()
 
 
@@ -66,7 +75,7 @@ def list_elements(project_dir: str = ChannelProvider.DEFAULT_PROJECT_DIR) -> dic
     """List the intercalated elements that have data in the project, and the supported ones."""
     return {
         "elements_with_data": FileReader.read_list_of_dirs(
-            Constants.path.PROJECTS_DATA_PATH / project_dir
+            PathBuilder.build_path_to_project_dir(project_dir)
         ),
         "supported_elements": sorted(ATOM_PARAMS_MAP),
     }
@@ -78,8 +87,10 @@ def list_structures(
         project_dir: str = ChannelProvider.DEFAULT_PROJECT_DIR,
 ) -> list[str]:
     """List the carbon structures available in the init data of the element (subdirectories only)."""
-    path_to_dir: Path = (
-        Constants.path.PROJECTS_DATA_PATH / project_dir / element / Constants.file_names.INIT_DATA_DIR
+    path_to_dir: Path = PathBuilder.build_path_to_init_data_dir(
+        project_dir=project_dir,
+        subproject_dir=element,
+        structure_dir=".",
     )
     return FileReader.read_list_of_dirs(path_to_dir)
 
@@ -88,7 +99,7 @@ def list_structures(
 def list_result_files(
         element: str,
         structure: str,
-        file_format: str = "xlsx",
+        file_format: str | None = None,
         project_dir: str = ChannelProvider.DEFAULT_PROJECT_DIR,
 ) -> dict[str, Any]:
     """List the result data files of the structure and the next free `final_one_ch-v{i}` version."""
@@ -250,7 +261,7 @@ def read_inter_atoms(
         file_name: str,
         project_dir: str = ChannelProvider.DEFAULT_PROJECT_DIR,
 ) -> dict[str, Any]:
-    """Read intercalated atom coordinates from a result data file (`.xlsx` or `.dat`)."""
+    """Read coordinates from CSV or a legacy XLSX/DAT file, preserving stable atom IDs."""
     inter_atoms: IPoints = InterAtomsFileManager.read_inter_atoms(
         project_dir, element, structure, file_name
     )
@@ -258,6 +269,8 @@ def read_inter_atoms(
         "file_name": file_name,
         "num_of_atoms": len(inter_atoms.points),
         "coordinates": points_to_list(inter_atoms),
+        "atom_ids": list(inter_atoms.atom_ids or ()),
+        "atoms": points_to_atom_records(inter_atoms),
     }
 
 
@@ -267,19 +280,23 @@ def write_inter_atoms(
         structure: str,
         file_name: str,
         atoms: list[list[float]],
-        sheet_name: str = InterAtomsFileManager.DEFAULT_SHEET_NAME,
+        atom_ids: list[str] | None = None,
         project_dir: str = ChannelProvider.DEFAULT_PROJECT_DIR,
 ) -> dict[str, Any]:
-    """Write intercalated atom coordinates to a result data file with the `i, x/y/z_inter` columns."""
+    """Write coordinates; use a `.csv` name for the CSV-first format."""
+    inter_atoms: IPoints = list_to_points(atoms, atom_ids)
     path_to_file: Path = InterAtomsFileManager.write_inter_atoms(
         project_dir=project_dir,
         subproject_dir=element,
         structure_dir=structure,
         file_name=file_name,
-        inter_atoms=list_to_points(atoms),
-        sheet_name=sheet_name,
+        inter_atoms=inter_atoms,
     )
-    return {"path": str(path_to_file), "num_of_atoms": len(atoms)}
+    return {
+        "path": str(path_to_file),
+        "num_of_atoms": len(atoms),
+        "atom_ids": list(inter_atoms.atom_ids or ()),
+    }
 
 
 @server.tool()
@@ -287,18 +304,60 @@ def write_final_structure(
         element: str,
         structure: str,
         atoms: list[list[float]],
+        atom_ids: list[str] | None = None,
         version: int | None = None,
         stacking: str | None = None,
-        author: str = "Claude",
+        author: str = "Agent",
+        required_checks: list[str] | None = None,
+        target_dist_to_carbon: float | None = None,
+        target_dist_between_inter_atoms: float | None = None,
+        hard_min_dist_between_inter_atoms: float | None = None,
+        max_compression_percent: float = 8.0,
+        max_expansion_percent: float = 10.0,
+        carbon_z_period: float | None = None,
+        z_period_tolerance: float = 0.1,
+        max_z_period_multiplier: int = 10,
+        opposite_position_tolerance: float | None = None,
+        near_wall_max_dist_to_plane: float | None = None,
         project_dir: str = ChannelProvider.DEFAULT_PROJECT_DIR,
 ) -> dict[str, Any]:
     """
-    Write a final one-channel structure following the `final_one_ch-v{i}[-{stacking}]-{author}.xlsx`
-    naming convention.
+    Validate and write `final_one_ch-v{i}[-{stacking}]-{author}.csv`.
 
-    `version` defaults to the next free number for the structure. Pass `stacking` only when it is
-    determined from the built structure (`AA`, `ABAB`, `ABC`, `ABCD`).
+    Validation is recomputed immediately before writing. `required_checks` defaults to
+    `["hard_floor_check"]`; every named report check must contain `passed: true`. All targets are
+    explicit arguments or resolve through the same element/structure constants as
+    `validate_structure`. Existing files are never overwritten.
     """
+    inter_atoms: IPoints = list_to_points(atoms, atom_ids)
+    report: dict[str, Any] = _build_validation_report(
+        project_dir=project_dir,
+        element=element,
+        structure=structure,
+        inter_atoms=inter_atoms,
+        target_dist_to_carbon=target_dist_to_carbon,
+        target_dist_between_inter_atoms=target_dist_between_inter_atoms,
+        hard_min_dist_between_inter_atoms=hard_min_dist_between_inter_atoms,
+        max_compression_percent=max_compression_percent,
+        max_expansion_percent=max_expansion_percent,
+        carbon_z_period=carbon_z_period,
+        z_period_tolerance=z_period_tolerance,
+        max_z_period_multiplier=max_z_period_multiplier,
+        opposite_position_tolerance=opposite_position_tolerance,
+        near_wall_max_dist_to_plane=near_wall_max_dist_to_plane,
+    )
+    checks_to_require: list[str] = required_checks or ["hard_floor_check"]
+    unsupported_checks: list[str] = [name for name in checks_to_require if name not in report]
+    if unsupported_checks:
+        raise ValueError(f"Unknown required checks: {unsupported_checks}.")
+    failed_checks: list[str] = [
+        name
+        for name in checks_to_require
+        if not isinstance(report[name], dict) or report[name].get("passed") is not True
+    ]
+    if failed_checks:
+        raise ValueError(f"Refusing to write: required validation checks failed: {failed_checks}.")
+
     if version is None:
         version = InterAtomsFileManager.get_next_final_version(project_dir, element, structure)
 
@@ -307,15 +366,21 @@ def write_final_structure(
         stacking=stacking,
         author=author,
         num_of_channels="one",
+        file_format="csv",
     )
+
+    destination: Path = PathBuilder.build_path_to_result_data_file(
+        project_dir, element, structure, file_name
+    )
+    if destination.exists():
+        raise FileExistsError(f"Refusing to overwrite existing final structure: {destination}")
 
     path_to_file: Path = InterAtomsFileManager.write_inter_atoms(
         project_dir=project_dir,
         subproject_dir=element,
         structure_dir=structure,
         file_name=file_name,
-        inter_atoms=list_to_points(atoms),
-        sheet_name=InterAtomsFileManager.DEFAULT_SHEET_NAME,
+        inter_atoms=inter_atoms,
     )
 
     return {
@@ -323,6 +388,19 @@ def write_final_structure(
         "file_name": file_name,
         "version": version,
         "num_of_atoms": len(atoms),
+        "atom_ids": list(inter_atoms.atom_ids or ()),
+        "required_checks": checks_to_require,
+        "validation": {
+            "summary": report["summary"],
+            "hard_floor_check": report["hard_floor_check"],
+            "dist_to_carbon_corridor_check": report["dist_to_carbon_corridor_check"],
+            "dist_between_inter_atoms_corridor_check": report[
+                "dist_between_inter_atoms_corridor_check"
+            ],
+            "z_periodicity_check": report["z_periodicity_check"],
+            "violations": report["violations"],
+            "compromise": report["compromise"],
+        },
     }
 
 
@@ -341,21 +419,21 @@ def generate_atoms_near_planes(
     """
     The GUI `Generate near planes` command: candidate positions near the channel walls.
 
-    Places atoms opposite the wall polygons and edge holes at the average intercalated-carbon
-    distance. Writes `sorbed-plane-coordinates.xlsx` and returns the coordinates.
+    Places atoms opposite wall polygons and edge holes at the average intercalated-carbon distance.
+    This tool is pure: it returns coordinates and writes no intermediate file.
     """
     params: PMvpParams = MvpParamsAdapter.build(
         number_of_planes=number_of_planes,
         to_replace_nearby_atoms=to_replace_nearby_atoms,
         to_remove_too_close_atoms=to_remove_too_close_atoms,
     )
-    path_to_file: Path = IntercalationAndSorption.generate_inter_plane_coordinates_file(
+    inter_atoms: IPoints = IntercalationAndSorption.generate_inter_plane_coordinates(
         project_dir=project_dir,
         subproject_dir=element,
         structure_dir=structure,
         params=params,
     )
-    return _read_generated_file(project_dir, element, structure, path_to_file)
+    return _edit_result(project_dir, element, structure, inter_atoms, output_file_name=None)
 
 
 @server.tool()
@@ -369,16 +447,16 @@ def generate_atoms_opposite_centers(
     The GUI `Generate opposite centers` command.
 
     Places one atom opposite each wall polygon center, offset along the wall normal by the element's
-    `place_opposite_centers` constant. Writes `sorbed-opposite-centers-coordinates.xlsx`.
+    `place_opposite_centers` constant. This tool writes no intermediate file.
     """
     params: PMvpParams = MvpParamsAdapter.build(number_of_planes=number_of_planes)
-    path_to_file: Path = IntercalationAndSorption.generate_opposite_centers_coordinates_file(
+    inter_atoms: IPoints = IntercalationAndSorption.generate_opposite_centers_coordinates(
         project_dir=project_dir,
         subproject_dir=element,
         structure_dir=structure,
         params=params,
     )
-    return _read_generated_file(project_dir, element, structure, path_to_file)
+    return _edit_result(project_dir, element, structure, inter_atoms, output_file_name=None)
 
 
 @server.tool()
@@ -391,18 +469,17 @@ def generate_atoms_opposite_faces(
     """
     The GUI `Generate opposite faces` command.
 
-    Places atoms opposite the wall polygon vertices and edge midpoints, offset along the wall normal
-    by the element's `place_opposite_faces` constant. Writes
-    `sorbed-opposite-faces-coordinates.xlsx`.
+    Places atoms opposite wall polygon vertices and edge midpoints. This tool writes no intermediate
+    file.
     """
     params: PMvpParams = MvpParamsAdapter.build(number_of_planes=number_of_planes)
-    path_to_file: Path = IntercalationAndSorption.generate_opposite_faces_coordinates_file(
+    inter_atoms: IPoints = IntercalationAndSorption.generate_opposite_faces_coordinates(
         project_dir=project_dir,
         subproject_dir=element,
         structure_dir=structure,
         params=params,
     )
-    return _read_generated_file(project_dir, element, structure, path_to_file)
+    return _edit_result(project_dir, element, structure, inter_atoms, output_file_name=None)
 
 
 ### DISTANCES ###
@@ -439,15 +516,19 @@ def add_atoms(
         element: str,
         structure: str,
         new_atoms: list[list[float]],
+        new_atom_ids: list[str] | None = None,
         atoms: list[list[float]] | None = None,
+        atom_ids: list[str] | None = None,
         file_name: str | None = None,
         output_file_name: str | None = None,
         project_dir: str = ChannelProvider.DEFAULT_PROJECT_DIR,
 ) -> dict[str, Any]:
     """Add atoms at explicit coordinates to a set (given inline via `atoms` or read from `file_name`)."""
-    inter_atoms: IPoints = _resolve_atoms(project_dir, element, structure, atoms, file_name)
+    inter_atoms: IPoints = _resolve_atoms(
+        project_dir, element, structure, atoms, file_name, atom_ids
+    )
     result: IPoints = InterAtomsEditor.add_atoms(
-        inter_atoms, np.array(new_atoms, dtype=np.float64)
+        inter_atoms, np.array(new_atoms, dtype=np.float64), new_atom_ids
     )
     return _edit_result(project_dir, element, structure, result, output_file_name)
 
@@ -456,15 +537,22 @@ def add_atoms(
 def delete_atoms(
         element: str,
         structure: str,
-        indexes: list[int],
+        indexes: list[int] | None = None,
+        selected_atom_ids: list[str] | None = None,
         atoms: list[list[float]] | None = None,
+        atom_ids: list[str] | None = None,
         file_name: str | None = None,
         output_file_name: str | None = None,
         project_dir: str = ChannelProvider.DEFAULT_PROJECT_DIR,
 ) -> dict[str, Any]:
-    """Delete the atoms with the given indexes from a set."""
-    inter_atoms: IPoints = _resolve_atoms(project_dir, element, structure, atoms, file_name)
-    result: IPoints = InterAtomsEditor.delete_atoms(inter_atoms, indexes)
+    """Delete atoms selected by stable IDs (preferred) or legacy indexes."""
+    inter_atoms: IPoints = _resolve_atoms(
+        project_dir, element, structure, atoms, file_name, atom_ids
+    )
+    resolved_indexes: list[int] = _resolve_selected_indexes(
+        inter_atoms, indexes, selected_atom_ids
+    )
+    result: IPoints = InterAtomsEditor.delete_atoms(inter_atoms, resolved_indexes)
     return _edit_result(project_dir, element, structure, result, output_file_name)
 
 
@@ -472,17 +560,24 @@ def delete_atoms(
 def move_atoms_on_vector(
         element: str,
         structure: str,
-        indexes: list[int],
         vector: list[float],
+        indexes: list[int] | None = None,
+        selected_atom_ids: list[str] | None = None,
         atoms: list[list[float]] | None = None,
+        atom_ids: list[str] | None = None,
         file_name: str | None = None,
         output_file_name: str | None = None,
         project_dir: str = ChannelProvider.DEFAULT_PROJECT_DIR,
 ) -> dict[str, Any]:
-    """Move the atoms with the given indexes on the given `[dx, dy, dz]` vector."""
-    inter_atoms: IPoints = _resolve_atoms(project_dir, element, structure, atoms, file_name)
+    """Move atoms selected by stable IDs (preferred) or indexes on `[dx, dy, dz]`."""
+    inter_atoms: IPoints = _resolve_atoms(
+        project_dir, element, structure, atoms, file_name, atom_ids
+    )
+    resolved_indexes: list[int] = _resolve_selected_indexes(
+        inter_atoms, indexes, selected_atom_ids
+    )
     result: IPoints = InterAtomsEditor.move_atoms_on_vector(
-        inter_atoms, indexes, np.array(vector, dtype=np.float64)
+        inter_atoms, resolved_indexes, np.array(vector, dtype=np.float64)
     )
     return _edit_result(project_dir, element, structure, result, output_file_name)
 
@@ -491,9 +586,11 @@ def move_atoms_on_vector(
 def move_atoms_to_channel_center(
         element: str,
         structure: str,
-        indexes: list[int],
         distance: float,
+        indexes: list[int] | None = None,
+        selected_atom_ids: list[str] | None = None,
         atoms: list[list[float]] | None = None,
+        atom_ids: list[str] | None = None,
         file_name: str | None = None,
         output_file_name: str | None = None,
         project_dir: str = ChannelProvider.DEFAULT_PROJECT_DIR,
@@ -506,9 +603,14 @@ def move_atoms_to_channel_center(
     carbon_channel: ICarbonHoneycombChannel = ChannelProvider.get_channel(
         project_dir, element, structure
     )
-    inter_atoms: IPoints = _resolve_atoms(project_dir, element, structure, atoms, file_name)
+    inter_atoms: IPoints = _resolve_atoms(
+        project_dir, element, structure, atoms, file_name, atom_ids
+    )
+    resolved_indexes: list[int] = _resolve_selected_indexes(
+        inter_atoms, indexes, selected_atom_ids
+    )
     result: IPoints = InterAtomsEditor.move_atoms_to_channel_center(
-        inter_atoms, indexes, carbon_channel.channel_center, distance
+        inter_atoms, resolved_indexes, carbon_channel.channel_center, distance
     )
     return _edit_result(project_dir, element, structure, result, output_file_name)
 
@@ -517,10 +619,12 @@ def move_atoms_to_channel_center(
 def move_atoms_along_plane_normal(
         element: str,
         structure: str,
-        indexes: list[int],
         plane_index: int,
         distance: float,
+        indexes: list[int] | None = None,
+        selected_atom_ids: list[str] | None = None,
         atoms: list[list[float]] | None = None,
+        atom_ids: list[str] | None = None,
         file_name: str | None = None,
         output_file_name: str | None = None,
         project_dir: str = ChannelProvider.DEFAULT_PROJECT_DIR,
@@ -535,9 +639,14 @@ def move_atoms_along_plane_normal(
         project_dir, element, structure
     )
     plane: ICarbonHoneycombPlane = _get_plane(carbon_channel, plane_index)
-    inter_atoms: IPoints = _resolve_atoms(project_dir, element, structure, atoms, file_name)
+    inter_atoms: IPoints = _resolve_atoms(
+        project_dir, element, structure, atoms, file_name, atom_ids
+    )
+    resolved_indexes: list[int] = _resolve_selected_indexes(
+        inter_atoms, indexes, selected_atom_ids
+    )
     result: IPoints = InterAtomsEditor.move_atoms_along_plane_normal(
-        inter_atoms, indexes, plane, carbon_channel.channel_center, distance
+        inter_atoms, resolved_indexes, plane, carbon_channel.channel_center, distance
     )
     return _edit_result(project_dir, element, structure, result, output_file_name)
 
@@ -548,12 +657,15 @@ def shift_atoms_along_z(
         structure: str,
         shift: float,
         atoms: list[list[float]] | None = None,
+        atom_ids: list[str] | None = None,
         file_name: str | None = None,
         output_file_name: str | None = None,
         project_dir: str = ChannelProvider.DEFAULT_PROJECT_DIR,
 ) -> dict[str, Any]:
     """Shift the whole set of atoms along the Oz axis by `shift`."""
-    inter_atoms: IPoints = _resolve_atoms(project_dir, element, structure, atoms, file_name)
+    inter_atoms: IPoints = _resolve_atoms(
+        project_dir, element, structure, atoms, file_name, atom_ids
+    )
     result: IPoints = InterAtomsEditor.shift_along_z(inter_atoms, shift)
     return _edit_result(project_dir, element, structure, result, output_file_name)
 
@@ -565,6 +677,7 @@ def translate_atoms_along_z(
         num_of_periods: int,
         z_period: float | None = None,
         atoms: list[list[float]] | None = None,
+        atom_ids: list[str] | None = None,
         file_name: str | None = None,
         output_file_name: str | None = None,
         project_dir: str = ChannelProvider.DEFAULT_PROJECT_DIR,
@@ -581,7 +694,9 @@ def translate_atoms_along_z(
     if z_period is None:
         z_period = ValidationTargetsBuilder.get_carbon_z_period(carbon_channel)
 
-    inter_atoms: IPoints = _resolve_atoms(project_dir, element, structure, atoms, file_name)
+    inter_atoms: IPoints = _resolve_atoms(
+        project_dir, element, structure, atoms, file_name, atom_ids
+    )
     result: IPoints = InterAtomsEditor.translate_along_z(inter_atoms, z_period, num_of_periods)
 
     payload: dict[str, Any] = _edit_result(
@@ -599,6 +714,7 @@ def validate_structure(
         element: str,
         structure: str,
         atoms: list[list[float]] | None = None,
+        atom_ids: list[str] | None = None,
         file_name: str | None = None,
         target_dist_to_carbon: float | None = None,
         target_dist_between_inter_atoms: float | None = None,
@@ -632,16 +748,14 @@ def validate_structure(
     element + structure, so the caller can validate the same structure against a different set of
     rules by passing its own numbers. The report flags violations but does not judge the structure.
     """
-    carbon_channel: ICarbonHoneycombChannel = ChannelProvider.get_channel(
-        project_dir, element, structure
+    inter_atoms: IPoints = _resolve_atoms(
+        project_dir, element, structure, atoms, file_name, atom_ids
     )
-    inter_atoms: IPoints = _resolve_atoms(project_dir, element, structure, atoms, file_name)
-
-    targets = ValidationTargetsBuilder.build(
+    report: dict[str, Any] = _build_validation_report(
         project_dir=project_dir,
-        subproject_dir=element,
-        structure_dir=structure,
-        carbon_channel=carbon_channel,
+        element=element,
+        structure=structure,
+        inter_atoms=inter_atoms,
         target_dist_to_carbon=target_dist_to_carbon,
         target_dist_between_inter_atoms=target_dist_between_inter_atoms,
         hard_min_dist_between_inter_atoms=hard_min_dist_between_inter_atoms,
@@ -653,14 +767,63 @@ def validate_structure(
         opposite_position_tolerance=opposite_position_tolerance,
         near_wall_max_dist_to_plane=near_wall_max_dist_to_plane,
     )
+    return {"element": element, "structure": structure, "source_file_name": file_name, **report}
 
-    report: dict[str, Any] = StructureValidator.build_report(
-        carbon_channel=carbon_channel,
-        inter_atoms=inter_atoms,
-        targets=targets,
+
+### CANDIDATE COMPARISON AND RUN CHECKPOINTS ###
+
+
+@server.tool()
+def compare_structures(
+        atoms_a: list[list[float]],
+        atoms_b: list[list[float]],
+        distinct_rmsd_threshold: float = 0.4,
+        z_period: float | None = None,
+) -> dict[str, Any]:
+    """Compare unordered candidates and classify diversity using a caller-supplied RMSD threshold."""
+    return CandidateComparator.compare(
+        candidate_a=list_to_points(atoms_a),
+        candidate_b=list_to_points(atoms_b),
+        distinct_rmsd_threshold=distinct_rmsd_threshold,
+        z_period=z_period,
     )
 
-    return {"element": element, "structure": structure, "source_file_name": file_name, **report}
+
+@server.tool()
+def save_run_checkpoint(
+        element: str,
+        structure: str,
+        run_id: str,
+        state: dict[str, Any],
+        project_dir: str = ChannelProvider.DEFAULT_PROJECT_DIR,
+) -> dict[str, Any]:
+    """Save explicit JSON loop state so a Codex or Claude run can resume after interruption."""
+    path: Path = RunCheckpointStore.save(project_dir, element, structure, run_id, state)
+    return {"run_id": run_id, "path": str(path)}
+
+
+@server.tool()
+def load_run_checkpoint(
+        element: str,
+        structure: str,
+        run_id: str,
+        project_dir: str = ChannelProvider.DEFAULT_PROJECT_DIR,
+) -> dict[str, Any]:
+    """Load an explicit JSON loop checkpoint."""
+    return {
+        "run_id": run_id,
+        "state": RunCheckpointStore.load(project_dir, element, structure, run_id),
+    }
+
+
+@server.tool()
+def list_run_checkpoints(
+        element: str,
+        structure: str,
+        project_dir: str = ChannelProvider.DEFAULT_PROJECT_DIR,
+) -> list[str]:
+    """List resumable run checkpoint IDs for one element and structure."""
+    return RunCheckpointStore.list_run_ids(project_dir, element, structure)
 
 
 ### HELPERS ###
@@ -684,18 +847,44 @@ def _resolve_atoms(
         structure: str,
         atoms: list[list[float]] | None,
         file_name: str | None,
+        atom_ids: list[str] | None = None,
 ) -> IPoints:
     """Take the atoms from the inline `atoms` argument or read them from `file_name`."""
     if atoms is not None and file_name is not None:
         raise ValueError("Provide either `atoms` or `file_name`, not both.")
 
     if atoms is not None:
-        return list_to_points(atoms)
+        return list_to_points(atoms, atom_ids)
 
     if file_name is not None:
         return InterAtomsFileManager.read_inter_atoms(project_dir, element, structure, file_name)
 
     raise ValueError("Provide either `atoms` (inline coordinates) or `file_name`.")
+
+
+def _resolve_selected_indexes(
+        inter_atoms: IPoints,
+        indexes: list[int] | None,
+        selected_atom_ids: list[str] | None,
+) -> list[int]:
+    """Resolve one unambiguous atom selection, preferring stable IDs."""
+    if indexes is not None and selected_atom_ids is not None:
+        raise ValueError("Provide either indexes or selected_atom_ids, not both.")
+    if selected_atom_ids is not None:
+        if inter_atoms.atom_ids is None:
+            raise ValueError("The atom set has no stable IDs.")
+        id_to_index: dict[str, int] = {
+            atom_id: index for index, atom_id in enumerate(inter_atoms.atom_ids)
+        }
+        missing_ids: list[str] = [
+            atom_id for atom_id in selected_atom_ids if atom_id not in id_to_index
+        ]
+        if missing_ids:
+            raise KeyError(f"Unknown atom IDs: {missing_ids}.")
+        return [id_to_index[atom_id] for atom_id in selected_atom_ids]
+    if indexes is not None:
+        return indexes
+    raise ValueError("Provide selected_atom_ids or indexes.")
 
 
 def _edit_result(
@@ -709,6 +898,8 @@ def _edit_result(
     payload: dict[str, Any] = {
         "num_of_atoms": len(result.points),
         "coordinates": points_to_list(result),
+        "atom_ids": list(result.atom_ids or ()),
+        "atoms": points_to_atom_records(result),
     }
 
     if output_file_name is not None:
@@ -718,26 +909,74 @@ def _edit_result(
             structure_dir=structure,
             file_name=output_file_name,
             inter_atoms=result,
-            sheet_name=InterAtomsFileManager.DEFAULT_SHEET_NAME,
         )
         payload["path"] = str(path_to_file)
 
     return payload
 
 
-def _read_generated_file(
+def _build_validation_report(
         project_dir: str,
         element: str,
         structure: str,
-        path_to_file: Path,
+        inter_atoms: IPoints,
+        target_dist_to_carbon: float | None,
+        target_dist_between_inter_atoms: float | None,
+        hard_min_dist_between_inter_atoms: float | None,
+        max_compression_percent: float,
+        max_expansion_percent: float,
+        carbon_z_period: float | None,
+        z_period_tolerance: float,
+        max_z_period_multiplier: int,
+        opposite_position_tolerance: float | None,
+        near_wall_max_dist_to_plane: float | None,
 ) -> dict[str, Any]:
-    """Read back a file a generator has just written and return its coordinates."""
-    inter_atoms: IPoints = InterAtomsFileManager.read_inter_atoms(
-        project_dir, element, structure, path_to_file.name
+    """Build a validation report and attach stable IDs to all index-based findings."""
+    carbon_channel: ICarbonHoneycombChannel = ChannelProvider.get_channel(
+        project_dir, element, structure
     )
-    return {
-        "path": str(path_to_file),
-        "file_name": path_to_file.name,
-        "num_of_atoms": len(inter_atoms.points),
-        "coordinates": points_to_list(inter_atoms),
-    }
+    targets: PValidationTargets = ValidationTargetsBuilder.build(
+        project_dir=project_dir,
+        subproject_dir=element,
+        structure_dir=structure,
+        carbon_channel=carbon_channel,
+        target_dist_to_carbon=target_dist_to_carbon,
+        target_dist_between_inter_atoms=target_dist_between_inter_atoms,
+        hard_min_dist_between_inter_atoms=hard_min_dist_between_inter_atoms,
+        max_compression_percent=max_compression_percent,
+        max_expansion_percent=max_expansion_percent,
+        carbon_z_period=carbon_z_period,
+        z_period_tolerance=z_period_tolerance,
+        max_z_period_multiplier=max_z_period_multiplier,
+        opposite_position_tolerance=opposite_position_tolerance,
+        near_wall_max_dist_to_plane=near_wall_max_dist_to_plane,
+    )
+    report: dict[str, Any] = StructureValidator.build_report(
+        carbon_channel=carbon_channel, inter_atoms=inter_atoms, targets=targets
+    )
+    _attach_atom_ids(report, inter_atoms)
+    return report
+
+
+def _attach_atom_ids(report: dict[str, Any], inter_atoms: IPoints) -> None:
+    """Add stable atom IDs alongside validator indexes without removing legacy fields."""
+    atom_ids: tuple[str, ...] = inter_atoms.atom_ids or tuple(
+        f"atom-{index + 1:04d}" for index in range(len(inter_atoms.points))
+    )
+    for index, atom_report in enumerate(report.get("atoms", [])):
+        atom_report["atom_id"] = atom_ids[index]
+
+    hard_floor: dict[str, Any] = report.get("hard_floor_check", {})
+    for violation in hard_floor.get("violations", []):
+        violation["atom_ids"] = [atom_ids[index] for index in violation["atom_indexes"]]
+
+    for check_name in (
+        "dist_to_carbon_corridor_check",
+        "dist_between_inter_atoms_corridor_check",
+    ):
+        check: dict[str, Any] = report.get(check_name, {})
+        for key, value in list(check.items()):
+            if key.startswith("atom_indexes_") and isinstance(value, list):
+                check[key.replace("atom_indexes_", "atom_ids_")] = [
+                    atom_ids[index] for index in value
+                ]

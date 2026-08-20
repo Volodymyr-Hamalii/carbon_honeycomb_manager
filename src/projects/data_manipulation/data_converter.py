@@ -4,7 +4,7 @@ from pathlib import Path
 import numpy as np
 from numpy.typing import NDArray
 import pandas as pd
-from typing import Any
+from typing import Any, cast
 
 from src.services import (
     Constants,
@@ -40,7 +40,7 @@ class DataConverter:
             subproject_dir: Subproject directory name
             structure_dir: Structure directory name
             file_name: Name of the file to convert
-            target_format: Target format (xlsx, dat, pdb)
+            target_format: Target format (csv, xlsx, dat, pdb)
             params: MVP parameters for state management
             
         Returns:
@@ -57,12 +57,13 @@ class DataConverter:
         source_format: str = path_to_init_file.suffix
 
         # Read the data based on the source format
-        if source_format == ".xlsx":
-            df: pd.DataFrame | None = FileReader.read_excel_file(
-                path_to_file=path_to_init_file,
-            )
+        if source_format in {".xlsx", ".csv"}:
+            if source_format == ".csv":
+                df = FileReader.read_csv_file(path_to_init_file)
+            else:
+                df = FileReader.read_excel_file(path_to_file=path_to_init_file)
             if df is None:
-                raise ValueError(f"Failed to read Excel file: {path_to_init_file}")
+                raise ValueError(f"Failed to read table file: {path_to_init_file}")
 
             # If more than 3 columns, find columns with "X", "Y", "Z"
             if len(df.columns) > 3:
@@ -70,29 +71,35 @@ class DataConverter:
                 y_col: str | None = next((col for col in df.columns if "y" in col.lower()), None)
                 z_col: str | None = next((col for col in df.columns if "z" in col.lower()), None)
                 if x_col and y_col and z_col:
-                    df = df[[x_col, y_col, z_col]]
+                    df = cast(pd.DataFrame, df.loc[:, [x_col, y_col, z_col]].copy())
                 else:
-                    raise ValueError("Could not find X, Y, Z columns in Excel file.")
+                    raise ValueError("Could not find X, Y, Z columns in table file.")
 
         elif source_format == ".dat":
             data: NDArray[np.float64] = FileReader.read_dat_file(
                 path_to_file=path_to_init_file,
             )
-            df = pd.DataFrame(data, columns=["X", "Y", "Z"])
+            df = pd.DataFrame(data, columns=pd.Index(["X", "Y", "Z"]))
 
         elif source_format == ".pdb":
             data: NDArray[np.float64] = FileReader.read_pdb_file(
                 path_to_file=path_to_init_file,
             )
-            df = pd.DataFrame(data, columns=["X", "Y", "Z"])
+            df = pd.DataFrame(data, columns=pd.Index(["X", "Y", "Z"]))
 
         else:
             raise ValueError(f"Unsupported source format: {source_format}")
 
+        if df is None:
+            raise ValueError(f"Failed to read source file: {path_to_init_file}")
+
         # Write the data based on the target format
         path_to_file_to_save: Path = path_to_init_file.with_suffix(f".{target_format}")
 
-        if target_format == "xlsx":
+        if target_format == "csv":
+            FileWriter.write_csv_file(df=df, path_to_file=path_to_file_to_save)
+
+        elif target_format == "xlsx":
             FileWriter.write_excel_file(
                 df=df,
                 path_to_file=path_to_file_to_save,
@@ -121,7 +128,7 @@ class DataConverter:
     @staticmethod
     def get_available_formats() -> list[str]:
         """Get list of available file formats for conversion."""
-        return ["xlsx", "dat", "pdb"]
+        return ["csv", "xlsx", "dat", "pdb"]
     
     @staticmethod
     def validate_file_format(file_path: Path) -> bool:
@@ -134,5 +141,5 @@ class DataConverter:
         Returns:
             True if format is supported, False otherwise
         """
-        supported_extensions = {".xlsx", ".dat", ".pdb"}
+        supported_extensions = {".csv", ".xlsx", ".dat", ".pdb"}
         return file_path.suffix.lower() in supported_extensions

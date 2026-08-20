@@ -23,7 +23,7 @@ class InterAtomsEditor(IInterAtomsEditor):
 
     Every method is pure: it returns a new `Points` instance and never mutates the input.
     Atom indexes always refer to the order of `inter_atoms.points` as it is passed in (which is the
-    order of the `i` column of the xlsx files).
+    order of the rows in the coordinate file).
     """
 
     ROUND_DECIMALS: int = 3
@@ -33,14 +33,28 @@ class InterAtomsEditor(IInterAtomsEditor):
             cls,
             inter_atoms: IPoints,
             new_atoms: NDArray[np.float64],
+            new_atom_ids: Sequence[str] | None = None,
     ) -> IPoints:
         """Append atoms with the given explicit coordinates to the end of the set."""
         new_atoms_array: NDArray[np.float64] = np.asarray(new_atoms, dtype=np.float64).reshape(-1, 3)
 
-        if len(inter_atoms.points) == 0:
-            return cls._build_points(new_atoms_array)
+        if new_atom_ids is not None and len(new_atom_ids) != len(new_atoms_array):
+            raise ValueError("new_atom_ids length must match new_atoms length.")
 
-        return cls._build_points(np.vstack([inter_atoms.points, new_atoms_array]))
+        atom_ids: tuple[str, ...] | None = None
+        if inter_atoms.atom_ids is not None or new_atom_ids is not None:
+            existing_ids: tuple[str, ...] = inter_atoms.atom_ids or tuple(
+                f"atom-{index + 1:04d}" for index in range(len(inter_atoms.points))
+            )
+            generated_ids: tuple[str, ...] = tuple(new_atom_ids) if new_atom_ids is not None else tuple(
+                cls._next_atom_ids(existing_ids, len(new_atoms_array))
+            )
+            atom_ids = (*existing_ids, *generated_ids)
+
+        if len(inter_atoms.points) == 0:
+            return cls._build_points(new_atoms_array, atom_ids)
+
+        return cls._build_points(np.vstack([inter_atoms.points, new_atoms_array]), atom_ids)
 
     @classmethod
     def delete_atoms(
@@ -52,7 +66,10 @@ class InterAtomsEditor(IInterAtomsEditor):
         cls._validate_indexes(inter_atoms, indexes)
         mask: NDArray[np.bool_] = np.ones(len(inter_atoms.points), dtype=bool)
         mask[list(indexes)] = False
-        return cls._build_points(inter_atoms.points[mask])
+        atom_ids: tuple[str, ...] | None = None
+        if inter_atoms.atom_ids is not None:
+            atom_ids = tuple(atom_id for atom_id, keep in zip(inter_atoms.atom_ids, mask) if keep)
+        return cls._build_points(inter_atoms.points[mask], atom_ids)
 
     @classmethod
     def move_atoms_on_vector(
@@ -146,7 +163,9 @@ class InterAtomsEditor(IInterAtomsEditor):
             shift: float,
     ) -> IPoints:
         """Shift the whole set along the Oz axis."""
-        return cls._build_points(inter_atoms.points + np.array([0.0, 0.0, shift]))
+        return cls._build_points(
+            inter_atoms.points + np.array([0.0, 0.0, shift]), inter_atoms.atom_ids
+        )
 
     @classmethod
     def translate_along_z(
@@ -172,23 +191,45 @@ class InterAtomsEditor(IInterAtomsEditor):
             for i in range(num_of_periods + 1)
         ]
 
-        translated: NDArray[np.float64] = np.unique(
-            np.round(np.vstack(copies), cls.ROUND_DECIMALS), axis=0
-        )
+        translated: NDArray[np.float64] = np.round(np.vstack(copies), cls.ROUND_DECIMALS)
+        translated_ids: tuple[str, ...] | None = None
+        if inter_atoms.atom_ids is not None:
+            candidate_ids: list[str] = [
+                atom_id if period_index == 0 else f"{atom_id}-z{period_index}"
+                for period_index in range(num_of_periods + 1)
+                for atom_id in inter_atoms.atom_ids
+            ]
+            unique_coordinates: dict[tuple[float, float, float], str] = {}
+            for coordinate, atom_id in zip(translated, candidate_ids):
+                coordinate_key: tuple[float, float, float] = (
+                    float(coordinate[0]),
+                    float(coordinate[1]),
+                    float(coordinate[2]),
+                )
+                unique_coordinates.setdefault(coordinate_key, atom_id)
+            translated = np.array(list(unique_coordinates), dtype=np.float64)
+            translated_ids = tuple(unique_coordinates.values())
+        else:
+            translated = np.unique(translated, axis=0)
 
-        return cls._build_points(translated)
+        return cls._build_points(translated, translated_ids)
 
     @classmethod
-    def _build_points(cls, points: NDArray[np.float64]) -> IPoints:
-        """Round the coordinates and sort them by z, y, x (the order used in the xlsx files)."""
+    def _build_points(
+            cls,
+            points: NDArray[np.float64],
+            atom_ids: Sequence[str] | None = None,
+    ) -> IPoints:
+        """Round coordinates and sort them by z, y, x while preserving atom IDs."""
         if len(points) == 0:
-            return Points(points=np.array([]).reshape(0, 3))
+            return Points(points=np.array([]).reshape(0, 3), atom_ids=tuple() if atom_ids is not None else None)
 
         rounded: NDArray[np.float64] = np.round(np.asarray(points, dtype=np.float64), cls.ROUND_DECIMALS)
-        sorted_points: NDArray[np.float64] = rounded[
-            np.lexsort((rounded[:, 0], rounded[:, 1], rounded[:, 2]))
-        ]
-        return Points(points=sorted_points)
+        sort_indexes: NDArray[np.intp] = np.lexsort((rounded[:, 0], rounded[:, 1], rounded[:, 2]))
+        sorted_ids: tuple[str, ...] | None = None
+        if atom_ids is not None:
+            sorted_ids = tuple(atom_ids[int(index)] for index in sort_indexes)
+        return Points(points=rounded[sort_indexes], atom_ids=sorted_ids)
 
     @classmethod
     def _replace_atoms(
@@ -200,7 +241,21 @@ class InterAtomsEditor(IInterAtomsEditor):
         """Return a copy of the set with the atoms at `indexes` replaced by `new_coordinates`."""
         points: NDArray[np.float64] = inter_atoms.points.copy()
         points[list(indexes)] = np.asarray(new_coordinates, dtype=np.float64).reshape(len(indexes), 3)
-        return cls._build_points(points)
+        return cls._build_points(points, inter_atoms.atom_ids)
+
+    @staticmethod
+    def _next_atom_ids(existing_ids: Sequence[str], count: int) -> list[str]:
+        """Build collision-free sequential IDs for newly added atoms."""
+        result: list[str] = []
+        used_ids: set[str] = set(existing_ids)
+        next_number: int = 1
+        while len(result) < count:
+            candidate: str = f"atom-{next_number:04d}"
+            next_number += 1
+            if candidate not in used_ids:
+                used_ids.add(candidate)
+                result.append(candidate)
+        return result
 
     @staticmethod
     def _validate_indexes(inter_atoms: IPoints, indexes: Sequence[int]) -> None:

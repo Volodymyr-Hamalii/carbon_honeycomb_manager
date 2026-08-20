@@ -26,7 +26,7 @@ class IInterAtomsFileManager(ABC):
             structure_dir: str,
             file_name: str,
             inter_atoms: IPoints,
-            sheet_name: str,
+            sheet_name: str | None = None,
     ) -> Path:
         ...
 
@@ -36,17 +36,19 @@ class IInterAtomsFileManager(ABC):
             project_dir: str,
             subproject_dir: str,
             structure_dir: str,
-            file_format: str | None,
+            file_format: str | None = "csv",
     ) -> list[str]:
         ...
 
-    @staticmethod
+    @classmethod
     @abstractmethod
     def build_final_file_name(
+            cls,
             version: int,
-            stacking: str | None,
-            author: str,
-            num_of_channels: str,
+            stacking: str | None = None,
+            author: str = "Agent",
+            num_of_channels: str = "one",
+            file_format: str = "csv",
     ) -> str:
         ...
 

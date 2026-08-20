@@ -16,7 +16,7 @@ class DataConverterModel(GeneralModel, IDataConverterModel):
 
     def get_available_formats(self) -> list[str]:
         """Get list of available file formats."""
-        return ["xlsx", "dat", "pdb"]
+        return ["csv", "xlsx", "dat", "pdb"]
 
     def get_conversion_state(self) -> dict[str, Any]:
         """Get current conversion state."""
@@ -87,7 +87,7 @@ class DataConverterModel(GeneralModel, IDataConverterModel):
                     files.extend(result_files)
             
             # Filter for supported formats and remove duplicates
-            supported_formats = ['.xlsx', '.dat', '.pdb']
+            supported_formats: list[str] = ['.csv', '.xlsx', '.dat', '.pdb']
             filtered_files = []
             for file in files:
                 if any(file.lower().endswith(fmt) for fmt in supported_formats):
@@ -99,4 +99,3 @@ class DataConverterModel(GeneralModel, IDataConverterModel):
         except Exception as e:
             logger.error(f"Failed to get available files: {e}")
             return ["No files found"]
-

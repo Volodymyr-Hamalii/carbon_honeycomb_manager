@@ -1,4 +1,6 @@
 from pathlib import Path
+from typing import cast
+
 import pandas as pd
 
 from src.interfaces import IDataConverterPresenter, IDataConverterModel, IDataConverterView
@@ -172,10 +174,14 @@ class DataConverterPresenter(IDataConverterPresenter):
 
     def _read_source_file(self, path_to_file: Path, source_format: str) -> pd.DataFrame:
         """Read source file and return DataFrame."""
-        if source_format == ".xlsx":
-            df: pd.DataFrame | None = FileReader.read_excel_file(path_to_file=path_to_file)
+        if source_format in {".xlsx", ".csv"}:
+            df: pd.DataFrame | None
+            if source_format == ".csv":
+                df = FileReader.read_csv_file(path_to_file=path_to_file)
+            else:
+                df = FileReader.read_excel_file(path_to_file=path_to_file)
             if df is None:
-                raise ValueError(f"Failed to read Excel file: {path_to_file}")
+                raise ValueError(f"Failed to read table file: {path_to_file}")
 
             # If more than 3 columns, find columns with "X", "Y", "Z"
             if len(df.columns) > 3:
@@ -183,26 +189,31 @@ class DataConverterPresenter(IDataConverterPresenter):
                 y_col: str | None = next((col for col in df.columns if "y" in col.lower()), None)
                 z_col: str | None = next((col for col in df.columns if "z" in col.lower()), None)
                 if x_col and y_col and z_col:
-                    df = df[[x_col, y_col, z_col]]
+                    df = cast(pd.DataFrame, df.loc[:, [x_col, y_col, z_col]].copy())
                 else:
-                    raise ValueError("Could not find X, Y, Z columns in Excel file.")
+                    raise ValueError("Could not find X, Y, Z columns in table file.")
 
         elif source_format == ".dat":
             data = FileReader.read_dat_file(path_to_file=path_to_file)
-            df = pd.DataFrame(data, columns=["X", "Y", "Z"])
+            df = pd.DataFrame(data, columns=pd.Index(["X", "Y", "Z"]))
 
         elif source_format == ".pdb":
             data = FileReader.read_pdb_file(path_to_file=path_to_file)
-            df = pd.DataFrame(data, columns=["X", "Y", "Z"])
+            df = pd.DataFrame(data, columns=pd.Index(["X", "Y", "Z"]))
 
         else:
             raise ValueError(f"Unsupported source format: {source_format}")
 
+        if df is None:
+            raise ValueError(f"Failed to read source file: {path_to_file}")
         return df
 
     def _write_target_file(self, df: pd.DataFrame, path_to_file: Path, target_format: str) -> None:
         """Write DataFrame to target file."""
-        if target_format == "xlsx":
+        if target_format == "csv":
+            FileWriter.write_csv_file(df=df, path_to_file=path_to_file)
+
+        elif target_format == "xlsx":
             FileWriter.write_excel_file(
                 df=df,
                 path_to_file=path_to_file,

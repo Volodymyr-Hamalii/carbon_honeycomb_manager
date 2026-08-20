@@ -38,6 +38,27 @@ logger = Logger("IntercalationAndSorption")
 class IntercalationAndSorption:
     """Intercalation and sorption analysis functionality."""
     @staticmethod
+    def generate_inter_plane_coordinates(
+        project_dir: str,
+        subproject_dir: str,
+        structure_dir: str,
+        params: PMvpParams,
+    ) -> IPoints:
+        """Generate intercalated plane coordinates without writing a file."""
+        atom_params: ConstantsAtomParams = ATOM_PARAMS_MAP[subproject_dir.lower()]
+        carbon_channel: ICarbonHoneycombChannel = CarbonHoneycombModeller.build_carbon_channel(
+            project_dir, subproject_dir, structure_dir, file_name=Constants.file_names.INIT_DAT_FILE
+        )
+        inter_atoms: IPoints = InterAtomsParser.build_inter_atoms_plane_coordinates(
+            carbon_channel,
+            num_of_planes=params.number_of_planes,
+            atom_params=atom_params,
+            to_replace_nearby_atoms=params.to_replace_nearby_atoms,
+            to_remove_too_close_atoms=params.to_remove_too_close_atoms,
+        )
+        return IntercalationAndSorption._filter_and_sort_coordinates(inter_atoms, params)
+
+    @staticmethod
     def generate_inter_plane_coordinates_file(
         project_dir: str,
         subproject_dir: str,
@@ -45,56 +66,41 @@ class IntercalationAndSorption:
         params: PMvpParams,
     ) -> Path:
         """Generate intercalated plane coordinates file."""
-        atom_params: ConstantsAtomParams = ATOM_PARAMS_MAP[subproject_dir.lower()]
-
-        carbon_channel: ICarbonHoneycombChannel = CarbonHoneycombModeller.build_carbon_channel(
-            project_dir, subproject_dir, structure_dir, file_name=Constants.file_names.INIT_DAT_FILE
+        inter_atoms_plane_coordinates: IPoints = (
+            IntercalationAndSorption.generate_inter_plane_coordinates(
+                project_dir, subproject_dir, structure_dir, params
+            )
         )
-
-        inter_atoms_plane_coordinates: IPoints = InterAtomsParser.build_inter_atoms_plane_coordinates(
-            carbon_channel,
-            num_of_planes=params.number_of_planes,
-            atom_params=atom_params,
-            to_replace_nearby_atoms=params.to_replace_nearby_atoms,
-            to_remove_too_close_atoms=params.to_remove_too_close_atoms,
-        )
-
-        # Filter out atoms with min and max coordinates
-        coordinates: NDArray[np.float64] = inter_atoms_plane_coordinates.points
-        coordinates_filtered: NDArray[np.float64] = coordinates[
-            (coordinates[:, 0] >= params.x_min) &
-            (coordinates[:, 0] <= params.x_max) &
-            (coordinates[:, 1] >= params.y_min) &
-            (coordinates[:, 1] <= params.y_max) &
-            (coordinates[:, 2] >= params.z_min) &
-            (coordinates[:, 2] <= params.z_max)
-        ]
-
-        # Sort by z coordinate
-        coordinates_filtered = coordinates_filtered[
-            np.lexsort((
-                coordinates_filtered[:, 0],
-                coordinates_filtered[:, 1],
-                coordinates_filtered[:, 2],
-            ))]
-
-        inter_atoms_plane_coordinates = Points(points=coordinates_filtered)
 
         path_to_file: Path = PathBuilder.build_path_to_result_data_file(
             project_dir, subproject_dir, structure_dir,
-            file_name=Constants.file_names.PLANE_COORDINATES_XLSX_FILE,
+            file_name=Constants.file_names.PLANE_COORDINATES_CSV_FILE,
         )
 
-        path_to_file_result: Path | None = FileWriter.write_excel_file(
-            df=inter_atoms_plane_coordinates.to_df(columns=["i", *InterAtomsParser.INTER_ATOMS_COORDINATES_COLUMNS]),
+        path_to_file_result: Path = FileWriter.write_csv_file(
+            df=IntercalationAndSorption._coordinates_df(inter_atoms_plane_coordinates),
             path_to_file=path_to_file,
-            sheet_name="Intercalated atoms for the plane",
         )
-
-        if path_to_file_result is None:
-            raise IOError(f"Failed to write {Constants.file_names.PLANE_COORDINATES_XLSX_FILE} file.")
 
         return path_to_file_result
+
+    @classmethod
+    def generate_opposite_centers_coordinates(
+        cls,
+        project_dir: str,
+        subproject_dir: str,
+        structure_dir: str,
+        params: PMvpParams,
+    ) -> IPoints:
+        """Generate atoms opposite polygon centers without writing a file."""
+        atom_params: ConstantsAtomParams = ATOM_PARAMS_MAP[subproject_dir.lower()]
+        carbon_channel: ICarbonHoneycombChannel = CarbonHoneycombModeller.build_carbon_channel(
+            project_dir, subproject_dir, structure_dir, file_name=Constants.file_names.INIT_DAT_FILE
+        )
+        inter_atoms: IPoints = InterAtomsParser.build_inter_atoms_opposite_centers_coordinates(
+            carbon_channel, num_of_planes=params.number_of_planes, atom_params=atom_params
+        )
+        return cls._filter_and_sort_coordinates(inter_atoms, params)
 
     @classmethod
     def generate_opposite_centers_coordinates_file(
@@ -105,16 +111,8 @@ class IntercalationAndSorption:
         params: PMvpParams,
     ) -> Path:
         """Generate intercalated atoms placed opposite the polygon centers."""
-        atom_params: ConstantsAtomParams = ATOM_PARAMS_MAP[subproject_dir.lower()]
-
-        carbon_channel: ICarbonHoneycombChannel = CarbonHoneycombModeller.build_carbon_channel(
-            project_dir, subproject_dir, structure_dir, file_name=Constants.file_names.INIT_DAT_FILE
-        )
-
-        inter_atoms: IPoints = InterAtomsParser.build_inter_atoms_opposite_centers_coordinates(
-            carbon_channel,
-            num_of_planes=params.number_of_planes,
-            atom_params=atom_params,
+        inter_atoms: IPoints = cls.generate_opposite_centers_coordinates(
+            project_dir, subproject_dir, structure_dir, params
         )
 
         return cls._write_inter_plane_coordinates(
@@ -123,9 +121,26 @@ class IntercalationAndSorption:
             project_dir=project_dir,
             subproject_dir=subproject_dir,
             structure_dir=structure_dir,
-            file_name=Constants.file_names.OPPOSITE_CENTERS_COORDINATES_XLSX_FILE,
-            sheet_name="Opposite centers atoms",
+            file_name=Constants.file_names.OPPOSITE_CENTERS_COORDINATES_CSV_FILE,
         )
+
+    @classmethod
+    def generate_opposite_faces_coordinates(
+        cls,
+        project_dir: str,
+        subproject_dir: str,
+        structure_dir: str,
+        params: PMvpParams,
+    ) -> IPoints:
+        """Generate atoms opposite polygon faces without writing a file."""
+        atom_params: ConstantsAtomParams = ATOM_PARAMS_MAP[subproject_dir.lower()]
+        carbon_channel: ICarbonHoneycombChannel = CarbonHoneycombModeller.build_carbon_channel(
+            project_dir, subproject_dir, structure_dir, file_name=Constants.file_names.INIT_DAT_FILE
+        )
+        inter_atoms: IPoints = InterAtomsParser.build_inter_atoms_opposite_faces_coordinates(
+            carbon_channel, num_of_planes=params.number_of_planes, atom_params=atom_params
+        )
+        return cls._filter_and_sort_coordinates(inter_atoms, params)
 
     @classmethod
     def generate_opposite_faces_coordinates_file(
@@ -136,16 +151,8 @@ class IntercalationAndSorption:
         params: PMvpParams,
     ) -> Path:
         """Generate intercalated atoms placed opposite the polygon vertices and edge midpoints."""
-        atom_params: ConstantsAtomParams = ATOM_PARAMS_MAP[subproject_dir.lower()]
-
-        carbon_channel: ICarbonHoneycombChannel = CarbonHoneycombModeller.build_carbon_channel(
-            project_dir, subproject_dir, structure_dir, file_name=Constants.file_names.INIT_DAT_FILE
-        )
-
-        inter_atoms: IPoints = InterAtomsParser.build_inter_atoms_opposite_faces_coordinates(
-            carbon_channel,
-            num_of_planes=params.number_of_planes,
-            atom_params=atom_params,
+        inter_atoms: IPoints = cls.generate_opposite_faces_coordinates(
+            project_dir, subproject_dir, structure_dir, params
         )
 
         return cls._write_inter_plane_coordinates(
@@ -154,8 +161,7 @@ class IntercalationAndSorption:
             project_dir=project_dir,
             subproject_dir=subproject_dir,
             structure_dir=structure_dir,
-            file_name=Constants.file_names.OPPOSITE_FACES_COORDINATES_XLSX_FILE,
-            sheet_name="Opposite faces atoms",
+            file_name=Constants.file_names.OPPOSITE_FACES_COORDINATES_CSV_FILE,
         )
 
     @staticmethod
@@ -166,45 +172,59 @@ class IntercalationAndSorption:
         subproject_dir: str,
         structure_dir: str,
         file_name: str,
-        sheet_name: str,
     ) -> Path:
-        """Filter by coordinate limits, sort by z and write the intercalated atoms to an Excel file."""
-        # Filter out atoms with min and max coordinates
-        coordinates: NDArray[np.float64] = inter_atoms.points
-        coordinates_filtered: NDArray[np.float64] = coordinates[
-            (coordinates[:, 0] >= params.x_min) &
-            (coordinates[:, 0] <= params.x_max) &
-            (coordinates[:, 1] >= params.y_min) &
-            (coordinates[:, 1] <= params.y_max) &
-            (coordinates[:, 2] >= params.z_min) &
-            (coordinates[:, 2] <= params.z_max)
-        ]
-
-        # Sort by z coordinate
-        coordinates_filtered = coordinates_filtered[
-            np.lexsort((
-                coordinates_filtered[:, 0],
-                coordinates_filtered[:, 1],
-                coordinates_filtered[:, 2],
-            ))]
-
-        inter_atoms = Points(points=coordinates_filtered)
+        """Filter, sort and write intercalated coordinates to CSV."""
+        inter_atoms = IntercalationAndSorption._filter_and_sort_coordinates(inter_atoms, params)
 
         path_to_file: Path = PathBuilder.build_path_to_result_data_file(
             project_dir, subproject_dir, structure_dir,
             file_name=file_name,
         )
 
-        path_to_file_result: Path | None = FileWriter.write_excel_file(
-            df=inter_atoms.to_df(columns=["i", *InterAtomsParser.INTER_ATOMS_COORDINATES_COLUMNS]),
-            path_to_file=path_to_file,
-            sheet_name=sheet_name,
+        path_to_file_result: Path = FileWriter.write_csv_file(
+            df=IntercalationAndSorption._coordinates_df(inter_atoms), path_to_file=path_to_file
         )
 
-        if path_to_file_result is None:
-            raise IOError(f"Failed to write {file_name} file.")
-
         return path_to_file_result
+
+    @staticmethod
+    def _filter_and_sort_coordinates(inter_atoms: IPoints, params: PMvpParams) -> IPoints:
+        """Apply coordinate limits and return points sorted by z, y, x."""
+        coordinates: NDArray[np.float64] = inter_atoms.points
+        mask: NDArray[np.bool_] = (
+            (coordinates[:, 0] >= params.x_min)
+            & (coordinates[:, 0] <= params.x_max)
+            & (coordinates[:, 1] >= params.y_min)
+            & (coordinates[:, 1] <= params.y_max)
+            & (coordinates[:, 2] >= params.z_min)
+            & (coordinates[:, 2] <= params.z_max)
+        )
+        filtered: NDArray[np.float64] = coordinates[mask]
+        sort_indexes: NDArray[np.intp] = np.lexsort(
+            (filtered[:, 0], filtered[:, 1], filtered[:, 2])
+        )
+        sorted_coordinates: NDArray[np.float64] = filtered[sort_indexes]
+        source_ids: tuple[str, ...] = inter_atoms.atom_ids or tuple(
+            f"atom-{index + 1:04d}" for index in range(len(coordinates))
+        )
+        filtered_ids: tuple[str, ...] = tuple(
+            atom_id for atom_id, keep in zip(source_ids, mask) if keep
+        )
+        atom_ids: tuple[str, ...] = tuple(filtered_ids[int(index)] for index in sort_indexes)
+        return Points(points=sorted_coordinates, atom_ids=atom_ids)
+
+    @staticmethod
+    def _coordinates_df(inter_atoms: IPoints) -> pd.DataFrame:
+        """Serialize intercalated coordinates with stable atom IDs."""
+        atom_ids: tuple[str, ...] = inter_atoms.atom_ids or tuple(
+            f"atom-{index + 1:04d}" for index in range(len(inter_atoms.points))
+        )
+        return pd.DataFrame({
+            InterAtomsParser.ATOM_ID_COLUMN: atom_ids,
+            InterAtomsParser.INTER_ATOMS_COORDINATES_COLUMNS[0]: inter_atoms.points[:, 0],
+            InterAtomsParser.INTER_ATOMS_COORDINATES_COLUMNS[1]: inter_atoms.points[:, 1],
+            InterAtomsParser.INTER_ATOMS_COORDINATES_COLUMNS[2]: inter_atoms.points[:, 2],
+        })
 
     @staticmethod
     def update_inter_plane_coordinates_file(
@@ -245,9 +265,7 @@ class IntercalationAndSorption:
         structure_dir: str,
         params: PMvpParams,
     ) -> None:
-        """
-        Read intercalated atoms coordinates from the Excel table and translate the structure to other planes.
-        """
+        """Read intercalated coordinates and translate the structure to other planes."""
         file_name: str | None = params.file_name
         if file_name is None:
             raise ValueError("File name is required")
@@ -336,8 +354,9 @@ class IntercalationAndSorption:
 
         return intercalation_constants_df
 
-    @staticmethod
+    @classmethod
     def update_inter_channel_coordinates(
+        cls,
         project_dir: str,
         subproject_dir: str,
         structure_dir: str,
@@ -352,7 +371,7 @@ class IntercalationAndSorption:
         )
 
         # Read the selected file
-        file_name: str = params.file_name or "intercalated-channel-coordinates.xlsx"
+        file_name: str = params.file_name or Constants.file_names.FULL_CHANNEL_COORDINATES_CSV_FILE
 
         inter_atoms_full_channel_coordinates_df: pd.DataFrame | None = FileReader.read_result_data_file(
             project_dir=project_dir,
@@ -380,11 +399,7 @@ class IntercalationAndSorption:
             project_dir, subproject_dir, structure_dir,
             file_name=file_name)
 
-        FileWriter.write_excel_file(
-            df=inter_atoms.to_df(columns=["i", *InterAtomsParser.INTER_ATOMS_COORDINATES_COLUMNS]),
-            path_to_file=path_to_file,
-            sheet_name="Intercalated atoms for the channel",
-        )
+        FileWriter.write_csv_file(df=cls._coordinates_df(inter_atoms), path_to_file=path_to_file)
 
         return path_to_file
 
@@ -429,7 +444,7 @@ class IntercalationAndSorption:
             project_dir, subproject_dir, structure_dir, file_name=Constants.file_names.INIT_DAT_FILE
         )
 
-        file_name: str = params.file_name or "intercalated-channel-coordinates.xlsx"
+        file_name: str = params.file_name or Constants.file_names.FULL_CHANNEL_COORDINATES_CSV_FILE
 
         intercalated_coordinates_df: pd.DataFrame | None = FileReader.read_result_data_file(
             project_dir=project_dir,
@@ -566,16 +581,12 @@ class IntercalationAndSorption:
             logger.info(f"After filtering: {len(all_channels_atoms.points)} atoms")
 
         # 4. Save translated coordinates
-        result_file_name: str = file_name.replace(".xlsx", "_all_channels.xlsx")
+        result_file_name: str = f"{Path(file_name).stem}_all_channels.csv"
         coords_path: Path = PathBuilder.build_path_to_result_data_file(
             project_dir, subproject_dir, structure_dir, file_name=result_file_name
         )
 
-        FileWriter.write_excel_file(
-            df=all_channels_atoms.to_df(columns=["i", *InterAtomsParser.INTER_ATOMS_COORDINATES_COLUMNS]),
-            path_to_file=coords_path,
-            sheet_name="Intercalated atoms for all channels",
-        )
+        FileWriter.write_csv_file(df=cls._coordinates_df(all_channels_atoms), path_to_file=coords_path)
 
         # # 5. Generate distance matrix using the translated atoms
         # # (update params.file_name temporarily to use the new file)
@@ -612,7 +623,7 @@ class IntercalationAndSorption:
     ) -> NDArray[np.float64] | None:
         """Get intercalated atoms coordinates."""
         try:
-            # Try to read existing intercalated coordinates file (supports .xlsx and .dat)
+            # Read existing intercalated coordinates from CSV or a legacy format.
             intercalated_coordinates_df: pd.DataFrame | None = FileReader.read_result_data_file(
                 project_dir=project_dir,
                 subproject_dir=subproject_dir,

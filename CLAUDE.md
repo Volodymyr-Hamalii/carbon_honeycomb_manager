@@ -43,11 +43,12 @@ The project ships an MCP server that exposes the domain layer to AI agents. It i
 `.mcp.json` and started as `python -m src.mcp_server` over stdio.
 
 **Read [`docs/mcp_description.md`](docs/mcp_description.md) before changing anything under
-`src/mcp_server/`.** Two rules govern it: the server is *rule-agnostic* (validation targets and
-tolerances are tool arguments, never constants in the code) and *element-agnostic* (`element` is a
+`src/mcp_server/`.** Two rules govern it: the server is _rule-agnostic_ (validation targets and
+tolerances are tool arguments, never constants in the code) and _element-agnostic_ (`element` is a
 required argument and every physical constant resolves through `ATOM_PARAMS_MAP`). The rules a
 structure must satisfy live in the skill under
-`.claude/skills/calculate-intercalation-structure-related-carbone-atoms/`.
+`.agents/skills/calculate-intercalation-structure-related-carbon-atoms/` (Codex) and
+`.claude/skills/calculate-intercalation-structure-related-carbon-atoms/` (Claude).
 
 Because stdio uses stdout for the protocol, **never `print()`** anywhere reachable from the server -
 use `Logger`, which writes to stderr.
@@ -111,7 +112,7 @@ data/
 └── projects/               # Project data organized by element and type
     └── {element}/
         ├── init_data/      # Initial structure files (.pdb, .dat)
-        ├── result_data/    # Generated analysis results (.xlsx)
+        ├── result_data/    # Generated coordinate CSV files and legacy/results files
         └── al-inter-fixed/ # Intercalated structure data
 ```
 
@@ -153,7 +154,7 @@ data/
 
 - **Service Layer**: Use `FileReader` and `FileWriter` from `src/services/utils/files_manager/`
 - **Path Management**: Constants defined in `src/services/utils/constants.py`
-- **Multi-Format Support**: Handle `.xlsx`, `.dat`, `.pdb` files through unified interface
+- **Multi-Format Support**: Generate coordinate `.csv` files and read `.csv`, `.xlsx`, `.dat`, `.pdb`
 
 ### Error Handling
 
@@ -173,7 +174,7 @@ Claude MUST always:
 2. **Check Interface Compliance**: Verify all methods exist in their respective interfaces
 3. **Validate Type Safety**: Ensure all method signatures match exactly
 4. **Run Mental Compilation**: Simulate code execution to catch errors before responding.
-    If there are some errors - fix them and run all checks one more time.
+   If there are some errors - fix them and run all checks one more time.
 
 ### Core Quality Standards
 

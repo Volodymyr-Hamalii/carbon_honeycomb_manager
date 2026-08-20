@@ -18,17 +18,20 @@ class InterAtomsFileManager(IInterAtomsFileManager):
     """
     Reading and writing the intercalated atom coordinate files of a structure.
 
-    The written files follow the format of the existing `final_*` files: a single sheet with the
-    `i`, `x_inter`, `y_inter`, `z_inter` columns and the coordinates rounded to 3 decimal places.
+    CSV is the default write format. Coordinate tables contain `atom_id`, `x_inter`, `y_inter`,
+    `z_inter`, with coordinates rounded to 3 decimal places. Legacy XLSX and DAT reads remain.
     """
 
     DEFAULT_SHEET_NAME: str = "Intercalated atoms"
 
-    # final_one_ch-v3-ABC-Volod.xlsx -> num_of_channels="one", version=3, stacking="ABC", author="Volod"
+    SUPPORTED_COORDINATE_FORMATS: frozenset[str] = frozenset({"csv", "xlsx", "dat"})
+    ALLOWED_STACKINGS: frozenset[str] = frozenset({"AA", "ABAB", "ABC", "ABCD"})
+
+    # final_one_ch-v3-ABC-Volod.csv -> num_of_channels="one", version=3, stacking="ABC", author="Volod"
     FINAL_FILE_NAME_PATTERN: re.Pattern[str] = re.compile(
         r"^final_(?P<num_of_channels>one|all)_ch-v(?P<version>\d+)"
         r"(?:-(?P<stacking>AA|ABAB|ABC|ABCD))?"
-        r"(?:-(?P<author>[^.]+))?\.xlsx$"
+        r"(?:-(?P<author>[A-Za-z0-9_-]+))?\.(?P<format>csv|xlsx)$"
     )
 
     @staticmethod
@@ -63,7 +66,7 @@ class InterAtomsFileManager(IInterAtomsFileManager):
             structure_dir: str,
             file_name: str,
             inter_atoms: IPoints,
-            sheet_name: str = DEFAULT_SHEET_NAME,
+            sheet_name: str | None = None,
     ) -> Path:
         """Write the intercalated atom coordinates to a result data file."""
         if len(inter_atoms.points) == 0:
@@ -73,11 +76,37 @@ class InterAtomsFileManager(IInterAtomsFileManager):
             project_dir, subproject_dir, structure_dir, file_name=file_name
         )
 
-        path_to_file_result: Path | None = FileWriter.write_excel_file(
-            df=inter_atoms.to_df(columns=["i", *InterAtomsParser.INTER_ATOMS_COORDINATES_COLUMNS]),
-            path_to_file=path_to_file,
-            sheet_name=sheet_name,
+        file_format: str = path_to_file.suffix.lower().lstrip(".") or "csv"
+        if file_format not in cls.SUPPORTED_COORDINATE_FORMATS:
+            raise ValueError(
+                f"Unsupported coordinate format {file_format!r}; expected one of "
+                f"{sorted(cls.SUPPORTED_COORDINATE_FORMATS)}."
+            )
+
+        atom_ids: tuple[str, ...] = inter_atoms.atom_ids or tuple(
+            f"atom-{index + 1:04d}" for index in range(len(inter_atoms.points))
         )
+        coordinates_df: pd.DataFrame = pd.DataFrame({
+            InterAtomsParser.ATOM_ID_COLUMN: atom_ids,
+            InterAtomsParser.INTER_ATOMS_COORDINATES_COLUMNS[0]: inter_atoms.points[:, 0],
+            InterAtomsParser.INTER_ATOMS_COORDINATES_COLUMNS[1]: inter_atoms.points[:, 1],
+            InterAtomsParser.INTER_ATOMS_COORDINATES_COLUMNS[2]: inter_atoms.points[:, 2],
+        })
+
+        path_to_file_result: Path | None
+        if file_format == "csv":
+            path_to_file_result = FileWriter.write_csv_file(coordinates_df, path_to_file)
+        elif file_format == "xlsx":
+            path_to_file_result = FileWriter.write_excel_file(
+                df=coordinates_df,
+                path_to_file=path_to_file,
+                sheet_name=sheet_name or cls.DEFAULT_SHEET_NAME,
+            )
+        else:
+            path_to_file_result = FileWriter.write_dat_file(
+                data_lines=inter_atoms.points,
+                path_to_file=path_to_file,
+            )
 
         if path_to_file_result is None:
             raise IOError(f"Failed to write {file_name} file.")
@@ -89,7 +118,7 @@ class InterAtomsFileManager(IInterAtomsFileManager):
             project_dir: str,
             subproject_dir: str,
             structure_dir: str,
-            file_format: str | None = "xlsx",
+            file_format: str | None = "csv",
     ) -> list[str]:
         """List the files available in the result data folder of the structure."""
         path_to_dir: Path = PathBuilder.build_path_to_result_data_dir(
@@ -97,15 +126,17 @@ class InterAtomsFileManager(IInterAtomsFileManager):
         )
         return FileReader.read_list_of_files(folder_path=path_to_dir, format=file_format)
 
-    @staticmethod
+    @classmethod
     def build_final_file_name(
+            cls,
             version: int,
             stacking: str | None = None,
-            author: str = "Claude",
+            author: str = "Agent",
             num_of_channels: str = "one",
+            file_format: str = "csv",
     ) -> str:
         """
-        Build a final structure file name: `final_{one|all}_ch-v{version}[-{stacking}][-{author}].xlsx`.
+        Build `final_{one|all}_ch-v{version}[-{stacking}][-{author}].{format}`.
 
         The `stacking` suffix is skipped for narrow structures where the stacking is not defined.
         """
@@ -115,6 +146,16 @@ class InterAtomsFileManager(IInterAtomsFileManager):
         if version < 1:
             raise ValueError(f"version must be a positive integer, got {version}.")
 
+        if stacking is not None and stacking not in cls.ALLOWED_STACKINGS:
+            raise ValueError(f"Unsupported stacking {stacking!r}.")
+
+        if author and re.fullmatch(r"[A-Za-z0-9_-]+", author) is None:
+            raise ValueError("author may contain only letters, digits, underscores and hyphens.")
+
+        normalized_format: str = file_format.lower().lstrip(".")
+        if normalized_format not in {"csv", "xlsx"}:
+            raise ValueError("Final structures support only csv and legacy xlsx formats.")
+
         name: str = f"final_{num_of_channels}_ch-v{version}"
 
         if stacking:
@@ -123,7 +164,7 @@ class InterAtomsFileManager(IInterAtomsFileManager):
         if author:
             name += f"-{author}"
 
-        return f"{name}.xlsx"
+        return f"{name}.{normalized_format}"
 
     @classmethod
     def get_next_final_version(
@@ -134,7 +175,7 @@ class InterAtomsFileManager(IInterAtomsFileManager):
     ) -> int:
         """Return the next free `v{i}` number for the `final_one_ch-*` files of the structure."""
         file_names: list[str] = cls.list_result_files(
-            project_dir, subproject_dir, structure_dir, file_format="xlsx"
+            project_dir, subproject_dir, structure_dir, file_format=None
         )
 
         versions: list[int] = []

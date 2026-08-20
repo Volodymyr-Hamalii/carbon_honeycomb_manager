@@ -23,6 +23,7 @@ logger = Logger("AtomsBuilder")
 
 
 class InterAtomsParser:
+    ATOM_ID_COLUMN: str = "atom_id"
     INTER_ATOMS_COORDINATES_COLUMNS: list[str] = ["x_inter", "y_inter", "z_inter"]
 
     @classmethod
@@ -38,10 +39,10 @@ class InterAtomsParser:
             to_remove_too_close_atoms: bool,
             atom_params: ConstantsAtomParams,
     ) -> IPoints:
-        """ Read intercalated atoms coordinates from the Excel file or build them if there is no Excel file. """
+        """Read intercalated coordinates from CSV or build them when no file exists."""
 
         # Try to read the full channel coordinates
-        file_name_full_channel: str = Constants.file_names.FULL_CHANNEL_COORDINATES_XLSX_FILE
+        file_name_full_channel: str = Constants.file_names.FULL_CHANNEL_COORDINATES_CSV_FILE
         inter_atoms_full_channel_coordinates_df: pd.DataFrame | None = FileReader.read_result_data_file(
             project_dir=project_dir,
             subproject_dir=subproject_dir,
@@ -54,7 +55,7 @@ class InterAtomsParser:
             return cls.parse_inter_atoms_coordinates_df(inter_atoms_full_channel_coordinates_df)
 
         # Try to read the channelintercalated atoms plane coordinates
-        file_name_channel: str = Constants.file_names.CHANNEL_COORDINATES_XLSX_FILE
+        file_name_channel: str = Constants.file_names.CHANNEL_COORDINATES_CSV_FILE
         inter_atoms_channel_coordinates_df: pd.DataFrame | None = FileReader.read_result_data_file(
             project_dir=project_dir,
             subproject_dir=subproject_dir,
@@ -67,7 +68,7 @@ class InterAtomsParser:
 
         # logger.warning(f"Excel table withintercalated atoms for {structure_dir} structure not found.intercalated atoms builder.")
 
-        file_name_plane: str = Constants.file_names.PLANE_COORDINATES_XLSX_FILE
+        file_name_plane: str = Constants.file_names.PLANE_COORDINATES_CSV_FILE
         inter_atoms_plane_coordinates_df: pd.DataFrame | None = FileReader.read_result_data_file(
             project_dir=project_dir,
             subproject_dir=subproject_dir,
@@ -115,7 +116,7 @@ class InterAtomsParser:
             to_remove_too_close_atoms: bool,
             file_name: str | None = None,
     ) -> IPoints:
-        """ Read intercalated atoms coordinates from the file or build them if there is no Excel file. """
+        """Read plane coordinates from a file or build them when no file exists."""
 
         if file_name and file_name != "None":
             inter_atoms_plane_coordinates_df: pd.DataFrame | None = FileReader.read_result_data_file(
@@ -129,7 +130,7 @@ class InterAtomsParser:
                 return cls.parse_inter_atoms_coordinates_df(inter_atoms_plane_coordinates_df)
 
         logger.warning(
-            f"Excel table with intercalated atoms for {structure_dir} structure not found. Intercalated atoms builder.")
+            f"Coordinate table for {structure_dir} not found. Building intercalated atoms.")
 
         # Build atoms
         # carbon_channel: CarbonHoneycombChannel = cls.build_carbon_channel(structure_dir)
@@ -253,4 +254,11 @@ class InterAtomsParser:
         points_array = np.round(points_array, 3)
 
         # Return the Points instance
-        return Points(points=points_array)
+        if cls.ATOM_ID_COLUMN in filtered_df.columns:
+            atom_ids: tuple[str, ...] = tuple(
+                str(value) for value in filtered_df[cls.ATOM_ID_COLUMN].tolist()
+            )
+        else:
+            atom_ids = tuple(f"atom-{index + 1:04d}" for index in range(len(points_array)))
+
+        return Points(points=points_array, atom_ids=atom_ids)

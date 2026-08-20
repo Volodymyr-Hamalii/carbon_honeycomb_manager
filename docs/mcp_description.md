@@ -17,7 +17,7 @@ the API, run it, and parse the output. Every time. It is slow, it is easy to get
 has to re-derive your domain knowledge from scratch on every session.
 
 The **Model Context Protocol (MCP)** is an open protocol that inverts this: instead of the agent
-figuring out how to use your code, *you* publish a set of named, documented, typed operations, and
+figuring out how to use your code, _you_ publish a set of named, documented, typed operations, and
 the agent calls them the same way it calls its built-in tools. MCP is to AI agents roughly what a
 REST API is to web clients - a stable contract in front of your internals.
 
@@ -48,7 +48,7 @@ The protocol is the easy half. What determines whether an agent uses your connec
 - **Tool descriptions are the API documentation, and the only one the agent gets.** The agent picks a
   tool by reading its name, its docstring and its parameter names. A tool called `process` with the
   docstring `"process the data"` will be used wrongly or not at all. Say what it returns, what the
-  units are, and when *not* to use it.
+  units are, and when _not_ to use it.
 - **Granularity.** Too coarse ("build the whole structure") and the agent cannot steer or recover from
   a bad intermediate step. Too fine ("add two floats") and it burns turns on plumbing. Aim for
   operations a domain expert would name out loud.
@@ -67,7 +67,7 @@ A connector that answers "is this structure correct?" has baked one particular d
 the server or add flags to it.
 
 The alternative: the server answers "here are the measurements and here is what is outside the
-bounds *you gave me*", and the criteria live in a **skill** - a markdown document the agent loads
+bounds _you gave me_", and the criteria live in a **skill** - a markdown document the agent loads
 that describes the rules, the priorities and the procedure. Rules become text you can edit and argue
 about; the server stays a measuring instrument. Multiple skills with contradictory rules can then
 share one connector.
@@ -77,7 +77,7 @@ share one connector.
 An MCP server runs with your permissions. A stdio server launched from a project config is as
 trusted as the repository it lives in. Two habits worth keeping:
 
-- Treat tool *arguments* as untrusted input - they are ultimately produced by a model that may have
+- Treat tool _arguments_ as untrusted input - they are ultimately produced by a model that may have
   read untrusted content. Validate paths and indexes rather than interpolating them into file
   operations.
 - Be deliberate about which tools can destroy data. A tool that overwrites a file should say so in
@@ -95,8 +95,9 @@ interactively instead of the user doing it by hand in Excel.
 
 It was built for the task in
 [`tasks/task_1.0_create_tools_for_claude_work.md`](../tasks/task_1.0_create_tools_for_claude_work.md)
-and is driven by the skill
-[`.claude/skills/calculate-intercalation-structure-related-carbone-atoms/SKILL.md`](../.claude/skills/calculate-intercalation-structure-related-carbone-atoms/SKILL.md).
+and is driven by synchronized Codex and Claude skills:
+[`.agents/.../SKILL.md`](../.agents/skills/calculate-intercalation-structure-related-carbon-atoms/SKILL.md)
+and [`.claude/.../SKILL.md`](../.claude/skills/calculate-intercalation-structure-related-carbon-atoms/SKILL.md).
 
 ### Two design rules it follows
 
@@ -166,34 +167,34 @@ before the server starts. If you add code to the server, log - do not print.
 
 ### The tools
 
-23 tools, grouped by what they do.
+27 tools, grouped by what they do.
 
 **Discovery**
 
-| Tool | Returns |
-| --- | --- |
-| `list_projects` | project directories under `data/projects` |
-| `list_elements` | elements with data, plus the elements the code supports |
-| `list_structures` | init-data structure directories for an element (real subdirectories only, so stray `.DS_Store` files are skipped) |
-| `list_result_files` | result-data files of a structure and the next free `final_one_ch-v{i}` number |
+| Tool                | Returns                                                                                                           |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `list_projects`     | project directories under `data/projects`                                                                         |
+| `list_elements`     | elements with data, plus the elements the code supports                                                           |
+| `list_structures`   | init-data structure directories for an element (real subdirectories only, so stray `.DS_Store` files are skipped) |
+| `list_result_files` | result-data files of a structure and the next free `final_one_ch-v{i}` number                                     |
 
 **Metadata**
 
-| Tool | Returns |
-| --- | --- |
-| `get_intercalation_constants` | the GUI `Get intercalation constants` table for an element + structure pair |
-| `get_channel_params` | channel center, coordinate limits, z self-repeat period, per-plane polygon and edge-hole counts |
-| `get_plane_geometry` | plane equation, polygon centers and edge holes of one wall |
-| `get_carbon_coordinates` | carbon coordinates of the channel or of a single wall |
+| Tool                          | Returns                                                                                         |
+| ----------------------------- | ----------------------------------------------------------------------------------------------- |
+| `get_intercalation_constants` | the GUI `Get intercalation constants` table for an element + structure pair                     |
+| `get_channel_params`          | channel center, coordinate limits, z self-repeat period, per-plane polygon and edge-hole counts |
+| `get_plane_geometry`          | plane equation, polygon centers and edge holes of one wall                                      |
+| `get_carbon_coordinates`      | carbon coordinates of the channel or of a single wall                                           |
 
 **Intercalated atoms**
 
-| Tool | Does |
-| --- | --- |
-| `read_inter_atoms` | reads coordinates from a result-data `.xlsx` / `.dat` |
-| `write_inter_atoms` | writes coordinates in the `i, x_inter, y_inter, z_inter` format |
-| `write_final_structure` | writes with the `final_one_ch-v{i}[-{stacking}]-{author}.xlsx` naming convention, auto-numbering the version |
-| `get_distance_matrix` | the GUI `Get distance matrix` for a saved file |
+| Tool                    | Does                                                                                                         |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `read_inter_atoms`      | reads coordinate `.csv` plus legacy `.xlsx` / `.dat` files                                                   |
+| `write_inter_atoms`     | writes `atom_id, x_inter, y_inter, z_inter`; new files should use CSV                                         |
+| `write_final_structure` | revalidates required checks and writes a non-overwriting `final_one_ch-v{i}[-{stacking}]-{author}.csv`        |
+| `get_distance_matrix`   | the GUI `Get distance matrix` for a saved file                                                               |
 
 **Generators** (the GUI buttons)
 
@@ -208,16 +209,26 @@ before the server starts. If you add code to the server, log - do not print.
 
 `validate_structure` - the numeric report described below.
 
+**Long-running search**
+
+- `compare_structures` compares unordered candidates, optionally modulo the carbon z period.
+- `save_run_checkpoint`, `load_run_checkpoint`, `list_run_checkpoints` persist explicit JSON run
+  state under the structure's `.agent-runs` result subdirectory.
+
 ### Conventions the tools share
 
-- Coordinates are lists of `[x, y, z]` triples in angstroms, rounded to 3 decimal places (the
-  precision of the xlsx files). Measured values are rounded to 4.
+- Coordinates are lists of `[x, y, z]` triples in angstroms, rounded to 3 decimal places. Results
+  also expose stable `atom_id` values. Measured values are rounded to 4.
 - Every edit tool takes the atoms either **inline** via `atoms` or **from a file** via `file_name`,
   and returns the resulting coordinates. It writes a file only when `output_file_name` is given. This
   keeps the server stateless and lets an agent chain edits without file churn.
-- Edit results are re-sorted by z, y, x after every operation, so **atom indexes shift**. Re-read the
-  returned list before choosing indexes for the next edit. This is called out in the server
-  instructions the agent receives on connect.
+- Edit results are re-sorted by z, y, x after every operation. Atom indexes therefore shift, but
+  `atom_id` remains stable; edit by `selected_atom_ids` whenever possible.
+- The three MCP generators are pure and write no intermediate files. The GUI-facing generator
+  methods still save their coordinate output, now as CSV.
+- Path construction resolves every generated path and rejects any argument that escapes
+  `data/projects`. Final names validate stacking/author components and never overwrite an existing
+  final file.
 - Errors are raised as exceptions; the client sees them as tool errors with the message.
 
 ### The validation report
@@ -258,18 +269,18 @@ largest acceptable intercalated-carbon distance cannot be at equilibrium with th
 
 Only near-wall atoms are checked against the carbon corridor. The rest appear in
 `dist_to_carbon_corridor_check.atom_indexes_exempt` and never produce a violation. Note the split is
-safe in the other direction: an atom that is *too close* to a wall necessarily has a small distance to
+safe in the other direction: an atom that is _too close_ to a wall necessarily has a small distance to
 the plane, so it is always classified near-wall and always checked.
 
 Measured on the shipped references (argon, `target_dist_to_carbon` about 2.60 Å, near-wall limit about
 2.86 Å):
 
-| structure | near-wall | dist to plane | dev from target | central | dist to plane | dev from target |
-| --- | --- | --- | --- | --- | --- | --- |
-| `C2-7_h3` v1-ABAB | 18 | 2.504-2.604 | -0.1% .. +1.6% | 9 | 3.984-6.834 | +54% .. +163% |
-| `B4-7_h7` v1-ABAB | 16 | 2.674-2.675 | +2.9% .. +7.5% | 21 | 3.421-6.549 | +32% .. +152% |
-| `A3-7_h3` v1-ABAB | 18 | 2.160-2.168 | about 0% | 9 | 3.648-6.620 | +43% .. +161% |
-| `B1-7_h7` v1-ABAB | 12 | 2.500-2.572 | about 0% | 0 | - | - |
+| structure         | near-wall | dist to plane | dev from target | central | dist to plane | dev from target |
+| ----------------- | --------- | ------------- | --------------- | ------- | ------------- | --------------- |
+| `C2-7_h3` v1-ABAB | 18        | 2.504-2.604   | -0.1% .. +1.6%  | 9       | 3.984-6.834   | +54% .. +163%   |
+| `B4-7_h7` v1-ABAB | 16        | 2.674-2.675   | +2.9% .. +7.5%  | 21      | 3.421-6.549   | +32% .. +152%   |
+| `A3-7_h3` v1-ABAB | 18        | 2.160-2.168   | about 0%        | 9       | 3.648-6.620   | +43% .. +161%   |
+| `B1-7_h7` v1-ABAB | 12        | 2.500-2.572   | about 0%        | 0       | -             | -               |
 
 No atom in any reference lands between about 2.7 and 3.4 Å from a wall, so the two populations are
 cleanly separated and the default limit is comfortably inside the gap.
@@ -288,18 +299,18 @@ where the original and the shifted set overlap can be compared, which gives thre
 - **nothing to compare** - the set is shorter than the shift, so it repeats trivially but nothing was
   actually verified. Reported as `verified_by_overlap: false`.
 
-The third case is normal and expected for a correctly built *elementary cell*, which by definition is
+The third case is normal and expected for a correctly built _elementary cell_, which by definition is
 exactly one repeat tall. For those, read the `seam` block instead: the atoms are reduced to one
 primitive cell, tiled once, and `min_dist_across_seam` is compared with `min_dist_inside_cell`. A much
 smaller seam distance means the tiling clashes; a much larger one means it leaves a gap.
 
 Verified against the shipped references:
 
-| structure | file | atoms | min dist to C (mean) | nearest inter-inter | `min_period_multiplier` |
-| --- | --- | --- | --- | --- | --- |
-| `ar/A1-7_h3` | `final_one_ch-v1.xlsx` | 3 | 2.717 | 4.320 (+15.1%) | 1, verified |
-| `ar/C0-7_h3` | `final_one_ch-v3-ABC.xlsx` | 12 | 2.580 | 3.888 (+3.6%) | 9, seam 3.904 vs interior 3.888 |
-| `ar/B4-7_h7` | `final_one_ch-v1-ABAB-Volod.xlsx` | 37 | 3.764 | 3.758 (+0.1%) | 2, verified |
+| structure    | file                              | atoms | min dist to C (mean) | nearest inter-inter | `min_period_multiplier`         |
+| ------------ | --------------------------------- | ----- | -------------------- | ------------------- | ------------------------------- |
+| `ar/A1-7_h3` | `final_one_ch-v1.xlsx`            | 3     | 2.717                | 4.320 (+15.1%)      | 1, verified                     |
+| `ar/C0-7_h3` | `final_one_ch-v3-ABC.xlsx`        | 12    | 2.580                | 3.888 (+3.6%)       | 9, seam 3.904 vs interior 3.888 |
+| `ar/B4-7_h7` | `final_one_ch-v1-ABAB-Volod.xlsx` | 37    | 3.764                | 3.758 (+0.1%)       | 2, verified                     |
 
 `A1-7_h3` is reported as `rule_4_over_corridor` - it repeats along z but its 4.320 A spacing is above
 the +10% corridor - which is exactly the trade-off recorded for it by hand.

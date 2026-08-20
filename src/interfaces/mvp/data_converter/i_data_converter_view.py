@@ -14,6 +14,11 @@ class IDataConverterView(IGeneralView):
         ...
 
     @abstractmethod
+    def set_available_files(self, files: list[str]) -> None:
+        """Set files available for conversion in the UI."""
+        ...
+
+    @abstractmethod
     def show_conversion_progress(self, message: str) -> None:
         """Show conversion progress to user."""
         ...

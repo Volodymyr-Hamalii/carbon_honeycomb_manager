@@ -16,6 +16,20 @@ logger = Logger("FileReader")
 
 class FileReader:
     @staticmethod
+    def read_csv_file(path_to_file: Path, to_print_warning: bool = True) -> pd.DataFrame | None:
+        """Read a UTF-8 CSV file into a DataFrame."""
+        if not path_to_file.exists():
+            if to_print_warning:
+                logger.warning(f"File not found at {path_to_file}")
+            return None
+        try:
+            return pd.read_csv(path_to_file, encoding="utf-8")
+        except Exception as error:
+            if to_print_warning:
+                logger.error(f"Failed to read CSV file {path_to_file}: {error}")
+            return None
+
+    @staticmethod
     def read_list_of_dirs(
             folder_path: Path | str,
     ) -> list[str]:
@@ -43,7 +57,7 @@ class FileReader:
             to_append_parent_dir: bool = False,
     ) -> list[str]:
         """
-        Read a list of files in the given folder path. By default uses '.xlsx' format.
+        Read a list of files in the given folder path. By default, include every format.
         If to_include_nested_files is True, it will include files from nested folders.
         """
         try:
@@ -218,6 +232,11 @@ class FileReader:
             if carbon_points_df is None:
                 raise IOError(f"Failed to read file: {file_name}")
             return carbon_points_df.to_numpy()
+        elif file_format == "csv":
+            carbon_points_df = cls.read_csv_file(path_to_file)
+            if carbon_points_df is None:
+                raise IOError(f"Failed to read file: {file_name}")
+            return carbon_points_df.to_numpy()
         else:
             raise ValueError(f"Unsupported file format: {file_format}")
 
@@ -231,7 +250,7 @@ class FileReader:
             to_print_warning: bool = True,
     ) -> pd.DataFrame | None:
         """
-        Read result data file (supports .xlsx and .dat formats).
+        Read result data file (supports .csv, .xlsx and .dat formats).
         Returns pandas DataFrame or None if file doesn't exist or fails to read.
         """
         path_to_file: Path = PathBuilder.build_path_to_result_data_file(
@@ -250,6 +269,8 @@ class FileReader:
 
         if file_format == "xlsx":
             return cls.read_excel_file(path_to_file, to_print_warning=to_print_warning)
+        elif file_format == "csv":
+            return cls.read_csv_file(path_to_file, to_print_warning=to_print_warning)
         elif file_format == "dat":
             try:
                 coords: np.ndarray = cls.read_dat_file(path_to_file)

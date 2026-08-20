@@ -10,6 +10,7 @@ from .structure_operations import (
     InterAtomsOptimizer,
     InterAtomsEditor,
     InterAtomsFileManager,
+    CandidateComparator,
 )
 from .validation import StructureValidator
 from .intercalation_and_sorption import IntercalationAndSorption

@@ -16,6 +16,15 @@ logger = Logger("FileWriter")
 
 class FileWriter:
     @staticmethod
+    def write_csv_file(df: pd.DataFrame, path_to_file: Path) -> Path:
+        """Write a DataFrame to UTF-8 CSV without an extra index column."""
+        csv_path: Path = path_to_file.with_suffix(".csv")
+        csv_path.parent.mkdir(parents=True, exist_ok=True)
+        df.to_csv(csv_path, index=False, encoding="utf-8")
+        logger.info(f"Data successfully written to {csv_path}")
+        return csv_path
+
+    @staticmethod
     def write_json_file(
             data: dict,
             path_to_file: Path,

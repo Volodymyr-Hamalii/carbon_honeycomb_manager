@@ -53,16 +53,7 @@ class CoordinatesTableManager:
             file_name=file_name,
         )
 
-        path_to_file: Path | None = FileWriter.write_excel_file(
-            df=df,
-            path_to_file=path_to_file,
-            sheet_name="Intercalated atoms for the plane",
-        )
-
-        if path_to_file is None:
-            raise IOError(f"Failed to write {file_name} file.")
-
-        return path_to_file
+        return FileWriter.write_csv_file(df=df, path_to_file=path_to_file)
 
     @classmethod
     def update_full_channel_tbl_file(
@@ -71,7 +62,7 @@ class CoordinatesTableManager:
             subproject_dir: str,
             structure_dir: str,
     ) -> Path:
-        file_name: str = Constants.file_names.FULL_CHANNEL_COORDINATES_XLSX_FILE
+        file_name: str = Constants.file_names.FULL_CHANNEL_COORDINATES_CSV_FILE
         inter_channel_coordinates_df: pd.DataFrame | None = FileReader.read_result_data_file(
             project_dir=project_dir,
             subproject_dir=subproject_dir,
@@ -94,16 +85,7 @@ class CoordinatesTableManager:
             inter_channel_coordinates_df)
         df: pd.DataFrame = cls._build_updated_df(inter_channel_coordinates)
 
-        path_to_file: Path | None = FileWriter.write_excel_file(
-            df=df,
-            path_to_file=path_to_file,
-            sheet_name="Intercalated atoms for the full channel",
-        )
-
-        if path_to_file is None:
-            raise IOError(f"Failed to write {file_name} file.")
-
-        return path_to_file
+        return FileWriter.write_csv_file(df=df, path_to_file=path_to_file)
 
     @staticmethod
     def _build_updated_df(inter_atoms: IPoints) -> pd.DataFrame:
@@ -131,8 +113,11 @@ class CoordinatesTableManager:
         min_dist_to_inter: np.ndarray = np.min(dists + np.diag([np.inf] * len(points)), axis=1)
 
         # Prepare data for the DataFrame
+        atom_ids: tuple[str, ...] = inter_atoms.atom_ids or tuple(
+            f"atom-{index + 1:04d}" for index in range(len(points))
+        )
         data: dict = {
-            "i": np.arange(len(points)),  # Point index
+            InterAtomsParser.ATOM_ID_COLUMN: atom_ids,
             InterAtomsParser.INTER_ATOMS_COORDINATES_COLUMNS[0]: points[:, 0],      # X-coordinates
             InterAtomsParser.INTER_ATOMS_COORDINATES_COLUMNS[1]: points[:, 1],      # Y-coordinates
             InterAtomsParser.INTER_ATOMS_COORDINATES_COLUMNS[2]: points[:, 2],      # Z-coordinates

@@ -21,6 +21,7 @@ class IInterAtomsEditor(ABC):
             cls,
             inter_atoms: IPoints,
             new_atoms: NDArray[np.float64],
+            new_atom_ids: Sequence[str] | None = None,
     ) -> IPoints:
         ...
 

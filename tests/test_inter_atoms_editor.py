@@ -36,6 +36,28 @@ def test_add_atoms_to_an_empty_set() -> None:
     assert result.points.tolist() == [[1.0, 2.0, 3.0]]
 
 
+def test_atom_ids_survive_move_and_sort() -> None:
+    atoms: Points = Points(
+        points=np.array([[0.0, 0.0, 5.0], [0.0, 0.0, 1.0]]),
+        atom_ids=("high", "low"),
+    )
+
+    result: IPoints = InterAtomsEditor.move_atoms_on_vector(
+        atoms, [0], np.array([0.0, 0.0, -5.0])
+    )
+
+    assert result.points[:, 2].tolist() == [0.0, 1.0]
+    assert result.atom_ids == ("high", "low")
+
+
+def test_translate_builds_unique_ids_for_copies() -> None:
+    atoms: Points = Points(points=np.array([[0.0, 0.0, 1.0]]), atom_ids=("a",))
+
+    result: IPoints = InterAtomsEditor.translate_along_z(atoms, Z_PERIOD, num_of_periods=2)
+
+    assert result.atom_ids == ("a", "a-z1", "a-z2")
+
+
 def test_delete_atoms_removes_the_given_indexes() -> None:
     atoms: Points = _points((0.0, 0.0, 1.0), (0.0, 0.0, 2.0), (0.0, 0.0, 3.0))
 

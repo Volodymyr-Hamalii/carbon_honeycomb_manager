@@ -21,7 +21,7 @@ This application is a comprehensive tool for computational modeling of carbon ho
   - Distance-to-plane and distance-to-edge calculations
   - Channel geometry analysis (angles, lengths, diameters)
 - **Structure Translation & Transformation**: Coordinate system manipulation and structure alignment tools
-- **Multi-Format Support**: Import/export data in `.pdb`, `.dat`, and `.xlsx` formats
+- **Multi-Format Support**: Generate coordinate `.csv` files and read `.csv`, `.pdb`, `.dat`, and legacy `.xlsx`
 - **Batch Processing**: Process multiple structures and generate comparative analysis
 
 ### 💻 Technical Achievements

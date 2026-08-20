@@ -15,6 +15,7 @@ class IPoints(ABC):
     """Interface for points (any set of points in 3D space)."""
 
     points: NDArray[np.float64]
+    atom_ids: tuple[str, ...] | None
 
     @property
     @abstractmethod

@@ -8,19 +8,19 @@ from src.projects.intercalation_and_sorption import InterAtomsFileManager
 def test_build_final_file_name_with_stacking_and_author() -> None:
     assert InterAtomsFileManager.build_final_file_name(
         version=3, stacking="ABC", author="Claude"
-    ) == "final_one_ch-v3-ABC-Claude.xlsx"
+    ) == "final_one_ch-v3-ABC-Claude.csv"
 
 
 def test_build_final_file_name_skips_the_stacking_suffix_when_undefined() -> None:
     assert InterAtomsFileManager.build_final_file_name(
         version=1, stacking=None, author="Claude"
-    ) == "final_one_ch-v1-Claude.xlsx"
+    ) == "final_one_ch-v1-Claude.csv"
 
 
 def test_build_final_file_name_supports_all_channels() -> None:
     assert InterAtomsFileManager.build_final_file_name(
         version=2, stacking="ABAB", author="Claude", num_of_channels="all"
-    ) == "final_all_ch-v2-ABAB-Claude.xlsx"
+    ) == "final_all_ch-v2-ABAB-Claude.csv"
 
 
 def test_build_final_file_name_rejects_an_invalid_version() -> None:
@@ -41,6 +41,7 @@ def test_build_final_file_name_rejects_an_invalid_channel_count() -> None:
         ("final_one_ch-v1-ABAB-Volod.xlsx", "1", "ABAB", "Volod"),
         ("final_all_ch-v2-ABCD-NV.xlsx", "2", "ABCD", "NV"),
         ("final_one_ch-v4-Claude.xlsx", "4", None, "Claude"),
+        ("final_one_ch-v5-ABC-Codex.csv", "5", "ABC", "Codex"),
         ("final_one_ch-v1-AA-transl-Oz.xlsx", "1", "AA", "transl-Oz"),
     ],
 )
@@ -65,6 +66,7 @@ def test_final_file_name_pattern_parses_the_existing_conventions(
         "intercalated-channel-coordinates.xlsx",
         "final_one_ch.xlsx",
         "built-structure-details.xlsx",
+        "final_one_ch-v2.json",
     ],
 )
 def test_final_file_name_pattern_ignores_other_files(file_name: str) -> None:

@@ -16,6 +16,7 @@ T = TypeVar("T", bound="Points")
 class Points(IPoints):
     """ Template for any class with points array as a property. """
     points: np.ndarray
+    atom_ids: tuple[str, ...] | None = None
 
     def __post_init__(self) -> None:
         """Validate and ensure points array has correct shape (N, 3)."""
@@ -25,10 +26,7 @@ class Points(IPoints):
         if points.size == 0:
             if points.ndim != 2 or points.shape[1] != 3:
                 object.__setattr__(self, 'points', np.array([]).reshape(0, 3))
-            return
-
-        # Validate and fix shape
-        if points.ndim == 1:
+        elif points.ndim == 1:
             if points.size % 3 == 0:
                 # Reshape from 1D to 2D: (N*3,) -> (N, 3)
                 reshaped = points.reshape(-1, 3)
@@ -42,6 +40,15 @@ class Points(IPoints):
             raise ValueError(
                 f"Points array must have shape (N, 3), got {points.shape}"
             )
+
+        if self.atom_ids is not None:
+            if len(self.atom_ids) != len(self.points):
+                raise ValueError(
+                    f"atom_ids length must match points length: {len(self.atom_ids)} != "
+                    f"{len(self.points)}."
+                )
+            if len(set(self.atom_ids)) != len(self.atom_ids):
+                raise ValueError("atom_ids must be unique.")
 
     def __len__(self) -> int:
         return len(self.points)
@@ -99,10 +106,13 @@ class Points(IPoints):
 
     def copy(self: T) -> T:
         """ Returns a new Points instance. """
-        return replace(self, points=self.points.copy())
+        return replace(self, points=self.points.copy(), atom_ids=self.atom_ids)
 
     def sort(self: T, axis: int = 0) -> T:
         """Sorts self.points by the specified axis."""
         # Note: (array,) creates a tuple; (array) is just parentheses
         sort_indices = np.lexsort((self.points[:, axis],))
-        return replace(self, points=self.points[sort_indices])
+        atom_ids: tuple[str, ...] | None = None
+        if self.atom_ids is not None:
+            atom_ids = tuple(self.atom_ids[index] for index in sort_indices)
+        return replace(self, points=self.points[sort_indices], atom_ids=atom_ids)

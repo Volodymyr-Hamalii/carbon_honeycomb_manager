@@ -8,3 +8,12 @@ args = [
 [mcp_servers.carbon-honeycomb-manager.env]
 MPLBACKEND = "Agg"
 LEVEL = "30"
+
+[mcp_servers.carbon-honeycomb-manager.tools.read_inter_atoms]
+approval_mode = "approve"
+
+[mcp_servers.carbon-honeycomb-manager.tools.validate_structure]
+approval_mode = "approve"
+
+[mcp_servers.carbon-honeycomb-manager.tools.save_run_checkpoint]
+approval_mode = "approve"

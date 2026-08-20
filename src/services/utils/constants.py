@@ -53,12 +53,12 @@ class _ConstantsFilenames:
     DEFAULT_CONFIGS_JSON_FILE: str = "_default_configs.json"
 
     # Intercalation and sorption paths
-    PLANE_COORDINATES_XLSX_FILE: str = "sorbed-plane-coordinates.xlsx"
-    OPPOSITE_CENTERS_COORDINATES_XLSX_FILE: str = "sorbed-opposite-centers-coordinates.xlsx"
-    OPPOSITE_FACES_COORDINATES_XLSX_FILE: str = "sorbed-opposite-faces-coordinates.xlsx"
-    CHANNEL_COORDINATES_XLSX_FILE: str = "sorbed-channel-coordinates.xlsx"
-    FULL_CHANNEL_COORDINATES_XLSX_FILE: str = "intercalated-channel-coordinates.xlsx"
-    ALL_CHANNELS_COORDINATES_XLSX_FILE: str = "intercalated-all-channels-coordinates.xlsx"
+    PLANE_COORDINATES_CSV_FILE: str = "sorbed-plane-coordinates.csv"
+    OPPOSITE_CENTERS_COORDINATES_CSV_FILE: str = "sorbed-opposite-centers-coordinates.csv"
+    OPPOSITE_FACES_COORDINATES_CSV_FILE: str = "sorbed-opposite-faces-coordinates.csv"
+    CHANNEL_COORDINATES_CSV_FILE: str = "sorbed-channel-coordinates.csv"
+    FULL_CHANNEL_COORDINATES_CSV_FILE: str = "intercalated-channel-coordinates.csv"
+    ALL_CHANNELS_COORDINATES_CSV_FILE: str = "intercalated-all-channels-coordinates.csv"
     CHANNEL_DETAILS_XLSX_FILE: str = "built-structure-details.xlsx"
 
     # Intercalation and sorption files

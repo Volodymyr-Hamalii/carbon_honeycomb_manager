@@ -65,7 +65,7 @@ class DataConverterView(GeneralView, IDataConverterView):
         target_frame.pack(fill="x", pady=(0, 10))
 
         ctk.CTkLabel(target_frame, text="Target Format:").pack(pady=5)
-        self.target_format_dropdown = DropdownList(target_frame, ["xlsx", "dat", "pdb"])
+        self.target_format_dropdown = DropdownList(target_frame, ["csv", "xlsx", "dat", "pdb"])
         self.target_format_dropdown.pack(pady=5)
 
         # Convert button
@@ -141,7 +141,7 @@ class DataConverterView(GeneralView, IDataConverterView):
     def reset_form(self) -> None:
         """Reset the form to default values."""
         if self.target_format_dropdown:
-            self.target_format_dropdown.set("xlsx")
+            self.target_format_dropdown.set("csv")
 
     def _on_convert_file(self) -> None:
         """Handle convert file button click."""
