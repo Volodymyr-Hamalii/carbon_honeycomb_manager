@@ -214,7 +214,9 @@ before the server starts. If you add code to the server, log - do not print.
   explicitly or resolved from the element constants.
 - `measure_polygon_site_distances` reports per-atom in-plane alignment and interpolated normal
   targets, the -8%/+10% corridor flags, recommended inward shifts, and explicit central-atom
-  exemptions. It accepts inline atoms or a saved file and never makes an acceptance decision.
+  exemptions. It accepts inline atoms or a saved file. By default it measures against the nearest
+  wall; `reference_wall_index` fixes one source wall for all atoms, while aligned
+  `reference_wall_indexes` supports mixed-wall models. It never makes an acceptance decision.
 
 **Edit primitives**
 

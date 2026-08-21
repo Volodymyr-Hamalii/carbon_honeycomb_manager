@@ -7,6 +7,8 @@ description: Build, rebuild, and validate intercalated structures using carbon p
 
 Build or rebuild one-channel intercalated structures by preferring exact alignment with polygon
 reference sites and using interpolated normal distances only when packing constraints require it.
+This workflow deliberately does not center a narrow-channel model: it assigns atoms to concrete
+wall sites even when the resulting coordinates form a compact cluster near the channel axis.
 All geometry and edits go through the `carbon-honeycomb-manager` MCP server. The server measures;
 this skill owns the priorities and acceptance decisions.
 
@@ -43,14 +45,40 @@ ordinary carbon-corridor default is smaller than the polygon normal targets.
 4. The model must self-repeat along Oz. A valid elementary cell may span multiple carbon periods.
 5. Maximize filling while retaining meaningfully different trade-off models.
 
-Central atoms are explicitly exempt from polygon-site targets and are governed by intercalated-
-neighbour spacing. For near-wall atoms, normal deviation must normally lie in the -8%/+10%
-corridor. No atom pair may ever violate `HARD_MIN`; this outranks every soft objective.
+An interior atom in an ordinary or wide channel may be exempt from polygon-site targets and be
+governed by intercalated-neighbour spacing. A narrow-channel atom is **not** exempt merely because
+it lies close to the channel center: retain its assigned source wall and site provenance and
+measure it against that wall. For wall-assigned atoms, normal deviation must normally lie in the
+-8%/+10% corridor. No atom pair may ever violate `HARD_MIN`; this outranks every soft objective.
+
+## Narrow-channel wall-first mode
+
+Use this mode when the available cross-section forces all plausible intercalated positions into a
+central axial cluster, as in A1.5. Do not use `move_atoms_to_channel_center`, a channel-center target,
+or radial symmetrization as an objective in this mode.
+
+1. Choose one deterministic primary wall whose plane contains or is parallel to Ox. Inspect all
+   walls with `get_plane_geometry`, minimize the absolute x component of the normalized plane
+   normal, and break an equivalent opposite-wall tie by the lowest `wall_index`.
+2. Explore three distinct primary-wall branches: only polygon centers (type #1), only carbon
+   vertices (type #2), and only eligible edge midpoints (type #3). Generate and correct each atom
+   along that wall's inward normal while preserving the selected site's in-plane projection.
+3. Explore a combined branch that assigns atoms to different walls and mixes site types #1/#2/#3
+   to maximize packing. A fifth branch may test a meaningfully different mixed-wall stacking or
+   periodic compromise.
+4. Pass `reference_wall_index` when every atom belongs to the primary wall. For a mixed-wall model,
+   pass `reference_wall_indexes` aligned one-to-one with `atoms` and `atom_ids`. Keep these wall
+   assignments stable through edits unless a deliberate branch change reassigns an atom.
+5. The assigned wall is the reference frame for site alignment and normal deviation even if the
+   target offset crosses the channel medial axis and another wall becomes geometrically nearer.
+   Still validate carbon distances, atom distances, the hard floor, and periodic seams globally;
+   explicit wall provenance never excuses a physical collision.
 
 ## Search loop
 
 - Explore at most 5 structurally distinct candidate branches. A correction round is not a new
-  branch.
+  branch. In narrow-channel wall-first mode, prioritize the three primary-wall site-type branches,
+  then the combined branch, then at most one alternative combined branch.
 - Stop a branch after 4 consecutive validation rounds without meaningful improvement. There is no
   fixed iteration cap while metrics continue improving.
 - A meaningful improvement is: a transition to an exact site normal, lower absolute polygon-site
@@ -65,28 +93,33 @@ corridor. No atom pair may ever violate `HARD_MIN`; this outranks every soft obj
 
 ## Procedure
 
-1. Read channel parameters and constants. Call `get_polygon_reference_sites` in summary mode, then
-   request only the site types or walls needed for the current branch.
+1. Read channel parameters and constants. Determine whether ordinary/wide-channel mode or the
+   narrow-channel wall-first mode applies. Call `get_polygon_reference_sites` in summary mode, then
+   request only the site types or walls needed for the current branch. In narrow mode, select the
+   primary Ox-aligned wall before generating atoms.
 2. For a new model, call `generate_atoms_at_polygon_sites`. It is a pure source of candidates and
    deliberately does not merge close positions. Create different branches by choosing different
    symmetric subsets or stacking patterns. For rebuild, use `read_inter_atoms(file_name)` as the
-   baseline and never use that source name as an output. Always remeasure generated candidates:
-   in a narrow channel a target offset can cross the medial axis, making another wall the nearest
-   wall, so source-site provenance alone does not prove that the resulting atom is aligned.
+   baseline and never use that source name as an output. Always remeasure generated candidates.
+   In narrow mode, supply their source `wall_index` explicitly so crossing the medial axis does not
+   silently change the intended wall-relative target.
 3. Keep coordinates and stable `atom_id` aligned. Prefer `selected_atom_ids` for
    `delete_atoms`, `move_atoms_on_vector`, `move_atoms_to_channel_center`, and
    `move_atoms_along_plane_normal`.
 4. After every meaningful correction round, run both:
-   - `measure_polygon_site_distances` for exact/interpolated normal targets and central exemptions;
+   - `measure_polygon_site_distances` for exact/interpolated normal targets and legitimate central
+     exemptions, with explicit reference-wall arguments for narrow-mode wall-assigned atoms;
    - `validate_structure` for the hard floor, inter-atom corridor, filling context, and
      z-periodicity.
 5. Resolve conflicts in this order: hard floor; exact polygon-site placement when feasible;
    polygon normal corridor; inter-atom packing; z seam and symmetry; filling. A change must not fix
    a lower objective by breaking a satisfied hard constraint.
-6. For near-wall corrections, use the measured `recommended_inward_shift`: positive moves inward,
-   negative moves toward the wall. Re-measure after moving; do not assume the nearest site or wall
-   stayed the same. For central atoms, ignore polygon recommendations and optimize only packing and
-   periodicity.
+6. For wall-relative corrections, use the measured `recommended_inward_shift`: positive moves
+   inward, negative moves toward the assigned wall. Re-measure after moving. In ordinary mode, do
+   not assume the nearest site or wall stayed the same. In narrow mode, preserve the explicit wall
+   assignment and never replace this correction with movement toward the channel center. Only a
+   legitimately unassigned interior atom may ignore polygon recommendations and optimize packing
+   and periodicity alone.
 7. Build the elementary z-cell, replicate with `translate_atoms_along_z` where needed, and validate
    the seam. `hard_floor_check` must pass for both explicit pairs and
    `periodic_seam_min_distance`; reject any cell whose seam is below `HARD_MIN`, even if its finite
@@ -101,7 +134,8 @@ corridor. No atom pair may ever violate `HARD_MIN`; this outranks every soft obj
 
 ## Final report
 
-For each written version report: file name and atom count; all four targets; near-wall versus
+For each written version report: file name and atom count; channel mode; primary wall and the
+per-atom wall-assignment strategy; all four targets; wall-assigned versus legitimately exempt
 central counts; alignment counts for center, vertex, edge midpoint, and interpolation; min/mean/max
 normal deviation and violating atom IDs; inter-atom min/mean/max and hard-floor result; z repeat and
 seam; filling/diversity rationale; and the specific trade-off versus other versions.

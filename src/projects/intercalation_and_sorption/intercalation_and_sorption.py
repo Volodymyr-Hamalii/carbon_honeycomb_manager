@@ -384,6 +384,7 @@ class IntercalationAndSorption:
         atom_params: ConstantsAtomParams,
         near_wall_max_dist_to_plane: float,
         alignment_tolerance: float,
+        reference_wall_indexes: tuple[int, ...] | None = None,
     ) -> PolygonSiteMeasurementReport:
         """Measure polygon-site distances using explicit project-resolved defaults."""
         return PolygonReferenceAnalyzer.measure(
@@ -393,6 +394,7 @@ class IntercalationAndSorption:
             face_target=atom_params.PLACE_OPPOSITE_FACES_DIST,
             near_wall_max_dist_to_plane=near_wall_max_dist_to_plane,
             alignment_tolerance=alignment_tolerance,
+            reference_wall_indexes=reference_wall_indexes,
         )
 
     @staticmethod

@@ -1,6 +1,7 @@
 """Unit tests for polygon-reference extraction, generation and measurement."""
 
 import numpy as np
+import pytest
 
 from src.entities import Points
 from src.interfaces import ICarbonHoneycombChannel
@@ -100,6 +101,57 @@ def test_measurement_handles_exact_face_and_central_exemption(
     assert central["is_near_wall"] is False
     assert central["target_normal_distance"] is None
     assert central["corridor_status"] == "exempt_central"
+
+
+def test_measurement_can_fix_the_candidate_source_wall(
+    synthetic_channel: ICarbonHoneycombChannel,
+) -> None:
+    """Measure an atom against explicit source-wall provenance when requested."""
+    candidate = PolygonReferenceAnalyzer.generate_candidates(
+        synthetic_channel,
+        center_target=3.0,
+        face_target=2.5,
+        site_types=("vertex",),
+        wall_indexes=(0,),
+    )[0]
+    points = Points(
+        points=np.asarray((candidate.coordinates,), dtype=np.float64),
+        atom_ids=(candidate.atom_id,),
+    )
+    row = PolygonReferenceAnalyzer.measure(
+        synthetic_channel,
+        points,
+        center_target=3.0,
+        face_target=2.5,
+        near_wall_max_dist_to_plane=3.3,
+        alignment_tolerance=0.1,
+        reference_wall_indexes=(0,),
+    ).rows[0].to_dict()
+
+    assert row["reference_wall_index"] == 0
+    assert row["wall_selection_mode"] == "explicit_reference"
+    assert row["alignment_type"] == "vertex"
+    assert abs(row["normal_deviation"]) < 1e-9
+
+
+def test_measurement_rejects_misaligned_reference_walls(
+    synthetic_channel: ICarbonHoneycombChannel,
+) -> None:
+    """Require one valid reference-wall index per measured atom."""
+    points = Points(
+        points=np.asarray((synthetic_channel.channel_center,), dtype=np.float64),
+        atom_ids=("atom-1",),
+    )
+    with pytest.raises(ValueError, match="one-to-one"):
+        PolygonReferenceAnalyzer.measure(
+            synthetic_channel, points, 3.0, 2.5, 3.3, 0.1,
+            reference_wall_indexes=(),
+        )
+    with pytest.raises(IndexError, match="out of range"):
+        PolygonReferenceAnalyzer.measure(
+            synthetic_channel, points, 3.0, 2.5, 3.3, 0.1,
+            reference_wall_indexes=(len(synthetic_channel.planes),),
+        )
 
 
 def test_interpolation_formula_and_endpoints_are_stable() -> None:

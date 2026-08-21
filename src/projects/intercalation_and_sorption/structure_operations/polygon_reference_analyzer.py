@@ -134,6 +134,7 @@ class PolygonReferenceAnalyzer(IPolygonReferenceAnalyzer):
         alignment_tolerance: float,
         corridor_lower_percent: float = -8.0,
         corridor_upper_percent: float = 10.0,
+        reference_wall_indexes: tuple[int, ...] | None = None,
     ) -> PolygonSiteMeasurementReport:
         """Measure normal and in-plane distances without making acceptance decisions."""
         if center_target <= 0.0 or face_target <= 0.0:
@@ -142,6 +143,20 @@ class PolygonReferenceAnalyzer(IPolygonReferenceAnalyzer):
             raise ValueError("Near-wall and alignment tolerances must be non-negative.")
         if corridor_lower_percent > corridor_upper_percent:
             raise ValueError("The lower corridor percent cannot exceed the upper percent.")
+        if reference_wall_indexes is not None:
+            if len(reference_wall_indexes) != len(inter_atoms.points):
+                raise ValueError(
+                    "reference_wall_indexes must align one-to-one with intercalated atoms."
+                )
+            invalid_walls: list[int] = [
+                wall_index for wall_index in reference_wall_indexes
+                if wall_index < 0 or wall_index >= len(carbon_channel.planes)
+            ]
+            if invalid_walls:
+                raise IndexError(
+                    f"Reference wall indexes {invalid_walls} are out of range for "
+                    f"{len(carbon_channel.planes)} walls."
+                )
         sites: tuple[PolygonReferenceSite, ...] = cls.get_reference_sites(carbon_channel)
         by_wall: dict[int, dict[PolygonSiteType, list[PolygonReferenceSite]]] = {}
         for wall_index in range(len(carbon_channel.planes)):
@@ -164,10 +179,15 @@ class PolygonReferenceAnalyzer(IPolygonReferenceAnalyzer):
             inward = cls._inward_normal(carbon_channel, wall_index)
             wall_geometry.append((normal, offset, inward))
 
-        for atom_id, raw_point in zip(atom_ids, inter_atoms.points):
+        for atom_index, (atom_id, raw_point) in enumerate(zip(atom_ids, inter_atoms.points)):
             point: NDArray[np.float64] = np.asarray(raw_point, dtype=np.float64)
             distances: list[float] = [abs(float(np.dot(normal, point) + offset)) for normal, offset, _ in wall_geometry]
-            wall_index: int = int(np.argmin(distances))
+            nearest_wall_index: int = int(np.argmin(distances))
+            wall_index: int = (
+                nearest_wall_index
+                if reference_wall_indexes is None
+                else reference_wall_indexes[atom_index]
+            )
             normal, offset, inward = wall_geometry[wall_index]
             signed: float = float(np.dot(normal, point) + offset)
             projection: NDArray[np.float64] = point - signed * normal
@@ -219,8 +239,13 @@ class PolygonReferenceAnalyzer(IPolygonReferenceAnalyzer):
                 "atom_id": atom_id,
                 "coordinates": cls._coordinate(point),
                 "is_near_wall": is_near_wall,
-                "nearest_wall_index": wall_index,
-                "nearest_wall_id": f"wall-{wall_index}",
+                "nearest_wall_index": nearest_wall_index,
+                "nearest_wall_id": f"wall-{nearest_wall_index}",
+                "reference_wall_index": wall_index,
+                "reference_wall_id": f"wall-{wall_index}",
+                "wall_selection_mode": (
+                    "nearest" if reference_wall_indexes is None else "explicit_reference"
+                ),
                 "projection_coordinates": cls._coordinate(projection),
                 "nearest_center_site_id": None if center_site is None else center_site.site_id,
                 "nearest_center_coordinates": None if center_site is None else center_site.coordinates,
@@ -251,6 +276,9 @@ class PolygonReferenceAnalyzer(IPolygonReferenceAnalyzer):
             "corridor_violation_count": len(violation_ids),
             "corridor_violation_atom_ids": violation_ids,
             "alignment_counts": alignment_counts,
+            "explicit_reference_wall_atoms": (
+                0 if reference_wall_indexes is None else len(reference_wall_indexes)
+            ),
             "normal_deviation_min": None if not deviations else min(deviations),
             "normal_deviation_mean": None if not deviations else float(np.mean(deviations)),
             "normal_deviation_max": None if not deviations else max(deviations),

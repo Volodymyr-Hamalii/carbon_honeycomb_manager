@@ -90,13 +90,15 @@ def test_measurement_mcp_accepts_inline_and_file_inputs(
     monkeypatch.setattr(InterAtomsFileManager, "read_inter_atoms", lambda *_args: stored)
 
     inline = measure_polygon_site_distances(
-        "ar", "synthetic", atoms=coordinates, atom_ids=atom_ids
+        "ar", "synthetic", atoms=coordinates, atom_ids=atom_ids,
+        reference_wall_index=0,
     )
     from_file = measure_polygon_site_distances(
-        "ar", "synthetic", file_name="candidate.csv"
+        "ar", "synthetic", file_name="candidate.csv", reference_wall_indexes=[0]
     )
     assert inline == from_file
     assert inline["rows"][0]["atom_id"] == atom_ids[0]
+    assert inline["rows"][0]["wall_selection_mode"] == "explicit_reference"
 
 
 def test_mcp_tool_list_and_documented_count_are_current() -> None:

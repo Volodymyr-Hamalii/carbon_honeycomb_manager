@@ -59,5 +59,6 @@ class IPolygonReferenceAnalyzer(ABC):
         alignment_tolerance: float,
         corridor_lower_percent: float = -8.0,
         corridor_upper_percent: float = 10.0,
+        reference_wall_indexes: tuple[int, ...] | None = None,
     ) -> PolygonSiteMeasurementReport:
         ...

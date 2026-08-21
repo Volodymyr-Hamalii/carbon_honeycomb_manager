@@ -578,6 +578,8 @@ def measure_polygon_site_distances(
         alignment_tolerance: float | None = None,
         corridor_lower_percent: float = -8.0,
         corridor_upper_percent: float = 10.0,
+        reference_wall_index: int | None = None,
+        reference_wall_indexes: list[int] | None = None,
         project_dir: str = ChannelProvider.DEFAULT_PROJECT_DIR,
 ) -> dict[str, Any]:
     """
@@ -585,9 +587,12 @@ def measure_polygon_site_distances(
 
     Supply exactly one of inline `atoms` (with optional aligned `atom_ids`) or `file_name`. Distances
     are in Å. Targets default to the element constants; near-wall classification and alignment
-    tolerance use the same project defaults as `validate_structure`. Central atoms are explicitly
-    exempt. The report measures and flags the -8%/+10% corridor by default but never accepts a
-    model or writes a file.
+    tolerance use the same project defaults as `validate_structure`. By default each atom is
+    measured against its nearest wall. Use `reference_wall_index` for one wall shared by all atoms,
+    or aligned `reference_wall_indexes` for a mixed-wall model; these options are mutually
+    exclusive. Central atoms are explicitly exempt unless an explicit wall makes them fall within
+    the supplied near-wall limit. The report measures and flags the -8%/+10% corridor by default
+    but never accepts a model or writes a file.
     """
     inter_atoms: IPoints = _resolve_atoms(
         project_dir, element, structure, atoms, file_name, atom_ids
@@ -604,6 +609,17 @@ def measure_polygon_site_distances(
         near_wall_max_dist_to_plane=near_wall_max_dist_to_plane,
         opposite_position_tolerance=alignment_tolerance,
     )
+    if reference_wall_index is not None and reference_wall_indexes is not None:
+        raise ValueError(
+            "Use either reference_wall_index or reference_wall_indexes, not both."
+        )
+    resolved_reference_walls: tuple[int, ...] | None = None
+    if reference_wall_index is not None:
+        resolved_reference_walls = tuple(
+            reference_wall_index for _ in inter_atoms.points
+        )
+    elif reference_wall_indexes is not None:
+        resolved_reference_walls = tuple(reference_wall_indexes)
     report: PolygonSiteMeasurementReport = PolygonReferenceAnalyzer.measure(
         carbon_channel,
         inter_atoms,
@@ -615,6 +631,7 @@ def measure_polygon_site_distances(
         alignment_tolerance=validation_targets.opposite_position_tolerance,
         corridor_lower_percent=corridor_lower_percent,
         corridor_upper_percent=corridor_upper_percent,
+        reference_wall_indexes=resolved_reference_walls,
     )
     return report.to_dict()
 
