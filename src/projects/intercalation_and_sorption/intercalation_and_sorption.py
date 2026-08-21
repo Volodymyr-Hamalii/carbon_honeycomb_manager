@@ -2,6 +2,7 @@
 """Intercalation and sorption analysis functionality."""
 
 from pathlib import Path
+import re
 import numpy as np
 from numpy.typing import NDArray
 import pandas as pd
@@ -44,10 +45,13 @@ logger = Logger("IntercalationAndSorption")
 class IntercalationAndSorption:
     """Intercalation and sorption analysis functionality."""
 
+    POLYGON_CANDIDATE_WALL_PATTERN: re.Pattern[str] = re.compile(r"-w(\d+)$")
     POLYGON_SITE_UI_COLUMNS: tuple[str, ...] = (
-        "atom_id",
         "coordinates",
         "is_near_wall",
+        "Min distance to plane",
+        "Min distance to C",
+        "Min distance to inter",
         "actual_normal_distance",
         "projection_coordinates",
         "nearest_center_coordinates",
@@ -66,6 +70,9 @@ class IntercalationAndSorption:
         "nearest_edge_midpoint_coordinates",
     )
     POLYGON_SITE_UI_DISTANCE_COLUMNS: tuple[str, ...] = (
+        "Min distance to plane",
+        "Min distance to C",
+        "Min distance to inter",
         "actual_normal_distance",
         "d_center",
         "d_vertex",
@@ -457,8 +464,31 @@ class IntercalationAndSorption:
             atom_params.PLACE_OPPOSITE_FACES_DIST,
             near_wall_max_dist_to_plane=target_to_carbon * 1.10,
             alignment_tolerance=float(carbon_channel.ave_dist_between_closest_atoms) / 2.0,
+            reference_wall_indexes=(
+                IntercalationAndSorption._polygon_reference_walls_from_atom_ids(
+                    inter_atoms.atom_ids
+                )
+            ),
         )
         rows: list[dict[str, object]] = [row.to_dict() for row in report.rows]
+        min_distances_to_carbon: NDArray[np.float64] = DistanceMeasurer.calculate_min_distances(
+            inter_atoms.points, carbon_channel.points
+        )
+        min_distances_to_inter: NDArray[np.float64] = (
+            DistanceMeasurer.calculate_min_distances_between_points(inter_atoms.points)
+            if len(inter_atoms.points) > 1
+            else np.full(len(inter_atoms.points), np.nan, dtype=np.float64)
+        )
+        for index, (row, inter_atom) in enumerate(zip(rows, inter_atoms.points)):
+            min_distance_to_plane: float = min(
+                DistanceMeasurer.calculate_distance_from_plane(
+                    np.asarray([inter_atom], dtype=np.float64), plane.plane_params
+                )
+                for plane in carbon_channel.planes
+            )
+            row["Min distance to plane"] = min_distance_to_plane
+            row["Min distance to C"] = float(min_distances_to_carbon[index])
+            row["Min distance to inter"] = float(min_distances_to_inter[index])
         return IntercalationAndSorption._polygon_site_measurements_ui_df(rows)
 
     @classmethod
@@ -476,6 +506,22 @@ class IntercalationAndSorption:
         for column in cls.POLYGON_SITE_UI_DISTANCE_COLUMNS:
             table[column] = table[column].map(cls._format_distance_for_ui)
         return table
+
+    @classmethod
+    def _polygon_reference_walls_from_atom_ids(
+        cls,
+        atom_ids: tuple[str, ...] | None,
+    ) -> tuple[int, ...] | None:
+        """Recover aligned source walls from generated polygon-candidate atom IDs."""
+        if atom_ids is None:
+            return None
+        wall_indexes: list[int] = []
+        for atom_id in atom_ids:
+            match: re.Match[str] | None = cls.POLYGON_CANDIDATE_WALL_PATTERN.search(atom_id)
+            if match is None:
+                return None
+            wall_indexes.append(int(match.group(1)))
+        return tuple(wall_indexes)
 
     @staticmethod
     def _format_coordinate_for_ui(value: object) -> str | None:

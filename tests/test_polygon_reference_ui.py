@@ -52,6 +52,9 @@ def test_polygon_measurement_table_selects_and_formats_ui_columns() -> None:
         "atom_id": "atom-0001",
         "coordinates": (1.303, 3.27, 1.44),
         "is_near_wall": True,
+        "Min distance to plane": 2.763,
+        "Min distance to C": 2.883,
+        "Min distance to inter": 4.32,
         "actual_normal_distance": 3.269,
         "projection_coordinates": (1.303, 0.0, 1.44),
         "nearest_center_coordinates": (1.303, 0.0, 1.44),
@@ -70,10 +73,24 @@ def test_polygon_measurement_table_selects_and_formats_ui_columns() -> None:
     assert table.loc[0, "coordinates"] == "[1.30, 3.27, 1.44]"
     assert table.loc[0, "projection_coordinates"] == "[1.30, 0.00, 1.44]"
     assert table.loc[0, "nearest_edge_midpoint_coordinates"] is None
+    assert table.loc[0, "Min distance to plane"] == "2.76"
+    assert table.loc[0, "Min distance to C"] == "2.88"
+    assert table.loc[0, "Min distance to inter"] == "4.32"
     assert table.loc[0, "actual_normal_distance"] == "3.27"
     assert table.loc[0, "d_center"] == "0.00"
     assert table.loc[0, "d_vertex"] == "0.03"
     assert table.loc[0, "d_edge_midpoint"] == "1.25"
+
+
+def test_polygon_ui_recovers_reference_walls_from_candidate_atom_ids() -> None:
+    """Use source-wall provenance when every atom ID carries a generated wall suffix."""
+    assert IntercalationAndSorption._polygon_reference_walls_from_atom_ids(
+        ("candidate-center-a-w0", "candidate-edge-b-w4")
+    ) == (0, 4)
+    assert IntercalationAndSorption._polygon_reference_walls_from_atom_ids(
+        ("candidate-center-a-w0", "atom-0002")
+    ) is None
+    assert IntercalationAndSorption._polygon_reference_walls_from_atom_ids(None) is None
 
 
 def test_presenter_registers_and_runs_selected_file_flow(
