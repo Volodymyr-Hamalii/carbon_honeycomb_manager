@@ -62,7 +62,10 @@ or radial symmetrization as an objective in this mode.
    normal, and break an equivalent opposite-wall tie by the lowest `wall_index`.
 2. Explore three distinct primary-wall branches: only polygon centers (type #1), only carbon
    vertices (type #2), and only eligible edge midpoints (type #3). Generate and correct each atom
-   along that wall's inward normal while preserving the selected site's in-plane projection.
+   along that wall's inward normal while preserving the selected site's in-plane projection. A
+   wall filter can also return cross-wall rings associated with that wall: retain only candidates
+   whose source point lies in the selected plane and whose normalized `inward_normal` is parallel
+   and codirectional with the selected wall's inward normal.
 3. Explore a combined branch that assigns atoms to different walls and mixes site types #1/#2/#3
    to maximize packing. A fifth branch may test a meaningfully different mixed-wall stacking or
    periodic compromise.
@@ -121,7 +124,10 @@ or radial symmetrization as an objective in this mode.
    legitimately unassigned interior atom may ignore polygon recommendations and optimize packing
    and periodicity alone.
 7. Build the elementary z-cell, replicate with `translate_atoms_along_z` where needed, and validate
-   the seam. `hard_floor_check` must pass for both explicit pairs and
+   the seam. Once the intended cell spans a known number of carbon periods, pass that value as
+   `required_z_period_multiplier` to both `validate_structure` and `write_final_structure`; do not
+   let an incidental shorter match in a finite sample redefine the cell. `hard_floor_check` must
+   pass for both explicit pairs and
    `periodic_seam_min_distance`; reject any cell whose seam is below `HARD_MIN`, even if its finite
    coordinates and `z_periodicity_check` otherwise pass. Keep distinct, defensible compromises as
    separate accepted variants.

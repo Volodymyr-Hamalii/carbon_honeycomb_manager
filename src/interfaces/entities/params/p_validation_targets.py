@@ -26,6 +26,7 @@ class PValidationTargets(ABC):
     carbon_z_period: float
     z_period_tolerance: float
     max_z_period_multiplier: int
+    required_z_period_multiplier: int | None
 
     # In-plane offset within which an atom counts as placed opposite a polygon center or an edge hole.
     opposite_position_tolerance: float

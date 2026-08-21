@@ -319,6 +319,7 @@ def write_final_structure(
         carbon_z_period: float | None = None,
         z_period_tolerance: float = 0.1,
         max_z_period_multiplier: int = 10,
+        required_z_period_multiplier: int | None = None,
         opposite_position_tolerance: float | None = None,
         near_wall_max_dist_to_plane: float | None = None,
         project_dir: str = ChannelProvider.DEFAULT_PROJECT_DIR,
@@ -329,8 +330,8 @@ def write_final_structure(
     Validation is recomputed immediately before writing. `required_checks` defaults to
     `["hard_floor_check"]`; every named report check must contain `passed: true`. All targets are
     explicit arguments or resolve through the same element/structure constants as
-    `validate_structure`. The hard-floor check includes the inferred periodic seam as well as
-    explicit atom pairs. Existing files are never overwritten.
+    `validate_structure`. The hard-floor check includes the inferred or explicitly selected
+    periodic seam as well as explicit atom pairs. Existing files are never overwritten.
     """
     inter_atoms: IPoints = list_to_points(atoms, atom_ids)
     report: dict[str, Any] = _build_validation_report(
@@ -346,6 +347,7 @@ def write_final_structure(
         carbon_z_period=carbon_z_period,
         z_period_tolerance=z_period_tolerance,
         max_z_period_multiplier=max_z_period_multiplier,
+        required_z_period_multiplier=required_z_period_multiplier,
         opposite_position_tolerance=opposite_position_tolerance,
         near_wall_max_dist_to_plane=near_wall_max_dist_to_plane,
     )
@@ -878,6 +880,7 @@ def validate_structure(
         carbon_z_period: float | None = None,
         z_period_tolerance: float = 0.1,
         max_z_period_multiplier: int = 10,
+        required_z_period_multiplier: int | None = None,
         opposite_position_tolerance: float | None = None,
         near_wall_max_dist_to_plane: float | None = None,
         project_dir: str = ChannelProvider.DEFAULT_PROJECT_DIR,
@@ -900,7 +903,9 @@ def validate_structure(
 
     Every target is optional and defaults to the value from `get_intercalation_constants` for this
     element + structure, so the caller can validate the same structure against a different set of
-    rules by passing its own numbers. The report flags violations but does not judge the structure.
+    rules by passing its own numbers. Set `required_z_period_multiplier` when the intended cell
+    spans a known number of carbon periods. The report flags violations but does not judge the
+    structure.
     """
     inter_atoms: IPoints = _resolve_atoms(
         project_dir, element, structure, atoms, file_name, atom_ids
@@ -918,6 +923,7 @@ def validate_structure(
         carbon_z_period=carbon_z_period,
         z_period_tolerance=z_period_tolerance,
         max_z_period_multiplier=max_z_period_multiplier,
+        required_z_period_multiplier=required_z_period_multiplier,
         opposite_position_tolerance=opposite_position_tolerance,
         near_wall_max_dist_to_plane=near_wall_max_dist_to_plane,
     )
@@ -1093,6 +1099,7 @@ def _build_validation_report(
         carbon_z_period: float | None,
         z_period_tolerance: float,
         max_z_period_multiplier: int,
+        required_z_period_multiplier: int | None,
         opposite_position_tolerance: float | None,
         near_wall_max_dist_to_plane: float | None,
 ) -> dict[str, Any]:
@@ -1113,6 +1120,7 @@ def _build_validation_report(
         carbon_z_period=carbon_z_period,
         z_period_tolerance=z_period_tolerance,
         max_z_period_multiplier=max_z_period_multiplier,
+        required_z_period_multiplier=required_z_period_multiplier,
         opposite_position_tolerance=opposite_position_tolerance,
         near_wall_max_dist_to_plane=near_wall_max_dist_to_plane,
     )

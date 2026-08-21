@@ -104,6 +104,7 @@ class StructureValidator(IStructureValidator):
             z_period=targets.carbon_z_period,
             tolerance=targets.z_period_tolerance,
             max_multiplier=targets.max_z_period_multiplier,
+            required_multiplier=targets.required_z_period_multiplier,
         )
         hard_floor_check: dict[str, Any] = cls._check_hard_floor(
             atoms, targets.hard_min_dist_between_inter_atoms
@@ -218,6 +219,7 @@ class StructureValidator(IStructureValidator):
             z_period: float,
             tolerance: float = 0.1,
             max_multiplier: int = 10,
+            required_multiplier: int | None = None,
     ) -> dict[str, Any]:
         """
         Check rule 4 (self-repeatability along Oz).
@@ -229,6 +231,10 @@ class StructureValidator(IStructureValidator):
         """
         if z_period <= 0:
             raise ValueError(f"z_period must be positive, got {z_period}.")
+        if required_multiplier is not None and not 1 <= required_multiplier <= max_multiplier:
+            raise ValueError(
+                "required_multiplier must be between 1 and max_multiplier inclusive."
+            )
 
         results: list[dict[str, Any]] = []
         min_multiplier: int | None = None
@@ -242,7 +248,10 @@ class StructureValidator(IStructureValidator):
                 "matches": is_invariant,
             })
 
-            if is_invariant is not False and min_multiplier is None:
+            may_select: bool = (
+                required_multiplier is None or multiplier == required_multiplier
+            )
+            if may_select and is_invariant is not False and min_multiplier is None:
                 min_multiplier = multiplier
 
         repeat_length: float | None = (
@@ -253,6 +262,8 @@ class StructureValidator(IStructureValidator):
             "carbon_z_period": round(z_period, cls.ROUND_DECIMALS),
             "tolerance": tolerance,
             "max_multiplier": max_multiplier,
+            "required_multiplier": required_multiplier,
+            "period_selection_mode": "automatic" if required_multiplier is None else "explicit",
             "min_period_multiplier": min_multiplier,
             "repeat_length": (
                 None if repeat_length is None else round(repeat_length, cls.ROUND_DECIMALS)

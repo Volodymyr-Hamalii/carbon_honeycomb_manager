@@ -137,3 +137,21 @@ def test_check_z_periodicity_marks_an_unverifiable_match() -> None:
     assert result["min_period_multiplier"] == 1
     assert result["verified_by_overlap"] is False
     assert result["seam"]["num_of_atoms_in_cell"] == 2
+
+
+def test_check_z_periodicity_can_require_the_intended_cell_multiplier() -> None:
+    """Use the caller's multi-period cell instead of an incidental shorter match."""
+    points: NDArray[np.float64] = _column([0.0, Z_PERIOD, 2 * Z_PERIOD])
+
+    result: dict = StructureValidator.check_z_periodicity(
+        points,
+        Z_PERIOD,
+        max_multiplier=5,
+        required_multiplier=3,
+    )
+
+    assert result["passed"] is True
+    assert result["min_period_multiplier"] == 3
+    assert result["repeat_length"] == 3 * Z_PERIOD
+    assert result["period_selection_mode"] == "explicit"
+    assert result["required_multiplier"] == 3

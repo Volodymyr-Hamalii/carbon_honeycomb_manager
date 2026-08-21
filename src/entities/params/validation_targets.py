@@ -16,6 +16,7 @@ class ValidationTargets(PValidationTargets):
     max_expansion_percent: float = 10.0
     z_period_tolerance: float = 0.1
     max_z_period_multiplier: int = 10
+    required_z_period_multiplier: int | None = None
     near_wall_max_dist_to_plane: float | None = None
 
     @property

@@ -227,6 +227,11 @@ before the server starts. If you add code to the server, log - do not print.
 
 `validate_structure` - the numeric report described below.
 
+Pass `required_z_period_multiplier` when the intended elementary cell deliberately spans a known
+number of carbon periods. The seam is then measured against that explicit cell instead of an
+incidental shorter repeat inferred from a finite coordinate sample. The value must not exceed
+`max_z_period_multiplier`.
+
 **Long-running search**
 
 - `compare_structures` compares unordered candidates, optionally modulo the carbon z period.
