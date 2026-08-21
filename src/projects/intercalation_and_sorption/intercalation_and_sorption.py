@@ -43,6 +43,35 @@ logger = Logger("IntercalationAndSorption")
 
 class IntercalationAndSorption:
     """Intercalation and sorption analysis functionality."""
+
+    POLYGON_SITE_UI_COLUMNS: tuple[str, ...] = (
+        "atom_id",
+        "coordinates",
+        "is_near_wall",
+        "actual_normal_distance",
+        "projection_coordinates",
+        "nearest_center_coordinates",
+        "nearest_vertex_coordinates",
+        "nearest_edge_midpoint_coordinates",
+        "d_center",
+        "d_vertex",
+        "d_edge_midpoint",
+        "exemption_reason",
+    )
+    POLYGON_SITE_UI_COORDINATE_COLUMNS: tuple[str, ...] = (
+        "coordinates",
+        "projection_coordinates",
+        "nearest_center_coordinates",
+        "nearest_vertex_coordinates",
+        "nearest_edge_midpoint_coordinates",
+    )
+    POLYGON_SITE_UI_DISTANCE_COLUMNS: tuple[str, ...] = (
+        "actual_normal_distance",
+        "d_center",
+        "d_vertex",
+        "d_edge_midpoint",
+    )
+
     @staticmethod
     def generate_inter_plane_coordinates(
         project_dir: str,
@@ -429,7 +458,40 @@ class IntercalationAndSorption:
             near_wall_max_dist_to_plane=target_to_carbon * 1.10,
             alignment_tolerance=float(carbon_channel.ave_dist_between_closest_atoms) / 2.0,
         )
-        return pd.DataFrame([row.to_dict() for row in report.rows])
+        rows: list[dict[str, object]] = [row.to_dict() for row in report.rows]
+        return IntercalationAndSorption._polygon_site_measurements_ui_df(rows)
+
+    @classmethod
+    def _polygon_site_measurements_ui_df(
+        cls,
+        rows: list[dict[str, object]],
+    ) -> pd.DataFrame:
+        """Select and format the polygon measurements shown by the desktop UI."""
+        measurements: pd.DataFrame = pd.DataFrame(rows)
+        table: pd.DataFrame = measurements.reindex(
+            columns=list(cls.POLYGON_SITE_UI_COLUMNS)
+        ).copy()
+        for column in cls.POLYGON_SITE_UI_COORDINATE_COLUMNS:
+            table[column] = table[column].map(cls._format_coordinate_for_ui)
+        for column in cls.POLYGON_SITE_UI_DISTANCE_COLUMNS:
+            table[column] = table[column].map(cls._format_distance_for_ui)
+        return table
+
+    @staticmethod
+    def _format_coordinate_for_ui(value: object) -> str | None:
+        """Format one coordinate triple with two decimal places."""
+        if value is None:
+            return None
+        if not isinstance(value, (list, tuple, np.ndarray)):
+            raise TypeError(f"Expected a coordinate sequence, got {type(value).__name__}.")
+        return "[" + ", ".join(f"{float(coordinate):.2f}" for coordinate in value) + "]"
+
+    @staticmethod
+    def _format_distance_for_ui(value: object) -> str | None:
+        """Format one optional distance with two decimal places."""
+        if value is None or bool(pd.isna(value)):
+            return None
+        return f"{float(value):.2f}"
 
     @classmethod
     def update_inter_channel_coordinates(

@@ -46,6 +46,36 @@ class _FakeModel:
         return self.params
 
 
+def test_polygon_measurement_table_selects_and_formats_ui_columns() -> None:
+    """Keep the requested UI fields in order and render measurements to two decimals."""
+    row: dict[str, object] = {
+        "atom_id": "atom-0001",
+        "coordinates": (1.303, 3.27, 1.44),
+        "is_near_wall": True,
+        "actual_normal_distance": 3.269,
+        "projection_coordinates": (1.303, 0.0, 1.44),
+        "nearest_center_coordinates": (1.303, 0.0, 1.44),
+        "nearest_vertex_coordinates": (1.331, 0.0, 1.44),
+        "nearest_edge_midpoint_coordinates": None,
+        "d_center": 0.004,
+        "d_vertex": 0.028,
+        "d_edge_midpoint": 1.247,
+        "exemption_reason": None,
+        "normal_deviation": -0.001,
+    }
+
+    table: pd.DataFrame = IntercalationAndSorption._polygon_site_measurements_ui_df([row])
+
+    assert tuple(table.columns) == IntercalationAndSorption.POLYGON_SITE_UI_COLUMNS
+    assert table.loc[0, "coordinates"] == "[1.30, 3.27, 1.44]"
+    assert table.loc[0, "projection_coordinates"] == "[1.30, 0.00, 1.44]"
+    assert table.loc[0, "nearest_edge_midpoint_coordinates"] is None
+    assert table.loc[0, "actual_normal_distance"] == "3.27"
+    assert table.loc[0, "d_center"] == "0.00"
+    assert table.loc[0, "d_vertex"] == "0.03"
+    assert table.loc[0, "d_edge_midpoint"] == "1.25"
+
+
 def test_presenter_registers_and_runs_selected_file_flow(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
