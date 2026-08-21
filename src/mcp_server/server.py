@@ -329,7 +329,8 @@ def write_final_structure(
     Validation is recomputed immediately before writing. `required_checks` defaults to
     `["hard_floor_check"]`; every named report check must contain `passed: true`. All targets are
     explicit arguments or resolve through the same element/structure constants as
-    `validate_structure`. Existing files are never overwritten.
+    `validate_structure`. The hard-floor check includes the inferred periodic seam as well as
+    explicit atom pairs. Existing files are never overwritten.
     """
     inter_atoms: IPoints = list_to_points(atoms, atom_ids)
     report: dict[str, Any] = _build_validation_report(

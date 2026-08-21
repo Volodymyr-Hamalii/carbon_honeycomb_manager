@@ -127,6 +127,22 @@ def test_hard_floor_violation_is_reported(report_for) -> None:
     assert "hard_min_dist_between_inter_atoms" in report["violations"]
 
 
+def test_periodic_seam_cannot_bypass_the_hard_floor(report_for) -> None:
+    """Reject a safe finite cell whose inferred periodic tiling creates a hard clash."""
+    report: dict[str, Any] = report_for([
+        [0.0, 0.0, 2.0053],
+        [0.0, 0.0, 5.76],
+        [0.0, 0.0, 9.5147],
+    ])
+    check: dict[str, Any] = report["hard_floor_check"]
+
+    assert check["min_pair_distance"] == pytest.approx(3.755, abs=1e-3)
+    assert check["periodic_seam_min_distance"] == pytest.approx(1.131, abs=1e-3)
+    assert check["periodic_seam_passed"] is False
+    assert check["passed"] is False
+    assert "hard_min_dist_between_inter_atoms" in report["violations"]
+
+
 def test_distance_above_the_corridor_is_reported(report_for) -> None:
     # 4.32 A apart against a 4.0 A target: +8%, inside the +10% corridor.
     inside: dict[str, Any] = report_for([

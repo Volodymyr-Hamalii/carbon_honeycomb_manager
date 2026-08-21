@@ -260,8 +260,10 @@ separately, the z range, and how many atoms sit opposite each kind of feature.
 
 Plus four checks:
 
-- `hard_floor_check` - no pair of intercalated atoms closer than the physical minimum, with the
-  offending pairs listed.
+- `hard_floor_check` - no explicit pair of intercalated atoms and no inferred periodic seam closer
+  than the physical minimum. Explicit offending pairs are listed; `periodic_seam_min_distance` and
+  `periodic_seam_passed` cover the tiled-cell boundary. The guarded final writer therefore cannot
+  accept a finite cell that becomes a hard clash when repeated.
 - `dist_to_carbon_corridor_check` and `dist_between_inter_atoms_corridor_check` - which atoms fall
   below or above the allowed deviation corridor. The carbon one applies to near-wall atoms only (see
   below); the intercalated-intercalated one applies to every atom.
@@ -319,6 +321,8 @@ The third case is normal and expected for a correctly built _elementary cell_, w
 exactly one repeat tall. For those, read the `seam` block instead: the atoms are reduced to one
 primitive cell, tiled once, and `min_dist_across_seam` is compared with `min_dist_inside_cell`. A much
 smaller seam distance means the tiling clashes; a much larger one means it leaves a gap.
+The seam distance is also part of `hard_floor_check`, so a seam below the physical hard minimum
+fails the default `write_final_structure` gate even when all explicit pairs are safe.
 
 Verified against the shipped references:
 

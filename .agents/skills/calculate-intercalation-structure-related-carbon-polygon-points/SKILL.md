@@ -24,6 +24,12 @@ Let:
 - `FACE_TARGET` = `Place opposite faces distance (Å)`;
 - `TARGET_INTER` = `Distance between atoms (Å)`;
 - `HARD_MIN` = `Distance to remove too close atoms (Å)`.
+- `POLYGON_NEAR_WALL_LIMIT` = `max(CENTER_TARGET, FACE_TARGET) × 1.10`.
+
+Pass `POLYGON_NEAR_WALL_LIMIT` as `near_wall_max_dist_to_plane` to both
+`measure_polygon_site_distances` and `validate_structure`. This keeps both reports on the same
+near-wall/central definition and avoids accidentally exempting exact polygon candidates when the
+ordinary carbon-corridor default is smaller than the polygon normal targets.
 
 ## Rules and priorities
 
@@ -64,7 +70,9 @@ corridor. No atom pair may ever violate `HARD_MIN`; this outranks every soft obj
 2. For a new model, call `generate_atoms_at_polygon_sites`. It is a pure source of candidates and
    deliberately does not merge close positions. Create different branches by choosing different
    symmetric subsets or stacking patterns. For rebuild, use `read_inter_atoms(file_name)` as the
-   baseline and never use that source name as an output.
+   baseline and never use that source name as an output. Always remeasure generated candidates:
+   in a narrow channel a target offset can cross the medial axis, making another wall the nearest
+   wall, so source-site provenance alone does not prove that the resulting atom is aligned.
 3. Keep coordinates and stable `atom_id` aligned. Prefer `selected_atom_ids` for
    `delete_atoms`, `move_atoms_on_vector`, `move_atoms_to_channel_center`, and
    `move_atoms_along_plane_normal`.
@@ -80,7 +88,10 @@ corridor. No atom pair may ever violate `HARD_MIN`; this outranks every soft obj
    stayed the same. For central atoms, ignore polygon recommendations and optimize only packing and
    periodicity.
 7. Build the elementary z-cell, replicate with `translate_atoms_along_z` where needed, and validate
-   the seam. Keep distinct, defensible compromises as separate accepted variants.
+   the seam. `hard_floor_check` must pass for both explicit pairs and
+   `periodic_seam_min_distance`; reject any cell whose seam is below `HARD_MIN`, even if its finite
+   coordinates and `z_periodicity_check` otherwise pass. Keep distinct, defensible compromises as
+   separate accepted variants.
 8. Before writing, re-run both reports on the exact final inline coordinates. Require no hard-floor
    violations, a valid z-periodic explanation, and explicitly disclose any remaining soft corridor
    violation. Do not write an empty or duplicate model.

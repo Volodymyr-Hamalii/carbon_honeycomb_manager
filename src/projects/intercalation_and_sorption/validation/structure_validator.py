@@ -99,8 +99,19 @@ class StructureValidator(IStructureValidator):
                 **opposite_features[i],
             })
 
+        z_periodicity: dict[str, Any] = cls.check_z_periodicity(
+            points=atoms,
+            z_period=targets.carbon_z_period,
+            tolerance=targets.z_period_tolerance,
+            max_multiplier=targets.max_z_period_multiplier,
+        )
         hard_floor_check: dict[str, Any] = cls._check_hard_floor(
             atoms, targets.hard_min_dist_between_inter_atoms
+        )
+        cls._attach_periodic_seam_hard_floor(
+            hard_floor_check,
+            z_periodicity,
+            targets.hard_min_dist_between_inter_atoms,
         )
         carbon_corridor_check: dict[str, Any] = cls._check_corridor(
             values=dists_to_carbon,
@@ -116,13 +127,6 @@ class StructureValidator(IStructureValidator):
             lower_bound=targets.dist_between_inter_atoms_lower_bound,
             upper_bound=targets.dist_between_inter_atoms_upper_bound,
         )
-        z_periodicity: dict[str, Any] = cls.check_z_periodicity(
-            points=atoms,
-            z_period=targets.carbon_z_period,
-            tolerance=targets.z_period_tolerance,
-            max_multiplier=targets.max_z_period_multiplier,
-        )
-
         violations: list[str] = []
         if not hard_floor_check["passed"]:
             violations.append("hard_min_dist_between_inter_atoms")
@@ -504,6 +508,31 @@ class StructureValidator(IStructureValidator):
             "violations": violations,
             "passed": not violations,
         }
+
+    @classmethod
+    def _attach_periodic_seam_hard_floor(
+            cls,
+            hard_floor_check: dict[str, Any],
+            z_periodicity: dict[str, Any],
+            hard_min_dist: float,
+    ) -> None:
+        """Extend the hard-floor gate to the inferred periodic-cell seam."""
+        seam: dict[str, Any] | None = z_periodicity.get("seam")
+        seam_distance_value: Any = (
+            None if seam is None else seam.get("min_dist_across_seam")
+        )
+        seam_distance: float | None = (
+            None if seam_distance_value is None else float(seam_distance_value)
+        )
+        seam_passed: bool | None = (
+            None if seam_distance is None else seam_distance >= hard_min_dist
+        )
+        hard_floor_check["periodic_seam_min_distance"] = cls._round_or_none(
+            np.nan if seam_distance is None else seam_distance
+        )
+        hard_floor_check["periodic_seam_passed"] = seam_passed
+        if seam_passed is False:
+            hard_floor_check["passed"] = False
 
     @classmethod
     def _check_corridor(
