@@ -60,6 +60,11 @@ class IIntercalationAndSorptionView(IGeneralView):
         ...
 
     @abstractmethod
+    def display_polygon_site_distances(self, measurements: pd.DataFrame, selected_file: str) -> None:
+        """Display polygon-site measurements without offering a file write."""
+        ...
+
+    @abstractmethod
     def display_channel_constants(self, constants: pd.DataFrame) -> None:
         """Display channel constants in the UI."""
         ...

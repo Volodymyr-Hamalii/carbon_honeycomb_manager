@@ -98,6 +98,10 @@ It was built for the task in
 and is driven by synchronized Codex and Claude skills:
 [`.agents/.../SKILL.md`](../.agents/skills/calculate-intercalation-structure-related-carbon-atoms/SKILL.md)
 and [`.claude/.../SKILL.md`](../.claude/skills/calculate-intercalation-structure-related-carbon-atoms/SKILL.md).
+The polygon-reference workflow has its own synchronized
+[Codex](../.agents/skills/calculate-intercalation-structure-related-carbon-polygon-points/SKILL.md)
+and [Claude](../.claude/skills/calculate-intercalation-structure-related-carbon-polygon-points/SKILL.md)
+skills so its center/vertex/edge-midpoint policy remains outside the server.
 
 ### Two design rules it follows
 
@@ -141,7 +145,7 @@ application.
   "mcpServers": {
     "carbon-honeycomb-manager": {
       "type": "stdio",
-      "command": "venv/bin/python",
+      "command": ".venv/bin/python",
       "args": ["-m", "src.mcp_server"],
       "env": { "MPLBACKEND": "Agg", "LEVEL": "30" }
     }
@@ -167,7 +171,7 @@ before the server starts. If you add code to the server, log - do not print.
 
 ### The tools
 
-27 tools, grouped by what they do.
+30 tools, grouped by what they do.
 
 **Discovery**
 
@@ -189,16 +193,28 @@ before the server starts. If you add code to the server, log - do not print.
 
 **Intercalated atoms**
 
-| Tool                    | Does                                                                                                         |
-| ----------------------- | ------------------------------------------------------------------------------------------------------------ |
-| `read_inter_atoms`      | reads coordinate `.csv` plus legacy `.xlsx` / `.dat` files                                                   |
-| `write_inter_atoms`     | writes `atom_id, x_inter, y_inter, z_inter`; new files should use CSV                                         |
-| `write_final_structure` | revalidates required checks and writes a non-overwriting `final_one_ch-v{i}[-{stacking}]-{author}.csv`        |
-| `get_distance_matrix`   | the GUI `Get distance matrix` for a saved file                                                               |
+| Tool                    | Does                                                                                                   |
+| ----------------------- | ------------------------------------------------------------------------------------------------------ |
+| `read_inter_atoms`      | reads coordinate `.csv` plus legacy `.xlsx` / `.dat` files                                             |
+| `write_inter_atoms`     | writes `atom_id, x_inter, y_inter, z_inter`; new files should use CSV                                  |
+| `write_final_structure` | revalidates required checks and writes a non-overwriting `final_one_ch-v{i}[-{stacking}]-{author}.csv` |
+| `get_distance_matrix`   | the GUI `Get distance matrix` for a saved file                                                         |
 
 **Generators** (the GUI buttons)
 
 `generate_atoms_near_planes`, `generate_atoms_opposite_centers`, `generate_atoms_opposite_faces`.
+
+**Polygon-reference workflow**
+
+- `get_polygon_reference_sites` returns stable ring-center, carbon-vertex and C-C edge-midpoint
+  sites with source provenance and all wall/inward-normal associations. It supports type, wall,
+  detail and result-limit filters.
+- `generate_atoms_at_polygon_sites` is a pure, unmerged candidate generator. Center candidates use
+  the center target; vertex and edge-midpoint candidates use the face target. Targets may be passed
+  explicitly or resolved from the element constants.
+- `measure_polygon_site_distances` reports per-atom in-plane alignment and interpolated normal
+  targets, the -8%/+10% corridor flags, recommended inward shifts, and explicit central-atom
+  exemptions. It accepts inline atoms or a saved file and never makes an acceptance decision.
 
 **Edit primitives**
 

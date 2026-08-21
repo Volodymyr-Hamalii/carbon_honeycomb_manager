@@ -1,7 +1,7 @@
 """MCP server exposing the carbon honeycomb / intercalation domain layer as tools."""
 
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 from numpy.typing import NDArray
@@ -15,6 +15,7 @@ from src.interfaces import (
     PMvpParams,
     PValidationTargets,
 )
+from src.entities import PolygonSiteMeasurementReport, PolygonSiteType
 from src.services import ATOM_PARAMS_MAP, Constants, FileReader, PathBuilder
 from src.projects.carbon_honeycomb_actions import CarbonHoneycombModeller
 from src.projects.intercalation_and_sorption import (
@@ -23,6 +24,7 @@ from src.projects.intercalation_and_sorption import (
     InterAtomsFileManager,
     IntercalationAndSorption,
     StructureValidator,
+    PolygonReferenceAnalyzer,
 )
 
 from .channel_provider import ChannelProvider
@@ -482,6 +484,140 @@ def generate_atoms_opposite_faces(
     return _edit_result(project_dir, element, structure, inter_atoms, output_file_name=None)
 
 
+@server.tool()
+def get_polygon_reference_sites(
+        element: str,
+        structure: str,
+        site_types: list[str] | None = None,
+        wall_indexes: list[int] | None = None,
+        include_details: bool = True,
+        limit: int = 500,
+        project_dir: str = ChannelProvider.DEFAULT_PROJECT_DIR,
+) -> dict[str, Any]:
+    """
+    Return stable center, carbon-vertex and C-C edge-midpoint reference sites.
+
+    Carbon pairs at a strict 3D distance below 1.65 Å form edges. Centers come from chordless
+    five- and six-member rings across the whole channel, including cross-wall rings. Use
+    `site_types`, `wall_indexes`, `include_details=False`, or `limit` to keep payloads compact.
+    Coordinates are in Å and inward normals are unit vectors. This tool writes no file.
+    """
+    resolved_types: tuple[PolygonSiteType, ...] | None = _polygon_site_types(site_types)
+    carbon_channel: ICarbonHoneycombChannel = ChannelProvider.get_channel(
+        project_dir, element, structure
+    )
+    sites = PolygonReferenceAnalyzer.get_reference_sites(
+        carbon_channel,
+        site_types=resolved_types,
+        wall_indexes=None if wall_indexes is None else tuple(wall_indexes),
+    )
+    counts: dict[str, int] = {
+        site_type: sum(site.site_type == site_type for site in sites)
+        for site_type in ("center", "vertex", "edge_midpoint")
+    }
+    safe_limit: int = max(0, limit)
+    payload: dict[str, Any] = {
+        "counts": counts,
+        "total": len(sites),
+        "returned": min(len(sites), safe_limit),
+    }
+    if include_details:
+        payload["sites"] = [site.to_dict() for site in sites[:safe_limit]]
+    return payload
+
+
+@server.tool()
+def generate_atoms_at_polygon_sites(
+        element: str,
+        structure: str,
+        site_types: list[str] | None = None,
+        wall_indexes: list[int] | None = None,
+        center_target: float | None = None,
+        face_target: float | None = None,
+        limit: int = 1000,
+        project_dir: str = ChannelProvider.DEFAULT_PROJECT_DIR,
+) -> dict[str, Any]:
+    """
+    Purely generate candidates along each polygon site's inward wall normal.
+
+    Center and face targets are distances in Å. Unset targets resolve through `ATOM_PARAMS_MAP`
+    for `element`. A multi-wall source site yields one stable candidate per association. Candidates
+    are deliberately not merged or packing-filtered, and no intermediate file is written.
+    """
+    atom_params = ChannelProvider.get_atom_params(element)
+    carbon_channel: ICarbonHoneycombChannel = ChannelProvider.get_channel(
+        project_dir, element, structure
+    )
+    candidates = PolygonReferenceAnalyzer.generate_candidates(
+        carbon_channel,
+        center_target=(
+            atom_params.PLACE_OPPOSITE_CENTERS_DIST if center_target is None else center_target
+        ),
+        face_target=atom_params.PLACE_OPPOSITE_FACES_DIST if face_target is None else face_target,
+        site_types=_polygon_site_types(site_types),
+        wall_indexes=None if wall_indexes is None else tuple(wall_indexes),
+    )
+    return {
+        "total": len(candidates),
+        "returned": min(len(candidates), max(0, limit)),
+        "candidates": [candidate.to_dict() for candidate in candidates[:max(0, limit)]],
+    }
+
+
+@server.tool()
+def measure_polygon_site_distances(
+        element: str,
+        structure: str,
+        atoms: list[list[float]] | None = None,
+        atom_ids: list[str] | None = None,
+        file_name: str | None = None,
+        center_target: float | None = None,
+        face_target: float | None = None,
+        near_wall_max_dist_to_plane: float | None = None,
+        alignment_tolerance: float | None = None,
+        corridor_lower_percent: float = -8.0,
+        corridor_upper_percent: float = 10.0,
+        project_dir: str = ChannelProvider.DEFAULT_PROJECT_DIR,
+) -> dict[str, Any]:
+    """
+    Measure polygon-site alignment and normal-distance deviations per atom.
+
+    Supply exactly one of inline `atoms` (with optional aligned `atom_ids`) or `file_name`. Distances
+    are in Å. Targets default to the element constants; near-wall classification and alignment
+    tolerance use the same project defaults as `validate_structure`. Central atoms are explicitly
+    exempt. The report measures and flags the -8%/+10% corridor by default but never accepts a
+    model or writes a file.
+    """
+    inter_atoms: IPoints = _resolve_atoms(
+        project_dir, element, structure, atoms, file_name, atom_ids
+    )
+    carbon_channel: ICarbonHoneycombChannel = ChannelProvider.get_channel(
+        project_dir, element, structure
+    )
+    atom_params = ChannelProvider.get_atom_params(element)
+    validation_targets = ValidationTargetsBuilder.build(
+        project_dir,
+        element,
+        structure,
+        carbon_channel,
+        near_wall_max_dist_to_plane=near_wall_max_dist_to_plane,
+        opposite_position_tolerance=alignment_tolerance,
+    )
+    report: PolygonSiteMeasurementReport = PolygonReferenceAnalyzer.measure(
+        carbon_channel,
+        inter_atoms,
+        center_target=(
+            atom_params.PLACE_OPPOSITE_CENTERS_DIST if center_target is None else center_target
+        ),
+        face_target=atom_params.PLACE_OPPOSITE_FACES_DIST if face_target is None else face_target,
+        near_wall_max_dist_to_plane=validation_targets.near_wall_dist_to_plane_limit,
+        alignment_tolerance=validation_targets.opposite_position_tolerance,
+        corridor_lower_percent=corridor_lower_percent,
+        corridor_upper_percent=corridor_upper_percent,
+    )
+    return report.to_dict()
+
+
 ### DISTANCES ###
 
 
@@ -827,6 +963,17 @@ def list_run_checkpoints(
 
 
 ### HELPERS ###
+
+
+def _polygon_site_types(site_types: list[str] | None) -> tuple[PolygonSiteType, ...] | None:
+    """Validate and narrow public string values to supported polygon site types."""
+    if site_types is None:
+        return None
+    allowed: frozenset[str] = frozenset({"center", "vertex", "edge_midpoint"})
+    invalid: list[str] = sorted(set(site_types) - allowed)
+    if invalid:
+        raise ValueError(f"Unknown site_types {invalid}; expected values from {sorted(allowed)}.")
+    return tuple(cast(PolygonSiteType, site_type) for site_type in site_types)
 
 
 def _get_plane(carbon_channel: ICarbonHoneycombChannel, plane_index: int) -> ICarbonHoneycombPlane:

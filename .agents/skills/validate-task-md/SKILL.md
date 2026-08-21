@@ -122,7 +122,7 @@ When the task changes calculations or model construction, verify:
 The task should name proportionate verification. Usually this includes focused unit tests and:
 
 ```bash
-venv/bin/python -m pytest tests/ -q
+.venv/bin/python -m pytest tests/ -q
 ```
 
 For typed code, include Pyright checks for the changed surface and distinguish new diagnostics from

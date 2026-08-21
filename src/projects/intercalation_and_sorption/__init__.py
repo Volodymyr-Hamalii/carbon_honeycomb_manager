@@ -11,6 +11,7 @@ from .structure_operations import (
     InterAtomsEditor,
     InterAtomsFileManager,
     CandidateComparator,
+    PolygonReferenceAnalyzer,
 )
 from .validation import StructureValidator
 from .intercalation_and_sorption import IntercalationAndSorption

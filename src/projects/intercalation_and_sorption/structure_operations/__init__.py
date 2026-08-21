@@ -3,6 +3,7 @@ from .inter_atoms_optimizer import InterAtomsOptimizer
 from .inter_atoms_editor import InterAtomsEditor
 from .inter_atoms_file_manager import InterAtomsFileManager
 from .candidate_comparator import CandidateComparator
+from .polygon_reference_analyzer import PolygonReferenceAnalyzer
 
 __all__: list[str] = [
     "StructureTranslator",
@@ -10,4 +11,5 @@ __all__: list[str] = [
     "InterAtomsEditor",
     "InterAtomsFileManager",
     "CandidateComparator",
+    "PolygonReferenceAnalyzer",
 ]

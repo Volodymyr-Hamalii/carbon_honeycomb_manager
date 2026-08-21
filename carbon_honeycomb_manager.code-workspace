@@ -1,8 +1,8 @@
 {
   "folders": [
     {
-      "path": "."
-    }
+      "path": ".",
+    },
   ],
   "settings": {
     "files.autoSave": "afterDelay",
@@ -10,21 +10,21 @@
     "editor.formatOnPaste": true,
     "editor.formatOnSave": true,
     "editor.formatOnType": true,
-    "python.defaultInterpreterPath": "venv/bin/python3.12",
+    "python.defaultInterpreterPath": ".venv/bin/python3.12",
     "python.terminal.activateEnvironment": true,
     "python.analysis.autoFormatStrings": true,
     "python.analysis.inlayHints.functionReturnTypes": true,
     "python.analysis.inlayHints.pytestParameters": true,
     "python.analysis.inlayHints.variableTypes": true,
     "[python]": {
-      "editor.defaultFormatter": "ms-python.autopep8"
+      "editor.defaultFormatter": "ms-python.autopep8",
     },
     "autopep8.args": ["--max-line-length", "120", "--experimental"],
     "code-runner.executorMap": {
-      "python": "venv/bin/python3.12 -u"
+      "python": ".venv/bin/python3.12 -u",
     },
     "python.languageServer": "None",
     "cursorpyright.analysis.inlayHints.functionReturnTypes": true,
-    "cursorpyright.analysis.inlayHints.variableTypes": true
-  }
+    "cursorpyright.analysis.inlayHints.variableTypes": true,
+  },
 }

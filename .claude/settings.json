@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__carbon-honeycomb-manager__get_polygon_reference_sites",
+      "mcp__carbon-honeycomb-manager__generate_atoms_at_polygon_sites",
+      "mcp__carbon-honeycomb-manager__measure_polygon_site_distances"
+    ]
+  }
+}

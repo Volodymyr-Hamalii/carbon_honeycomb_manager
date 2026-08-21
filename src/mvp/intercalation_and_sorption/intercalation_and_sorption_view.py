@@ -107,6 +107,10 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
             op_col2, "Get distance matrix",
             self._on_get_distance_matrix
         )
+        self.operation_buttons["get_polygon_site_distances"] = self.template.pack_button(
+            op_col2, "Get polygon-site distances",
+            self._on_get_polygon_site_distances
+        )
         self.operation_buttons["get_inter_chc_constants"] = self.template.pack_button(
             op_col2, "Get intercalation constants",
             self._on_get_inter_chc_constants
@@ -322,9 +326,9 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
 
         return settings
 
-    def set_intercalation_parameters(self, params: dict[str, Any]) -> None:
+    def set_intercalation_parameters(self, parameters: dict[str, Any]) -> None:
         """Set intercalation parameters in the UI."""
-        for key, value in params.items():
+        for key, value in parameters.items():
             if key in self.intercalation_params:
                 self.intercalation_params[key].set_value(str(value))
 
@@ -417,6 +421,25 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
         )
 
         table.pack(fill="both", expand=True, padx=2, pady=2)  # Reduced padding
+
+    def display_polygon_site_distances(
+        self, measurements: pd.DataFrame, selected_file: str
+    ) -> None:
+        """Display read-only polygon-site measurements for the selected file."""
+        details_window = ScrollableToplevel(self)
+        details_window.title("Polygon-site distances")
+        width: int = min(len(measurements.columns) * 65 + 100, 1200)
+        height: int = min(len(measurements) * 27 + 120, 1000)
+        details_window.geometry(f"{width}x{height}")
+        container: ctk.CTkFrame = ctk.CTkFrame(details_window)
+        container.pack(fill="both", expand=True, padx=10, pady=10)
+        table: Table = Table(
+            data=measurements,
+            master=container,
+            title=selected_file,
+            to_show_index=True,
+        )
+        table.pack(fill="both", expand=True, padx=2, pady=2)
 
     def display_channel_constants(self, constants: pd.DataFrame) -> None:
         """Display channel constants in the UI."""
@@ -515,6 +538,11 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
         if "get_distance_matrix" in self.callbacks:
             self.callbacks["get_distance_matrix"]()
             self.refresh_files_after_action()
+
+    def _on_get_polygon_site_distances(self) -> None:
+        """Handle the read-only polygon-site measurement action."""
+        if "get_polygon_site_distances" in self.callbacks:
+            self.callbacks["get_polygon_site_distances"]()
 
     def _on_get_inter_chc_constants(self) -> None:
         """Handle get intercalation constants button click."""

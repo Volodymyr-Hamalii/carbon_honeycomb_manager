@@ -3,7 +3,7 @@ RasMol
 
 .env
 .DS_Store
-venv
+.venv
 __pycache__
 
 old_gui_logic/*

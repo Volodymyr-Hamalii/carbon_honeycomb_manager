@@ -31,7 +31,7 @@ build_app_for_windows.bat
 ### Running the Tests
 
 ```bash
-venv/bin/python -m pytest tests/ -q
+.venv/bin/python -m pytest tests/ -q
 ```
 
 The suite runs against a synthetic carbon channel built in `tests/conftest.py`, not against the data

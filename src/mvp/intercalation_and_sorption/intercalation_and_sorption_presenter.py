@@ -47,6 +47,7 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
             "update_inter_channel_coordinates": self._handle_update_inter_channel_coordinates,
             "save_distance_matrix": self._handle_save_distance_matrix,
             "get_distance_matrix": self._handle_get_distance_matrix,
+            "get_polygon_site_distances": self._handle_get_polygon_site_distances,
             "get_inter_chc_constants": self._handle_get_inter_chc_constants,
             "translate_inter_to_all_channels_plot": self._handle_translate_inter_to_all_channels_plot,
             "translate_inter_to_all_channels_generate": self._handle_translate_inter_to_all_channels_generate,
@@ -686,6 +687,31 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
 
         except Exception as e:
             self.on_operation_failed("get_distance_matrix", e)
+
+    def _handle_get_polygon_site_distances(self) -> None:
+        """Measure polygon-site distances for the selected file without writing output."""
+        try:
+            if not self._current_context:
+                self.view.show_operation_error("No context available. Please reload the window.")
+                return
+            params: PMvpParams = self.model.get_mvp_params()
+            selected_file: str = self.view.get_selected_file()
+            if not selected_file or selected_file == "No files found":
+                self.view.show_operation_error("Select an intercalated structure file first.")
+                return
+            params.file_name = selected_file
+            measurements: pd.DataFrame = IntercalationAndSorption.get_polygon_site_distances(
+                project_dir=self._current_context["project_dir"],
+                subproject_dir=self._current_context["subproject_dir"],
+                structure_dir=self._current_context["structure_dir"],
+                params=params,
+            )
+            self.view.display_polygon_site_distances(measurements, selected_file)
+            self.on_operation_completed(
+                "get_polygon_site_distances", "Polygon-site distances retrieved"
+            )
+        except Exception as e:
+            self.on_operation_failed("get_polygon_site_distances", e)
 
     def _handle_get_inter_chc_constants(self) -> None:
         """Handle get intercalation constants callback."""

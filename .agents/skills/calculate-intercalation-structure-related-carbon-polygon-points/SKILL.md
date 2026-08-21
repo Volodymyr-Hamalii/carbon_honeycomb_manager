@@ -1,0 +1,96 @@
+---
+name: calculate-intercalation-structure-related-carbon-polygon-points
+description: Build, rebuild, and validate intercalated structures using carbon polygon centers, vertices, and edge midpoints, producing final_one_ch-v{i}[-{stacking}]-Codex.csv files.
+---
+
+# Calculate intercalation from carbon polygon points
+
+Build or rebuild one-channel intercalated structures by preferring exact alignment with polygon
+reference sites and using interpolated normal distances only when packing constraints require it.
+All geometry and edits go through the `carbon-honeycomb-manager` MCP server. The server measures;
+this skill owns the priorities and acceptance decisions.
+
+## Input and constants
+
+Require `element` and `structure`; verify them with `list_elements` and `list_structures`. An optional
+existing `file_name` means rebuild that model without overwriting it. Read
+`get_intercalation_constants(element, structure)` for every run. Never embed element-specific
+numbers in this skill. The current acceptance smoke target is Ar, but the procedure is
+element-agnostic and becomes usable for other elements when their constants are populated.
+
+Let:
+
+- `CENTER_TARGET` = `Place opposite centers distance (Å)`;
+- `FACE_TARGET` = `Place opposite faces distance (Å)`;
+- `TARGET_INTER` = `Distance between atoms (Å)`;
+- `HARD_MIN` = `Distance to remove too close atoms (Å)`.
+
+## Rules and priorities
+
+1. A near-wall atom should preferably project exactly onto a polygon center, any carbon vertex, or
+   the midpoint of any unique C-C pair whose strict 3D distance is below 1.65 Å. Centers use
+   `CENTER_TARGET`; vertices and edge midpoints use `FACE_TARGET` along the inward normal.
+2. All intercalated-neighbour distances should be as close as possible to `TARGET_INTER`.
+3. If exact alignment conflicts with packing, the hard floor, z-periodicity, or symmetry, use the
+   target returned by `measure_polygon_site_distances`: it interpolates between center and face
+   targets from the in-plane distances. Exact alignment remains preferable.
+4. The model must self-repeat along Oz. A valid elementary cell may span multiple carbon periods.
+5. Maximize filling while retaining meaningfully different trade-off models.
+
+Central atoms are explicitly exempt from polygon-site targets and are governed by intercalated-
+neighbour spacing. For near-wall atoms, normal deviation must normally lie in the -8%/+10%
+corridor. No atom pair may ever violate `HARD_MIN`; this outranks every soft objective.
+
+## Search loop
+
+- Explore at most 5 structurally distinct candidate branches. A correction round is not a new
+  branch.
+- Stop a branch after 4 consecutive validation rounds without meaningful improvement. There is no
+  fixed iteration cap while metrics continue improving.
+- A meaningful improvement is: a transition to an exact site normal, lower absolute polygon-site
+  deviation, fewer corridor violations, better inter-atom distances, denser filling, or a better z
+  seam without weakening a higher-priority hard constraint.
+- Call `save_run_checkpoint` after the baseline and every meaningful generate/edit/validate round. Include
+  aligned `atoms` and `atom_ids`, branch number, metrics, no-improvement count, last edit, next
+  hypothesis, and accepted variants. Resume from `list_run_checkpoints` / `load_run_checkpoint`.
+- Before accepting a model, use `compare_structures` against all accepted models with the carbon z
+  period and `distinct_rmsd_threshold=0.4`. Different atom counts are distinct; otherwise require a
+  genuinely different packing.
+
+## Procedure
+
+1. Read channel parameters and constants. Call `get_polygon_reference_sites` in summary mode, then
+   request only the site types or walls needed for the current branch.
+2. For a new model, call `generate_atoms_at_polygon_sites`. It is a pure source of candidates and
+   deliberately does not merge close positions. Create different branches by choosing different
+   symmetric subsets or stacking patterns. For rebuild, use `read_inter_atoms(file_name)` as the
+   baseline and never use that source name as an output.
+3. Keep coordinates and stable `atom_id` aligned. Prefer `selected_atom_ids` for
+   `delete_atoms`, `move_atoms_on_vector`, `move_atoms_to_channel_center`, and
+   `move_atoms_along_plane_normal`.
+4. After every meaningful correction round, run both:
+   - `measure_polygon_site_distances` for exact/interpolated normal targets and central exemptions;
+   - `validate_structure` for the hard floor, inter-atom corridor, filling context, and
+     z-periodicity.
+5. Resolve conflicts in this order: hard floor; exact polygon-site placement when feasible;
+   polygon normal corridor; inter-atom packing; z seam and symmetry; filling. A change must not fix
+   a lower objective by breaking a satisfied hard constraint.
+6. For near-wall corrections, use the measured `recommended_inward_shift`: positive moves inward,
+   negative moves toward the wall. Re-measure after moving; do not assume the nearest site or wall
+   stayed the same. For central atoms, ignore polygon recommendations and optimize only packing and
+   periodicity.
+7. Build the elementary z-cell, replicate with `translate_atoms_along_z` where needed, and validate
+   the seam. Keep distinct, defensible compromises as separate accepted variants.
+8. Before writing, re-run both reports on the exact final inline coordinates. Require no hard-floor
+   violations, a valid z-periodic explanation, and explicitly disclose any remaining soft corridor
+   violation. Do not write an empty or duplicate model.
+9. Write only through `write_final_structure`, with `author="Codex"`. The result must be
+   `final_one_ch-v{i}[-{stacking}]-Codex.csv`; never create an intermediate coordinate file and
+   never create `final_all_ch-*`.
+
+## Final report
+
+For each written version report: file name and atom count; all four targets; near-wall versus
+central counts; alignment counts for center, vertex, edge midpoint, and interpolation; min/mean/max
+normal deviation and violating atom IDs; inter-atom min/mean/max and hard-floor result; z repeat and
+seam; filling/diversity rationale; and the specific trade-off versus other versions.

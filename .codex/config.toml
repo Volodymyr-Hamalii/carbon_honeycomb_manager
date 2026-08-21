@@ -1,5 +1,5 @@
 [mcp_servers.carbon-honeycomb-manager]
-command = "venv/bin/python"
+command = ".venv/bin/python"
 args = [
     "-m",
     "src.mcp_server",

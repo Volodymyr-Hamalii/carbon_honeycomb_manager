@@ -11,7 +11,12 @@ from src.interfaces import (
     ICarbonHoneycombChannel,
     PMvpParams,
 )
-from src.entities import Points
+from src.entities import (
+    Points,
+    PolygonReferenceSite,
+    PolygonSiteMeasurementReport,
+    PolygonSiteType,
+)
 from src.services import (
     Constants,
     ConstantsAtomParams,
@@ -30,6 +35,7 @@ from .build_intercalated_structure import (
     InterAtomsParser,
     InterAtomsTranslator,
 )
+from .structure_operations import InterAtomsFileManager, PolygonReferenceAnalyzer
 
 
 logger = Logger("IntercalationAndSorption")
@@ -345,6 +351,12 @@ class IntercalationAndSorption:
             "Distance to replace nearby atoms (Å)": round(atom_params.DIST_TO_REPLACE_NEARBY_ATOMS, 4),
             "Distance to remove too close atoms (Å)": round(atom_params.MIN_ALLOWED_DIST_BETWEEN_ATOMS, 4),
             f"Average {atom_params.ATOM_SYMBOL}-C distance (Å)": round(float(mean_inter_c_dist), 4),
+            "Place opposite centers distance (Å)": round(
+                atom_params.PLACE_OPPOSITE_CENTERS_DIST, 4
+            ),
+            "Place opposite faces distance (Å)": round(
+                atom_params.PLACE_OPPOSITE_FACES_DIST, 4
+            ),
         }
 
         # Convert the dictionary to a DataFrame
@@ -353,6 +365,69 @@ class IntercalationAndSorption:
         ).reset_index().rename(columns={'index': 'Name'})
 
         return intercalation_constants_df
+
+    @staticmethod
+    def get_polygon_reference_sites(
+        carbon_channel: ICarbonHoneycombChannel,
+        site_types: tuple[PolygonSiteType, ...] | None = None,
+        wall_indexes: tuple[int, ...] | None = None,
+    ) -> tuple[PolygonReferenceSite, ...]:
+        """Return polygon-reference sites for an already built channel."""
+        return PolygonReferenceAnalyzer.get_reference_sites(
+            carbon_channel, site_types=site_types, wall_indexes=wall_indexes
+        )
+
+    @staticmethod
+    def measure_polygon_site_distances(
+        carbon_channel: ICarbonHoneycombChannel,
+        inter_atoms: IPoints,
+        atom_params: ConstantsAtomParams,
+        near_wall_max_dist_to_plane: float,
+        alignment_tolerance: float,
+    ) -> PolygonSiteMeasurementReport:
+        """Measure polygon-site distances using explicit project-resolved defaults."""
+        return PolygonReferenceAnalyzer.measure(
+            carbon_channel=carbon_channel,
+            inter_atoms=inter_atoms,
+            center_target=atom_params.PLACE_OPPOSITE_CENTERS_DIST,
+            face_target=atom_params.PLACE_OPPOSITE_FACES_DIST,
+            near_wall_max_dist_to_plane=near_wall_max_dist_to_plane,
+            alignment_tolerance=alignment_tolerance,
+        )
+
+    @staticmethod
+    def get_polygon_site_distances(
+        project_dir: str,
+        subproject_dir: str,
+        structure_dir: str,
+        params: PMvpParams,
+    ) -> pd.DataFrame:
+        """Read the selected file and return its polygon-site measurement table."""
+        if params.file_name is None:
+            raise ValueError("File name is required")
+        atom_params: ConstantsAtomParams = ATOM_PARAMS_MAP[subproject_dir.lower()]
+        carbon_channel: ICarbonHoneycombChannel = CarbonHoneycombModeller.build_carbon_channel(
+            project_dir, subproject_dir, structure_dir, file_name=Constants.file_names.INIT_DAT_FILE
+        )
+        inter_atoms: IPoints = InterAtomsFileManager.read_inter_atoms(
+            project_dir, subproject_dir, structure_dir, params.file_name
+        )
+        min_carbon_distances: NDArray[np.float64] = (
+            DistanceMeasurer.calculate_min_distances_between_points(carbon_channel.points)
+        )
+        target_to_carbon: float = float(np.mean((
+            float(np.mean(min_carbon_distances)),
+            atom_params.DIST_BETWEEN_ATOMS,
+        )))
+        report: PolygonSiteMeasurementReport = PolygonReferenceAnalyzer.measure(
+            carbon_channel,
+            inter_atoms,
+            atom_params.PLACE_OPPOSITE_CENTERS_DIST,
+            atom_params.PLACE_OPPOSITE_FACES_DIST,
+            near_wall_max_dist_to_plane=target_to_carbon * 1.10,
+            alignment_tolerance=float(carbon_channel.ave_dist_between_closest_atoms) / 2.0,
+        )
+        return pd.DataFrame([row.to_dict() for row in report.rows])
 
     @classmethod
     def update_inter_channel_coordinates(
