@@ -450,19 +450,16 @@ class IntercalationAndSorption:
         inter_atoms: IPoints = InterAtomsFileManager.read_inter_atoms(
             project_dir, subproject_dir, structure_dir, params.file_name
         )
-        min_carbon_distances: NDArray[np.float64] = (
-            DistanceMeasurer.calculate_min_distances_between_points(carbon_channel.points)
-        )
-        target_to_carbon: float = float(np.mean((
-            float(np.mean(min_carbon_distances)),
-            atom_params.DIST_BETWEEN_ATOMS,
-        )))
+        polygon_near_wall_limit: float = max(
+            atom_params.PLACE_OPPOSITE_CENTERS_DIST,
+            atom_params.PLACE_OPPOSITE_FACES_DIST,
+        ) * 1.10
         report: PolygonSiteMeasurementReport = PolygonReferenceAnalyzer.measure(
             carbon_channel,
             inter_atoms,
             atom_params.PLACE_OPPOSITE_CENTERS_DIST,
             atom_params.PLACE_OPPOSITE_FACES_DIST,
-            near_wall_max_dist_to_plane=target_to_carbon * 1.10,
+            near_wall_max_dist_to_plane=polygon_near_wall_limit,
             alignment_tolerance=float(carbon_channel.ave_dist_between_closest_atoms) / 2.0,
             reference_wall_indexes=(
                 IntercalationAndSorption._polygon_reference_walls_from_atom_ids(
