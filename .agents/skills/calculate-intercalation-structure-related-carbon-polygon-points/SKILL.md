@@ -25,6 +25,7 @@ Let:
 - `CENTER_TARGET` = `Place opposite centers distance (Å)`;
 - `FACE_TARGET` = `Place opposite faces distance (Å)`;
 - `TARGET_INTER` = `Distance between atoms (Å)`;
+- `INTER_LOWER` = `TARGET_INTER × 0.92`;
 - `HARD_MIN` = `Distance to remove too close atoms (Å)`.
 - `POLYGON_NEAR_WALL_LIMIT` = `max(CENTER_TARGET, FACE_TARGET) × 1.10`.
 
@@ -38,7 +39,9 @@ ordinary carbon-corridor default is smaller than the polygon normal targets.
 1. A near-wall atom should preferably project exactly onto a polygon center, any carbon vertex, or
    the midpoint of any unique C-C pair whose strict 3D distance is below 1.65 Å. Centers use
    `CENTER_TARGET`; vertices and edge midpoints use `FACE_TARGET` along the inward normal.
-2. All intercalated-neighbour distances should be as close as possible to `TARGET_INTER`.
+2. All intercalated-neighbour distances should be as close as possible to `TARGET_INTER`. No
+   nearest-neighbour distance may be below `INTER_LOWER`; this is an acceptance gate, not a soft
+   packing preference.
 3. If exact alignment conflicts with packing, the hard floor, z-periodicity, or symmetry, use the
    target returned by `measure_polygon_site_distances`: it interpolates between center and face
    targets from the in-plane distances. Exact alignment remains preferable.
@@ -49,7 +52,11 @@ An interior atom in an ordinary or wide channel may be exempt from polygon-site 
 governed by intercalated-neighbour spacing. A narrow-channel atom is **not** exempt merely because
 it lies close to the channel center: retain its assigned source wall and site provenance and
 measure it against that wall. For wall-assigned atoms, normal deviation must normally lie in the
--8%/+10% corridor. No atom pair may ever violate `HARD_MIN`; this outranks every soft objective.
+-8%/+10% corridor. A valid assigned-wall target must also pass the global nearest-carbon corridor
+reported by `validate_structure`; crossing the medial axis can otherwise place the atom correctly
+relative to its source wall but too close to carbon on another wall. No atom pair may ever violate
+`HARD_MIN`, and no nearest intercalated pair may fall below `INTER_LOWER`. These constraints outrank
+polygon alignment and every soft objective.
 
 ## Narrow-channel wall-first mode
 
@@ -86,7 +93,9 @@ or radial symmetrization as an objective in this mode.
   fixed iteration cap while metrics continue improving.
 - A meaningful improvement is: a transition to an exact site normal, lower absolute polygon-site
   deviation, fewer corridor violations, better inter-atom distances, denser filling, or a better z
-  seam without weakening a higher-priority hard constraint.
+  seam without weakening a higher-priority constraint. Adding atoms while any finite or periodic
+  nearest-neighbour distance remains below `INTER_LOWER`, or while any non-exempt near-wall atom
+  remains outside the global nearest-carbon corridor, is not an improvement.
 - Call `save_run_checkpoint` after the baseline and every meaningful generate/edit/validate round. Include
   aligned `atoms` and `atom_ids`, branch number, metrics, no-improvement count, last edit, next
   hypothesis, and accepted variants. Resume from `list_run_checkpoints` / `load_run_checkpoint`.
@@ -113,10 +122,15 @@ or radial symmetrization as an objective in this mode.
    - `measure_polygon_site_distances` for exact/interpolated normal targets and legitimate central
      exemptions, with explicit reference-wall arguments for narrow-mode wall-assigned atoms;
    - `validate_structure` for the hard floor, inter-atom corridor, filling context, and
-     z-periodicity.
-5. Resolve conflicts in this order: hard floor; exact polygon-site placement when feasible;
-   polygon normal corridor; inter-atom packing; z seam and symmetry; filling. A change must not fix
-   a lower objective by breaking a satisfied hard constraint.
+     z-periodicity. Reject the candidate when `dist_between_inter_atoms_corridor_check` reports any
+     `atom_ids_below`, even if `hard_floor_check` passes. Also reject it when
+     `dist_to_carbon_corridor_check` reports any non-exempt atom below or above its global
+     nearest-carbon corridor; an exact source-wall normal is not an exception.
+5. Resolve conflicts in this order: hard floor; the global nearest-carbon corridor; the
+   `INTER_LOWER` finite-pair and periodic-seam gates; exact polygon-site placement when feasible;
+   polygon normal corridor; closeness to `TARGET_INTER`; z seam and symmetry; filling. Reduce
+   filling or give up exact site alignment rather than accept a global carbon-corridor violation or
+   an intercalated-neighbour distance below `INTER_LOWER`.
 6. For wall-relative corrections, use the measured `recommended_inward_shift`: positive moves
    inward, negative moves toward the assigned wall. Re-measure after moving. In ordinary mode, do
    not assume the nearest site or wall stayed the same. In narrow mode, preserve the explicit wall
@@ -127,13 +141,18 @@ or radial symmetrization as an objective in this mode.
    the seam. Once the intended cell spans a known number of carbon periods, pass that value as
    `required_z_period_multiplier` to both `validate_structure` and `write_final_structure`; do not
    let an incidental shorter match in a finite sample redefine the cell. `hard_floor_check` must
-   pass for both explicit pairs and
-   `periodic_seam_min_distance`; reject any cell whose seam is below `HARD_MIN`, even if its finite
-   coordinates and `z_periodicity_check` otherwise pass. Keep distinct, defensible compromises as
-   separate accepted variants.
+   pass for both explicit pairs and `periodic_seam_min_distance`. The seam must also be at least
+   `INTER_LOWER`; reject any cell below that stricter limit even if its finite coordinates,
+   `hard_floor_check`, and `z_periodicity_check` otherwise pass. Keep distinct, defensible
+   compromises as separate accepted variants.
 8. Before writing, re-run both reports on the exact final inline coordinates. Require no hard-floor
-   violations, a valid z-periodic explanation, and explicitly disclose any remaining soft corridor
-   violation. Do not write an empty or duplicate model.
+   violations, a passed `dist_to_carbon_corridor_check`, no `atom_ids_below` in the inter-atom
+   corridor check,
+   `periodic_seam_min_distance >= INTER_LOWER`, and a valid z-periodic explanation. An upper
+   inter-atom expansion or another soft corridor violation may be disclosed as a trade-off, but
+   lower inter-atom compression and global nearest-carbon corridor violations may not. Pass
+   `dist_to_carbon_corridor_check` among the `required_checks` to `write_final_structure`. Do not
+   write an empty or duplicate model.
 9. Write only through `write_final_structure`, with `author="Codex"`. The result must be
    `final_one_ch-v{i}[-{stacking}]-Codex.csv`; never create an intermediate coordinate file and
    never create `final_all_ch-*`.
@@ -141,7 +160,10 @@ or radial symmetrization as an objective in this mode.
 ## Final report
 
 For each written version report: file name and atom count; channel mode; primary wall and the
-per-atom wall-assignment strategy; all four targets; wall-assigned versus legitimately exempt
-central counts; alignment counts for center, vertex, edge midpoint, and interpolation; min/mean/max
-normal deviation and violating atom IDs; inter-atom min/mean/max and hard-floor result; z repeat and
-seam; filling/diversity rationale; and the specific trade-off versus other versions.
+per-atom wall-assignment strategy; all targets including `INTER_LOWER`; wall-assigned versus
+legitimately exempt central counts; alignment counts for center, vertex, edge midpoint, and
+interpolation; min/mean/max
+normal deviation and violating atom IDs; inter-atom min/mean/max, below-limit atom IDs, and
+hard-floor result; global nearest-carbon min/mean/max and corridor result; z repeat and seam with an
+explicit `INTER_LOWER` comparison; filling/diversity rationale; and the specific trade-off versus
+other versions.
