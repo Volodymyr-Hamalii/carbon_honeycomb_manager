@@ -33,6 +33,9 @@ Pass `POLYGON_NEAR_WALL_LIMIT` as `near_wall_max_dist_to_plane` to both
 `measure_polygon_site_distances` and `validate_structure`. This keeps both reports on the same
 near-wall/central definition and avoids accidentally exempting exact polygon candidates when the
 ordinary carbon-corridor default is smaller than the polygon normal targets.
+Pass the polygon corridor to `measure_polygon_site_distances` with its signed API values:
+`corridor_lower_percent=-8` and `corridor_upper_percent=10`. Do not pass positive `8` as the
+lower value; that would incorrectly classify even zero-deviation exact targets as violations.
 
 ## Rules and priorities
 
@@ -49,21 +52,60 @@ ordinary carbon-corridor default is smaller than the polygon normal targets.
 5. Maximize filling while retaining meaningfully different trade-off models.
 
 An interior atom in an ordinary or wide channel may be exempt from polygon-site targets and be
-governed by intercalated-neighbour spacing. A narrow-channel atom is **not** exempt merely because
-it lies close to the channel center. Source-wall provenance may guide generation and one edit, but
+governed by intercalated-neighbour spacing. Finding only central-exempt models does not finish the
+search: also attempt at least one exact-normal wall-assigned alternative as described below. A
+narrow-channel atom is **not** exempt merely because it lies close to the channel center.
+Source-wall provenance may guide generation and one edit, but
 the atom's current nearest wall governs every acceptance decision. After any movement, re-detect
 that wall and apply the center/vertex/edge target and the -8%/+10% normal corridor relative to it.
 Every non-exempt near-wall atom must pass this polygon-normal corridor; it is a hard acceptance
 gate, not a soft preference. The model must also pass the global nearest-carbon corridor reported
-by `validate_structure`. No atom pair may ever violate `HARD_MIN`, and no nearest intercalated pair
+by `validate_structure`, except for the explicitly defined upper-bound exception for an
+exact-normal alternative. No atom pair may ever violate `HARD_MIN`, and no nearest intercalated pair
 may fall below `INTER_LOWER`. These constraints outrank filling, symmetry, visual quality, and
 every soft objective.
 
-Never write a final CSV when any critical gate fails: polygon-normal corridor, global
-nearest-carbon corridor, `INTER_LOWER` for finite pairs or the periodic seam, hard floor, or
-z-periodicity. Keep a promising but invalid geometry only in a run checkpoint. If the user
+Never write a final CSV when any critical gate fails: polygon-normal corridor, the applicable
+nearest-carbon gate, `INTER_LOWER` for finite pairs or the periodic seam, hard floor, or
+z-periodicity. The sole nearest-carbon exception is the documented upper-bound exception for an
+exact-normal alternative; the lower bound remains a gate. Keep a promising but invalid geometry
+only in a run checkpoint. If the user
 explicitly asks to preserve an invalid illustrative structure, its filename and report must say
 `INVALID` and name the failed gate; never present it as an accepted `final_one_ch-*` model.
+
+## Exact-normal alternative after a central-only result
+
+If the accepted or best surviving models contain only central-exempt atoms, keep those models but
+do not stop there. Use one or more remaining candidate branches to try to produce at least one
+wall-assigned model whose authoritative nearest-wall normal distances equal the physical targets:
+`CENTER_TARGET` for center alignment and `FACE_TARGET` for vertex or edge-midpoint alignment.
+
+1. Try a deterministic base wall first, but do not require an Oy-oriented wall. If exact candidates
+   cross a medial boundary, compress too strongly, or cannot form a valid periodic packing, try
+   other wall indexes and site types before concluding that no exact-normal alternative exists.
+2. Generate candidates from concrete sites with `generate_atoms_at_polygon_sites`; do not obtain
+   this alternative by moving atoms toward the channel center. Preserve the generated source wall
+   only as provenance. Re-measure without reference-wall overrides and retain an atom only when its
+   source wall is still its authoritative nearest wall, its projection remains aligned with the
+   intended center/vertex/edge site, and its actual normal distance matches that site's target
+   within the alignment tolerance used by the report. An interpolated target does not qualify as
+   the required exact-normal alternative.
+3. Reduce filling, change z stacking, mix walls, or use a longer elementary z-cell as needed. Keep
+   `HARD_MIN`, `INTER_LOWER` for finite pairs and the periodic seam, polygon-normal validation, and
+   z-periodicity as hard gates.
+4. For this exact-normal alternative only, nearest-carbon distances above the global upper corridor
+   are an expected geometric consequence when the target normal itself exceeds that upper bound.
+   Such atoms may use an `exact_normal_upper_exempt` acceptance classification if every condition
+   in step 2 holds. Nearest-carbon distances below the global lower bound are never exempt. Any atom
+   that is off-site, interpolated, referenced to a non-nearest wall, or merely inside the normal
+   corridor rather than at the exact target remains subject to both nearest-carbon bounds.
+5. Report the ordinary `dist_to_carbon_corridor_check` unchanged for transparency, plus the exact
+   atom IDs, site types, walls, target/actual normal distances, and nearest-carbon values covered by
+   `exact_normal_upper_exempt`. When writing this alternative, do not require a failed unadjusted
+   `dist_to_carbon_corridor_check`; require all other checks and independently verify that every
+   above-upper atom qualifies for the exception. If the MCP writer cannot express the adjusted
+   check, omit only that check from `required_checks`, then reread and repeat the explicit
+   qualification audit before accepting the CSV.
 
 ## Narrow-channel wall-first mode
 
@@ -104,7 +146,8 @@ or radial symmetrization as an objective in this mode.
   seam without weakening a higher-priority constraint. A candidate is not improved or acceptable
   while any non-exempt atom fails the nearest-wall polygon-normal corridor, any finite or periodic
   nearest-neighbour distance is below `INTER_LOWER`, or any non-exempt near-wall atom is outside
-  the global nearest-carbon corridor.
+  the applicable nearest-carbon rule, including exact qualification for every claimed
+  `exact_normal_upper_exempt` atom.
 - Call `save_run_checkpoint` after the baseline and every meaningful generate/edit/validate round. Include
   aligned `atoms` and `atom_ids`, branch number, metrics, no-improvement count, last edit, next
   hypothesis, and accepted variants. Resume from `list_run_checkpoints` / `load_run_checkpoint`.
@@ -135,12 +178,16 @@ or radial symmetrization as an objective in this mode.
    - `validate_structure` for the hard floor, inter-atom corridor, filling context, and
      z-periodicity. Reject the candidate when `dist_between_inter_atoms_corridor_check` reports any
      `atom_ids_below`, even if `hard_floor_check` passes. Also reject it when
-     `dist_to_carbon_corridor_check` reports any non-exempt atom below or above its global
-     nearest-carbon corridor; an exact source-wall normal is not an exception.
-5. Resolve conflicts in this order: hard floor; the global nearest-carbon corridor; the
+   `dist_to_carbon_corridor_check` reports any non-exempt atom below or above its global
+   nearest-carbon corridor. The only upper-bound exception is a separately audited exact-normal
+   alternative satisfying every condition in that section; exact source-wall provenance alone is
+   insufficient.
+5. Resolve conflicts in this order: hard floor; the applicable nearest-carbon rule; the
    `INTER_LOWER` finite-pair and periodic-seam gates; the nearest-wall polygon-normal corridor;
    exact polygon-site placement when feasible; closeness to `TARGET_INTER`; z seam and symmetry;
    filling. Reduce filling or reject the branch rather than weaken any of the first four gates.
+   After a central-only result, reserve a branch for the exact-normal alternative and try other
+   walls before falling back to only the central model.
 6. For wall-relative corrections, use the measured `recommended_inward_shift`: positive moves
    inward, negative moves toward the current nearest wall. Re-measure after moving without reference-wall
    arguments in every mode; use the newly detected nearest wall for the next correction and for
@@ -157,13 +204,14 @@ or radial symmetrization as an objective in this mode.
    compromises as separate accepted variants.
 8. Before writing, re-run both reports on the exact final inline coordinates. Run the polygon
    report without reference-wall arguments. Require zero non-exempt
-   `corridor_violation_atom_ids`, no hard-floor violations, a passed
-   `dist_to_carbon_corridor_check`, no `atom_ids_below` in the inter-atom corridor check,
+   `corridor_violation_atom_ids`, no hard-floor violations, a passed applicable nearest-carbon
+   audit, no `atom_ids_below` in the inter-atom corridor check,
    `periodic_seam_min_distance >= INTER_LOWER`, and a valid z-periodic explanation. An upper
    inter-atom expansion or another soft corridor violation may be disclosed as a trade-off, but
-   lower inter-atom compression, polygon-normal violations, and global nearest-carbon corridor
-   violations may not. Pass `dist_to_carbon_corridor_check` among the `required_checks` to
-   `write_final_structure`. Do not write an empty, duplicate, or critically invalid model. After
+   lower inter-atom compression and polygon-normal violations may not. Ordinary models must pass
+   `dist_to_carbon_corridor_check` among the `required_checks` to `write_final_structure`.
+   Exact-normal alternatives may exceed only its upper bound and must follow the explicit audit and
+   writer procedure above. Do not write an empty, duplicate, or critically invalid model. After
    writing, read the CSV back and repeat both reports without reference-wall overrides; delete the
    output if serialization or nearest-wall reassignment makes any critical gate fail.
 9. Write only through `write_final_structure`, with `author="Claude"`. The result must be
@@ -177,7 +225,8 @@ per-atom wall-assignment strategy; all targets including `INTER_LOWER`; wall-ass
 legitimately exempt central counts; alignment counts for center, vertex, edge midpoint, and
 interpolation; min/mean/max
 normal deviation and violating atom IDs; inter-atom min/mean/max, below-limit atom IDs, and
-hard-floor result; global nearest-carbon min/mean/max and corridor result; z repeat and seam with an
+hard-floor result; global nearest-carbon min/mean/max and corridor result, including every
+`exact_normal_upper_exempt` atom when applicable; z repeat and seam with an
 explicit `INTER_LOWER` comparison; filling/diversity rationale; and the specific trade-off versus
 other versions. Report every atom whose authoritative nearest wall changed from its source wall.
 Report rejected branches separately and do not list them as written or accepted models.
