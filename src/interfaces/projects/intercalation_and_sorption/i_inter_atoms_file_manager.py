@@ -45,7 +45,8 @@ class IInterAtomsFileManager(ABC):
     def build_final_file_name(
             cls,
             version: int,
-            stacking: str | None = None,
+            stacking: str,
+            model_family: str | None = None,
             author: str = "Agent",
             num_of_channels: str = "one",
             file_format: str = "csv",
@@ -59,5 +60,7 @@ class IInterAtomsFileManager(ABC):
             project_dir: str,
             subproject_dir: str,
             structure_dir: str,
+            stacking: str,
+            model_family: str | None = None,
     ) -> int:
         ...

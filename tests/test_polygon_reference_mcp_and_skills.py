@@ -137,3 +137,20 @@ def test_codex_and_claude_polygon_skills_are_behaviorally_synchronized() -> None
         assert required in codex
     assert "author=\"Codex\"" in codex
     assert "author=\"Claude\"" in claude
+    assert "one_ch-polygon-{type}-v{i}-Codex.csv" in codex
+    assert 'model_family="polygon"' in codex
+    assert "ABCABC" in codex
+    assert "ABCDABCD" in codex
+
+
+def test_codex_and_claude_carbon_atom_skills_are_behaviorally_synchronized() -> None:
+    """Keep ordered-layer and output naming rules identical for both agents."""
+    root = Path(__file__).resolve().parent.parent
+    codex_path = root / ".agents/skills/calculate-intercalation-structure-related-carbon-atoms/SKILL.md"
+    claude_path = root / ".claude/skills/calculate-intercalation-structure-related-carbon-atoms/SKILL.md"
+    codex = codex_path.read_text(encoding="utf-8")
+    claude = claude_path.read_text(encoding="utf-8")
+
+    assert codex.replace("Codex", "AGENT") == claude.replace("Claude", "AGENT")
+    assert "one_ch-{type}-v{i}-Codex.csv" in codex
+    assert "at most four unique" in codex

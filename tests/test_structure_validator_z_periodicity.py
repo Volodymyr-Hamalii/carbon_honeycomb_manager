@@ -115,6 +115,23 @@ def test_check_z_periodicity_reports_the_repeat_length_and_the_seam() -> None:
     assert result["seam"]["min_dist_across_seam"] == Z_PERIOD
 
 
+def test_seam_excludes_a_floating_point_replica_on_the_cell_boundary() -> None:
+    """A repeated AB file must not report a zero-distance seam from its boundary replica."""
+    points: NDArray[np.float64] = np.array([
+        [0.0, 0.0, 1.674],
+        [1.384, 2.395, 4.168],
+        [0.0, 0.0, 6.662],
+        [1.384, 2.395, 9.156],
+    ])
+
+    result: dict = StructureValidator.check_z_periodicity(
+        points, 4.988, max_multiplier=3, required_multiplier=1
+    )
+
+    assert result["seam"]["num_of_atoms_in_cell"] == 2
+    assert result["seam"]["min_dist_across_seam"] > 3.45
+
+
 def test_check_z_periodicity_fails_when_no_multiplier_matches() -> None:
     # A column with an irregular spacing that no multiple of the carbon period can reproduce.
     points: NDArray[np.float64] = _column([0.0, 2.0, 7.5, 9.1, 20.3])

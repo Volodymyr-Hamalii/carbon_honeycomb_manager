@@ -295,7 +295,11 @@ class StructureValidator(IStructureValidator):
         the tiling creates a clash, a much larger one means it leaves a gap.
         """
         z_min: float = float(points[:, 2].min())
-        cell: NDArray[np.float64] = points[points[:, 2] < z_min + repeat_length]
+        upper_boundary: float = z_min + repeat_length
+        boundary_tolerance: float = 1e-9
+        cell: NDArray[np.float64] = points[
+            points[:, 2] < upper_boundary - boundary_tolerance
+        ]
 
         if len(cell) == 0:
             cell = points

@@ -104,14 +104,23 @@ def list_result_files(
         file_format: str | None = None,
         project_dir: str = ChannelProvider.DEFAULT_PROJECT_DIR,
 ) -> dict[str, Any]:
-    """List the result data files of the structure and the next free `final_one_ch-v{i}` version."""
+    """List result files and the next free version for every ordered layer type."""
     return {
         "files": InterAtomsFileManager.list_result_files(
             project_dir, element, structure, file_format=file_format
         ),
-        "next_final_version": InterAtomsFileManager.get_next_final_version(
-            project_dir, element, structure
-        ),
+        "next_final_versions": {
+            stacking: InterAtomsFileManager.get_next_final_version(
+                project_dir, element, structure, stacking
+            )
+            for stacking in sorted(InterAtomsFileManager.ALLOWED_STACKINGS)
+        },
+        "next_polygon_versions": {
+            stacking: InterAtomsFileManager.get_next_final_version(
+                project_dir, element, structure, stacking, model_family="polygon"
+            )
+            for stacking in sorted(InterAtomsFileManager.ALLOWED_STACKINGS)
+        },
         "result_data_dir": str(
             PathBuilder.build_path_to_result_data_dir(project_dir, element, structure)
         ),
@@ -306,9 +315,10 @@ def write_final_structure(
         element: str,
         structure: str,
         atoms: list[list[float]],
+        stacking: str,
+        model_family: str | None = None,
         atom_ids: list[str] | None = None,
         version: int | None = None,
-        stacking: str | None = None,
         author: str = "Agent",
         required_checks: list[str] | None = None,
         target_dist_to_carbon: float | None = None,
@@ -325,7 +335,7 @@ def write_final_structure(
         project_dir: str = ChannelProvider.DEFAULT_PROJECT_DIR,
 ) -> dict[str, Any]:
     """
-    Validate and write `final_one_ch-v{i}[-{stacking}]-{author}.csv`.
+    Validate and write `one_ch[-{model_family}]-{stacking}-v{i}-{author}.csv`.
 
     Validation is recomputed immediately before writing. `required_checks` defaults to
     `["hard_floor_check"]`; every named report check must contain `passed: true`. All targets are
@@ -364,11 +374,14 @@ def write_final_structure(
         raise ValueError(f"Refusing to write: required validation checks failed: {failed_checks}.")
 
     if version is None:
-        version = InterAtomsFileManager.get_next_final_version(project_dir, element, structure)
+        version = InterAtomsFileManager.get_next_final_version(
+            project_dir, element, structure, stacking, model_family=model_family
+        )
 
     file_name: str = InterAtomsFileManager.build_final_file_name(
         version=version,
         stacking=stacking,
+        model_family=model_family,
         author=author,
         num_of_channels="one",
         file_format="csv",

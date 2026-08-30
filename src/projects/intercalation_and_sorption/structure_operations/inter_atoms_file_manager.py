@@ -25,10 +25,17 @@ class InterAtomsFileManager(IInterAtomsFileManager):
     DEFAULT_SHEET_NAME: str = "Intercalated atoms"
 
     SUPPORTED_COORDINATE_FORMATS: frozenset[str] = frozenset({"csv", "xlsx", "dat"})
-    ALLOWED_STACKINGS: frozenset[str] = frozenset({"AA", "ABAB", "ABC", "ABCD"})
+    ALLOWED_STACKINGS: frozenset[str] = frozenset({"AA", "ABAB", "ABCABC", "ABCDABCD"})
+    ALLOWED_MODEL_FAMILIES: frozenset[str] = frozenset({"polygon"})
 
-    # final_one_ch-v3-ABC-Volod.csv -> num_of_channels="one", version=3, stacking="ABC", author="Volod"
+    # one_ch-polygon-ABCABC-v3-Volod.csv -> family="polygon", stacking="ABCABC", version=3
     FINAL_FILE_NAME_PATTERN: re.Pattern[str] = re.compile(
+        r"^(?P<num_of_channels>one|all)_ch-"
+        r"(?:(?P<model_family>polygon)-)?"
+        r"(?P<stacking>AA|ABAB|ABCABC|ABCDABCD)-v(?P<version>\d+)"
+        r"(?:-(?P<author>[A-Za-z0-9_-]+))?\.(?P<format>csv|xlsx)$"
+    )
+    LEGACY_FINAL_FILE_NAME_PATTERN: re.Pattern[str] = re.compile(
         r"^final_(?P<num_of_channels>one|all)_ch-v(?P<version>\d+)"
         r"(?:-(?P<stacking>AA|ABAB|ABC|ABCD))?"
         r"(?:-(?P<author>[A-Za-z0-9_-]+))?\.(?P<format>csv|xlsx)$"
@@ -130,15 +137,14 @@ class InterAtomsFileManager(IInterAtomsFileManager):
     def build_final_file_name(
             cls,
             version: int,
-            stacking: str | None = None,
+            stacking: str,
+            model_family: str | None = None,
             author: str = "Agent",
             num_of_channels: str = "one",
             file_format: str = "csv",
     ) -> str:
         """
-        Build `final_{one|all}_ch-v{version}[-{stacking}][-{author}].{format}`.
-
-        The `stacking` suffix is skipped for narrow structures where the stacking is not defined.
+        Build `{one|all}_ch[-{model_family}]-{stacking}-v{version}[-{author}].{format}`.
         """
         if num_of_channels not in ("one", "all"):
             raise ValueError(f"num_of_channels must be 'one' or 'all', got {num_of_channels!r}.")
@@ -146,8 +152,11 @@ class InterAtomsFileManager(IInterAtomsFileManager):
         if version < 1:
             raise ValueError(f"version must be a positive integer, got {version}.")
 
-        if stacking is not None and stacking not in cls.ALLOWED_STACKINGS:
+        if stacking not in cls.ALLOWED_STACKINGS:
             raise ValueError(f"Unsupported stacking {stacking!r}.")
+
+        if model_family is not None and model_family not in cls.ALLOWED_MODEL_FAMILIES:
+            raise ValueError(f"Unsupported model family {model_family!r}.")
 
         if author and re.fullmatch(r"[A-Za-z0-9_-]+", author) is None:
             raise ValueError("author may contain only letters, digits, underscores and hyphens.")
@@ -156,10 +165,8 @@ class InterAtomsFileManager(IInterAtomsFileManager):
         if normalized_format not in {"csv", "xlsx"}:
             raise ValueError("Final structures support only csv and legacy xlsx formats.")
 
-        name: str = f"final_{num_of_channels}_ch-v{version}"
-
-        if stacking:
-            name += f"-{stacking}"
+        family_part: str = "" if model_family is None else f"-{model_family}"
+        name: str = f"{num_of_channels}_ch{family_part}-{stacking}-v{version}"
 
         if author:
             name += f"-{author}"
@@ -172,8 +179,14 @@ class InterAtomsFileManager(IInterAtomsFileManager):
             project_dir: str,
             subproject_dir: str,
             structure_dir: str,
+            stacking: str,
+            model_family: str | None = None,
     ) -> int:
-        """Return the next free `v{i}` number for the `final_one_ch-*` files of the structure."""
+        """Return the next free version in one family and stacking type sequence."""
+        if stacking not in cls.ALLOWED_STACKINGS:
+            raise ValueError(f"Unsupported stacking {stacking!r}.")
+        if model_family is not None and model_family not in cls.ALLOWED_MODEL_FAMILIES:
+            raise ValueError(f"Unsupported model family {model_family!r}.")
         file_names: list[str] = cls.list_result_files(
             project_dir, subproject_dir, structure_dir, file_format=None
         )
@@ -181,7 +194,11 @@ class InterAtomsFileManager(IInterAtomsFileManager):
         versions: list[int] = []
         for file_name in file_names:
             match: re.Match[str] | None = cls.FINAL_FILE_NAME_PATTERN.match(file_name)
-            if match is not None:
+            if (
+                    match is not None
+                    and match.group("stacking") == stacking
+                    and match.group("model_family") == model_family
+            ):
                 versions.append(int(match.group("version")))
 
         return max(versions) + 1 if versions else 1
