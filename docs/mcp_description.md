@@ -180,7 +180,7 @@ before the server starts. If you add code to the server, log - do not print.
 | `list_projects`     | project directories under `data/projects`                                                                         |
 | `list_elements`     | elements with data, plus the elements the code supports                                                           |
 | `list_structures`   | init-data structure directories for an element (real subdirectories only, so stray `.DS_Store` files are skipped) |
-| `list_result_files` | result-data files of a structure and the next free `final_one_ch-v{i}` number                                     |
+| `list_result_files` | result-data files and the next free version per ordered layer type                                                  |
 
 **Metadata**
 
@@ -197,7 +197,7 @@ before the server starts. If you add code to the server, log - do not print.
 | ----------------------- | ------------------------------------------------------------------------------------------------------ |
 | `read_inter_atoms`      | reads coordinate `.csv` plus legacy `.xlsx` / `.dat` files                                             |
 | `write_inter_atoms`     | writes `atom_id, x_inter, y_inter, z_inter`; new files should use CSV                                  |
-| `write_final_structure` | revalidates required checks and writes a non-overwriting `final_one_ch-v{i}[-{stacking}]-{author}.csv` |
+| `write_final_structure` | revalidates required checks and writes `one_ch[-{family}]-{type}-v{i}-{author}.csv` without overwriting |
 | `get_distance_matrix`   | the GUI `Get distance matrix` for a saved file                                                         |
 
 **Generators** (the GUI buttons)

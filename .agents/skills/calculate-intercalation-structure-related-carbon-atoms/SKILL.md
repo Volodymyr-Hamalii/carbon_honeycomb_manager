@@ -1,12 +1,12 @@
 ---
 name: calculate-intercalation-structure-related-carbon-atoms
-description: Build and validate the positions of intercalated atoms inside a carbon honeycomb channel. Use when the user asks to calculate, build or check an intercalated structure for an element + carbon structure pair (e.g. "Розрахуй структуру для Ar A1-7_h3", "build the structure for Xe C0-7_h3"), producing final_one_ch-v{i}[-{stacking}]-Codex.csv files.
+description: Build and validate ordered, repeating layers of intercalated atoms inside a carbon honeycomb channel, producing one_ch-{type}-v{i}-Codex.csv files.
 ---
 
 # Calculate intercalated atom positions
 
 Build the coordinates of intercalated atoms inside one carbon honeycomb channel, validate them
-numerically and write them as `final_one_ch-v{i}[-{stacking}]-Codex.csv`.
+numerically and write them as `one_ch-{type}-v{i}-Codex.csv`.
 
 All geometry, measurement and file access goes through the `carbon-honeycomb-manager` MCP server
 (see `docs/mcp_description.md`). The server measures and edits but never judges: **the rules below
@@ -56,9 +56,12 @@ and `HARD_MIN` = `Distance to remove too close atoms (Å)`, all from
 3. **Placement opposite wall features.** Intercalated atoms - the ones near the walls in particular -
    normally sit on the normal to a wall, opposite a polygon center or an edge hole. The structure
    should be roughly symmetric.
-4. **Self-repeatability along z.** It must be possible to translate the channel together with the
-   intercalated atoms along Oz so that the structure maps onto itself. Sometimes a single belt of
-   atoms per carbon z period is enough; sometimes the elementary cell is several carbon periods tall.
+4. **Ordered, repeating layers along z.** A layer is the unordered set of atoms with the same z
+   coordinate. The sequence of layer `(x, y)` sets must repeat and contain at most four unique
+   layers. Use the explicit type names `AA`, `ABAB`, `ABCABC`, or `ABCDABCD`; the letters describe
+   equal `(x, y)` sets, not merely uniform z spacing. Every occurrence of the same letter must have
+   the same unordered `(x, y)` coordinates within coordinate precision. The combined carbon and
+   intercalated elementary cell must self-repeat along Oz and may span several carbon periods.
 5. **Maximum filling.** Prefer structures that fill the channel as densely as possible - but keep
    **every** reasonable filling variant as its own version, not only the densest one.
 
@@ -91,7 +94,7 @@ state in the report which trade-off each version makes.
 
 ### Existing reference files are context, not a target
 
-Legacy `final_one_ch-*.xlsx` and new `final_one_ch-*.csv` files under the structure's result directory
+Legacy `final_one_ch-*.xlsx` and generated `one_ch-*.csv` files under the structure's result directory
 show what an acceptable structure looks
 like. Your structures are **not required to match them** - a different, or even better, structure is a
 normal and expected outcome. Judge your result **only by the rules above**. Show the numbers so the
@@ -140,7 +143,7 @@ user can compare for themselves.
    `TARGET_INTER` from each other and from the near-wall shell - do **not** try to bring them closer
    to carbon. Their distance to the walls follows from the packing and will be far above `TARGET_C`;
    in the references it reaches +160%. Judge them by rule 2 only.
-6. **Make it repeat along z.** Build one belt or one elementary cell, then
+6. **Make ordered layers repeat along z.** Build a 1-4-layer template, then
    `translate_atoms_along_z` to fill the channel height. Confirm with the `z_periodicity_check`
    section of the report: `min_period_multiplier` must not be null, and
    `seam.min_dist_across_seam` must be close to `seam.min_dist_inside_cell` - a much smaller value
@@ -150,10 +153,11 @@ user can compare for themselves.
 8. **Validate before writing.** Run `validate_structure` on the final coordinates of each variant.
    `write_final_structure` recomputes validation and defaults to requiring `hard_floor_check`; still
    inspect the report first and fix or drop a variant that fails it.
-9. **Write.** `write_final_structure(element, structure, atoms, stacking=..., author="Codex")`.
-   Omit `stacking` unless the built structure clearly has one (`AA`, `ABAB`, `ABC`, `ABCD`); narrow
-   structures without a stacking pattern take no suffix. `version` defaults to the next free number
-   for that structure, so consecutive variants get consecutive versions.
+9. **Write.** Before writing, group atoms by z and explicitly audit that their unordered `(x, y)`
+   sets follow the declared type. Then call
+   `write_final_structure(element, structure, atoms, stacking=..., author="Codex")`. `stacking` is
+   required and is one of `AA`, `ABAB`, `ABCABC`, `ABCDABCD`; a one-layer narrow structure is `AA`.
+   The output is `one_ch-{type}-v{i}-Codex.csv`. Versioning is independent per type and starts at 1.
 10. **Report to the user in chat**, one block per version (see below). Do not write a separate report
     file unless the user asks.
 
@@ -166,7 +170,7 @@ The explicit checkpoint, not chat context alone, is the source of truth for resu
 Per written version:
 
 ```
-### final_one_ch-v{i}[-{stacking}]-Codex.csv  ({N} atoms)
+### one_ch-{type}-v{i}-Codex.csv  ({N} atoms)
 
 Targets (element {E}, structure {S}):
   Average {E}-C distance      {TARGET_C} Å
@@ -202,7 +206,7 @@ pass/fail criterion.
 - **`verified_by_overlap: false`** in `z_periodicity_check` means the structure is exactly one
   elementary cell tall, so nothing overlaps it to compare against. That is normal for a correctly
   built elementary cell - lean on the `seam` numbers in that case.
-- **Do not generate `final_all_ch-*` files.** The user generates those from your `final_one_ch-*`
+- **Do not generate `all_ch-*` files.** The user generates those from your `one_ch-*`
   after checking them.
 - **Do not use `generate_atoms_opposite_centers` / `generate_atoms_opposite_faces`** for this skill.
   They rely on the `place_opposite_centers` / `place_opposite_faces` constants, which belong to a

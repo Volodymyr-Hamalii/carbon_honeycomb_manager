@@ -1,6 +1,6 @@
 ---
 name: calculate-intercalation-structure-related-carbon-polygon-points
-description: Build, rebuild, and validate intercalated structures using carbon polygon centers, vertices, and edge midpoints, producing final_one_ch-v{i}[-{stacking}]-Codex.csv files.
+description: Build, rebuild, and validate ordered, repeating intercalated layers at carbon polygon centers, vertices, and edge midpoints, producing one_ch-polygon-{type}-v{i}-Codex.csv files.
 ---
 
 # Calculate intercalation from carbon polygon points
@@ -48,7 +48,11 @@ lower value; that would incorrectly classify even zero-deviation exact targets a
 3. If exact alignment conflicts with packing, the hard floor, z-periodicity, or symmetry, use the
    target returned by `measure_polygon_site_distances`: it interpolates between center and face
    targets from the in-plane distances. Exact alignment remains preferable.
-4. The model must self-repeat along Oz. A valid elementary cell may span multiple carbon periods.
+4. The model must have ordered layers and self-repeat along Oz. A layer is the unordered set of
+   atoms with the same z coordinate. Its `(x, y)` set must follow a repeating template with at most
+   four unique layers: `AA`, `ABAB`, `ABCABC`, or `ABCDABCD`. Equal letters mean equal unordered
+   `(x, y)` sets within coordinate precision; uniform z spacing alone is not an ordered type. A
+   valid combined carbon/intercalated elementary cell may span multiple carbon periods.
 5. Maximize filling while retaining meaningfully different trade-off models.
 
 An interior atom in an ordinary or wide channel may be exempt from polygon-site targets and be
@@ -71,7 +75,7 @@ z-periodicity. The sole nearest-carbon exception is the documented upper-bound e
 exact-normal alternative; the lower bound remains a gate. Keep a promising but invalid geometry
 only in a run checkpoint. If the user
 explicitly asks to preserve an invalid illustrative structure, its filename and report must say
-`INVALID` and name the failed gate; never present it as an accepted `final_one_ch-*` model.
+`INVALID` and name the failed gate; never present it as an accepted `one_ch-*` model.
 
 ## Exact-normal alternative after a central-only result
 
@@ -194,7 +198,8 @@ or radial symmetrization as an objective in this mode.
    acceptance. In narrow mode, never replace this correction with movement toward the channel
    center. Only a legitimately exempt interior atom may ignore polygon recommendations and
    optimize packing and periodicity alone.
-7. Build the elementary z-cell, replicate with `translate_atoms_along_z` where needed, and validate
+7. Build a 1-4-layer elementary z-template, replicate with `translate_atoms_along_z` where needed,
+   explicitly compare the unordered `(x, y)` set of every repeated layer, and validate
    the seam. Once the intended cell spans a known number of carbon periods, pass that value as
    `required_z_period_multiplier` to both `validate_structure` and `write_final_structure`; do not
    let an incidental shorter match in a finite sample redefine the cell. `hard_floor_check` must
@@ -214,9 +219,11 @@ or radial symmetrization as an objective in this mode.
    writer procedure above. Do not write an empty, duplicate, or critically invalid model. After
    writing, read the CSV back and repeat both reports without reference-wall overrides; delete the
    output if serialization or nearest-wall reassignment makes any critical gate fail.
-9. Write only through `write_final_structure`, with `author="Codex"`. The result must be
-   `final_one_ch-v{i}[-{stacking}]-Codex.csv`; never create an intermediate coordinate file and
-   never create `final_all_ch-*`.
+9. Write only through `write_final_structure`, with `author="Codex"`,
+   `model_family="polygon"`, and required `stacking` equal to `AA`, `ABAB`, `ABCABC`, or
+   `ABCDABCD`. A one-layer pattern is `AA`. The result must be
+   `one_ch-polygon-{type}-v{i}-Codex.csv`, where `i` starts at 1 independently for each polygon
+   type; never create an intermediate coordinate file or an `all_ch-*` file.
 
 ## Final report
 
