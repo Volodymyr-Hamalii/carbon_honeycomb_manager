@@ -111,6 +111,23 @@ class PlotWindowFactory:
             return 2
         return 3
 
+    @staticmethod
+    def _get_default_num_of_inter_atoms_layers(file_name: str, fallback: int) -> int:
+        """Get the default intercalated-layer count encoded in a file name."""
+        layer_patterns: tuple[tuple[str, int], ...] = (
+            ("-ABCD", 4),
+            ("-ABC", 3),
+            ("-ABAB", 2),
+            ("-AA", 1),
+        )
+        normalized_file_name: str = file_name.upper()
+
+        for pattern, num_of_layers in layer_patterns:
+            if pattern in normalized_file_name:
+                return num_of_layers
+
+        return fallback
+
     @classmethod
     def _convert_mvp_to_plot_params(cls, mvp_params: PMvpParams, title: str) -> PlotParams:
         """Convert MVP parameters to plot parameters."""
@@ -126,6 +143,11 @@ class PlotWindowFactory:
         num_of_min_distances: int = mvp_params.bonds_num_of_min_distances
         if num_of_min_distances == 3 and default_num_of_min_distances == 2:
             num_of_min_distances = 2
+
+        num_of_inter_atoms_layers: int = cls._get_default_num_of_inter_atoms_layers(
+            file_name,
+            getattr(mvp_params, 'num_of_inter_atoms_layers', 2),
+        )
 
         # Check if there are any saved plot params in the MVP params
         plot_params = PlotParams(
@@ -147,7 +169,7 @@ class PlotWindowFactory:
             to_build_edge_vertical_lines=getattr(mvp_params, 'to_build_edge_vertical_lines', False),
             to_show_grid=getattr(mvp_params, 'to_show_grid', True),
             to_show_legend=getattr(mvp_params, 'to_show_legend', True),
-            num_of_inter_atoms_layers=getattr(mvp_params, 'num_of_inter_atoms_layers', 2),
+            num_of_inter_atoms_layers=num_of_inter_atoms_layers,
         )
         return plot_params
 
