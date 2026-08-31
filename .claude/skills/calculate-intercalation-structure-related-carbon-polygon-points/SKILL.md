@@ -54,6 +54,10 @@ lower value; that would incorrectly classify even zero-deviation exact targets a
    `(x, y)` sets within coordinate precision; uniform z spacing alone is not an ordered type. A
    valid combined carbon/intercalated elementary cell may span multiple carbon periods.
 5. Maximize filling while retaining meaningfully different trade-off models.
+6. A model is not considered fully reviewed merely because its existing atoms pass validation.
+   Before acceptance, perform the post-build saturation review below to look for omitted wall sites
+   and viable atoms in axial gaps. A dense/max-filled claim requires no unreviewed feasible
+   symmetry-complete insertion orbit.
 
 An interior atom in an ordinary or wide channel may be exempt from polygon-site targets and be
 governed by intercalated-neighbour spacing. Finding only central-exempt models does not finish the
@@ -159,6 +163,37 @@ or radial symmetrization as an objective in this mode.
   period and `distinct_rmsd_threshold=0.4`. Different atom counts are distinct; otherwise require a
   genuinely different packing.
 
+## Post-build saturation review
+
+Run this review after the ordinary geometry validation has passed and again after rereading a written
+CSV. It checks whether a valid model is nevertheless incomplete; `validate_structure` alone cannot
+detect atoms that were never proposed.
+
+1. Set `periodic_z_length` to `carbon_z_period × required_z_period_multiplier`. Generate polygon
+   candidates for every wall and every site type relevant to the branch, covering one complete
+   periodic cell. Call `measure_candidate_addition_distances` with the final model, those candidates,
+   `min_allowed_distance=INTER_LOWER`, and that `periodic_z_length`. The tool measures candidates
+   independently and does not prove that several candidates can be inserted together.
+2. Group every `individually_addable` candidate into a symmetry- and z-complete insertion orbit.
+   Review wall coverage per ordered layer, including visually empty cross-section sectors and the
+   symmetry-equivalent wall indexes. Do not dismiss an empty sector from a projection until its
+   candidate orbit has been tested. Insert the whole orbit with `add_atoms`, then rerun polygon,
+   global-distance, layer-template and seam validation on the combined structure.
+3. Audit axial gaps separately, including the seam from the last layer back to the first. At minimum,
+   propose a channel-center atom at the midpoint of each adjacent-layer interval and pass those
+   coordinates through `measure_candidate_addition_distances`. If a midpoint is individually
+   feasible, construct its full repeating layer/orbit and validate the combined model. Also test a
+   non-central polygon-site orbit when the gap or cross-section suggests one; the midpoint check is a
+   floor, not an exhaustive packing proof.
+4. If a symmetry-complete orbit passes every critical gate and increases filling, the original is
+   unsaturated. Promote the denser structure as a new candidate and repeat the saturation review.
+   A sparser exact-site model may be retained only as an explicitly reported sparse trade-off when a
+   denser accepted counterpart is also produced. Never call it complete, dense, or max-filled.
+5. Stop only when a full pass adds no valid orbit. Record: candidates screened, already-present and
+   below-limit counts, all individually addable IDs grouped into tested orbits, accepted additions,
+   and the validation reason for every rejected orbit. `individually_addable_count = 0` is sufficient
+   only for the tested candidate set; state which site types, walls, and axial gaps were covered.
+
 ## Procedure
 
 1. Read channel parameters and constants. Determine whether ordinary/wide-channel mode or the
@@ -207,7 +242,8 @@ or radial symmetrization as an objective in this mode.
    `INTER_LOWER`; reject any cell below that stricter limit even if its finite coordinates,
    `hard_floor_check`, and `z_periodicity_check` otherwise pass. Keep distinct, defensible
    compromises as separate accepted variants.
-8. Before writing, re-run both reports on the exact final inline coordinates. Run the polygon
+8. Before writing, complete the post-build saturation review, then re-run both reports on the exact
+   final inline coordinates. Run the polygon
    report without reference-wall arguments. Require zero non-exempt
    `corridor_violation_atom_ids`, no hard-floor violations, a passed applicable nearest-carbon
    audit, no `atom_ids_below` in the inter-atom corridor check,
@@ -218,7 +254,9 @@ or radial symmetrization as an objective in this mode.
    Exact-normal alternatives may exceed only its upper bound and must follow the explicit audit and
    writer procedure above. Do not write an empty, duplicate, or critically invalid model. After
    writing, read the CSV back and repeat both reports without reference-wall overrides; delete the
-   output if serialization or nearest-wall reassignment makes any critical gate fail.
+   output if serialization or nearest-wall reassignment makes any critical gate fail. Repeat the
+   saturation measurement after rereading; if a newly addable orbit appears, the file is not the
+   final dense variant and must be superseded by another validated version.
 9. Write only through `write_final_structure`, with `author="Claude"`,
    `model_family="polygon"`, and required `stacking` equal to `AA`, `ABAB`, `ABCABC`, or
    `ABCDABCD`. A one-layer pattern is `AA`. The result must be
@@ -235,5 +273,6 @@ normal deviation and violating atom IDs; inter-atom min/mean/max, below-limit at
 hard-floor result; global nearest-carbon min/mean/max and corridor result, including every
 `exact_normal_upper_exempt` atom when applicable; z repeat and seam with an
 explicit `INTER_LOWER` comparison; filling/diversity rationale; and the specific trade-off versus
-other versions. Report every atom whose authoritative nearest wall changed from its source wall.
+other versions. Include the post-build saturation coverage and every accepted/rejected insertion
+orbit. Report every atom whose authoritative nearest wall changed from its source wall.
 Report rejected branches separately and do not list them as written or accepted models.

@@ -12,6 +12,7 @@ from src.mcp_server.channel_provider import ChannelProvider
 from src.mcp_server.server import (
     generate_atoms_at_polygon_sites,
     get_polygon_reference_sites,
+    measure_candidate_addition_distances,
     measure_polygon_site_distances,
     server,
 )
@@ -101,20 +102,42 @@ def test_measurement_mcp_accepts_inline_and_file_inputs(
     assert inline["rows"][0]["wall_selection_mode"] == "explicit_reference"
 
 
+def test_candidate_addition_measurement_wraps_over_periodic_z() -> None:
+    """Expose free insertion sites without hiding a clash across the z seam."""
+    result = measure_candidate_addition_distances(
+        "ar",
+        "synthetic",
+        atoms=[[0.0, 0.0, 0.0]],
+        atom_ids=["existing"],
+        candidate_atoms=[[0.0, 0.0, 9.5], [0.0, 0.0, 5.0], [0.0, 0.0, 0.0]],
+        candidate_atom_ids=["seam-clash", "free", "duplicate"],
+        min_allowed_distance=2.0,
+        periodic_z_length=10.0,
+    )
+    rows = {row["candidate_atom_id"]: row for row in result["rows"]}
+    assert rows["seam-clash"]["min_distance_to_existing"] == 0.5
+    assert rows["seam-clash"]["nearest_existing_periodic_z_shift"] == 10.0
+    assert not rows["seam-clash"]["individually_addable"]
+    assert rows["free"]["individually_addable"]
+    assert rows["duplicate"]["already_present"]
+    assert result["summary"]["individually_addable_atom_ids"] == ["free"]
+
+
 def test_mcp_tool_list_and_documented_count_are_current() -> None:
-    """Advertise all three tools and keep the documented total synchronized."""
+    """Advertise the polygon workflow tools and keep the documented total synchronized."""
     tools = asyncio.run(server.list_tools())
     names = {tool.name for tool in tools}
-    assert len(tools) == 30
+    assert len(tools) == 31
     assert {
         "get_polygon_reference_sites",
         "generate_atoms_at_polygon_sites",
         "measure_polygon_site_distances",
+        "measure_candidate_addition_distances",
     } <= names
     docs = (Path(__file__).resolve().parent.parent / "docs/mcp_description.md").read_text(
         encoding="utf-8"
     )
-    assert "30 tools" in docs
+    assert "31 tools" in docs
 
 
 def test_codex_and_claude_polygon_skills_are_behaviorally_synchronized() -> None:
@@ -133,6 +156,8 @@ def test_codex_and_claude_polygon_skills_are_behaviorally_synchronized() -> None
         "rebuild",
         "write_final_structure",
         "atom_id",
+        "measure_candidate_addition_distances",
+        "saturation",
     ):
         assert required in codex
     assert "author=\"Codex\"" in codex

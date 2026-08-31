@@ -651,6 +651,42 @@ def measure_polygon_site_distances(
     return report.to_dict()
 
 
+@server.tool()
+def measure_candidate_addition_distances(
+        element: str,
+        structure: str,
+        candidate_atoms: list[list[float]],
+        min_allowed_distance: float,
+        atoms: list[list[float]] | None = None,
+        atom_ids: list[str] | None = None,
+        file_name: str | None = None,
+        candidate_atom_ids: list[str] | None = None,
+        periodic_z_length: float | None = None,
+        duplicate_tolerance: float = 0.001,
+        project_dir: str = ChannelProvider.DEFAULT_PROJECT_DIR,
+) -> dict[str, Any]:
+    """
+    Measure whether proposed atoms have room in an existing structure.
+
+    Supply the existing structure either inline or by file name. For each candidate, this reports
+    the nearest existing atom and distance in Å, optionally using minimum-image wrapping over a
+    caller-supplied z repeat length. `min_allowed_distance` is a caller rule, not a server policy.
+    Candidates are measured independently; the caller must still validate a jointly inserted,
+    symmetry-complete set. This tool writes no file and makes no acceptance decision.
+    """
+    existing: IPoints = _resolve_atoms(
+        project_dir, element, structure, atoms, file_name, atom_ids
+    )
+    candidates: IPoints = list_to_points(candidate_atoms, candidate_atom_ids)
+    return StructureValidator.measure_candidate_addition_distances(
+        existing_atoms=existing,
+        candidate_atoms=candidates,
+        min_allowed_distance=min_allowed_distance,
+        periodic_z_length=periodic_z_length,
+        duplicate_tolerance=duplicate_tolerance,
+    )
+
+
 ### DISTANCES ###
 
 

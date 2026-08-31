@@ -171,7 +171,7 @@ before the server starts. If you add code to the server, log - do not print.
 
 ### The tools
 
-30 tools, grouped by what they do.
+31 tools, grouped by what they do.
 
 **Discovery**
 
@@ -217,6 +217,11 @@ before the server starts. If you add code to the server, log - do not print.
   exemptions. It accepts inline atoms or a saved file. By default it measures against the nearest
   wall; `reference_wall_index` fixes one source wall for all atoms, while aligned
   `reference_wall_indexes` supports mixed-wall models. It never makes an acceptance decision.
+- `measure_candidate_addition_distances` supports a post-build saturation audit. It measures each
+  proposed polygon-site or axial-gap candidate against the existing model, optionally with minimum-
+  image wrapping over the caller's z repeat length. The minimum allowed distance is an explicit
+  argument. Candidates are independent measurements, so a jointly inserted symmetric set still
+  needs full validation.
 
 **Edit primitives**
 

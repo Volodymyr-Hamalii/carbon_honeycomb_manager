@@ -32,6 +32,18 @@ class IStructureValidator(ABC):
 
     @classmethod
     @abstractmethod
+    def measure_candidate_addition_distances(
+            cls,
+            existing_atoms: IPoints,
+            candidate_atoms: IPoints,
+            min_allowed_distance: float,
+            periodic_z_length: float | None = None,
+            duplicate_tolerance: float = 0.001,
+    ) -> dict[str, Any]:
+        ...
+
+    @classmethod
+    @abstractmethod
     def find_z_period(
             cls,
             points: NDArray[np.float64],

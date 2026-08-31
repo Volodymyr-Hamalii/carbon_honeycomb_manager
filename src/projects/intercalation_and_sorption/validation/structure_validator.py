@@ -163,6 +163,124 @@ class StructureValidator(IStructureValidator):
             ),
         }
 
+    @classmethod
+    def measure_candidate_addition_distances(
+            cls,
+            existing_atoms: IPoints,
+            candidate_atoms: IPoints,
+            min_allowed_distance: float,
+            periodic_z_length: float | None = None,
+            duplicate_tolerance: float = 0.001,
+    ) -> dict[str, Any]:
+        """Measure each candidate against an existing structure, including periodic z images."""
+        if min_allowed_distance <= 0:
+            raise ValueError("min_allowed_distance must be positive.")
+        if periodic_z_length is not None and periodic_z_length <= 0:
+            raise ValueError("periodic_z_length must be positive when provided.")
+        if duplicate_tolerance < 0:
+            raise ValueError("duplicate_tolerance must be non-negative.")
+
+        existing: NDArray[np.float64] = np.asarray(existing_atoms.points, dtype=np.float64)
+        candidates: NDArray[np.float64] = np.asarray(candidate_atoms.points, dtype=np.float64)
+        existing_ids: tuple[str, ...] = existing_atoms.atom_ids or tuple(
+            f"existing-atom-{index + 1:04d}" for index in range(len(existing))
+        )
+        candidate_ids: tuple[str, ...] = candidate_atoms.atom_ids or tuple(
+            f"candidate-atom-{index + 1:04d}" for index in range(len(candidates))
+        )
+
+        rows: list[dict[str, Any]] = []
+        finite_min_distances: list[float] = []
+        for candidate_id, candidate in zip(candidate_ids, candidates):
+            min_distance: float | None = None
+            nearest_index: int | None = None
+            nearest_periodic_shift: float | None = None
+            if len(existing) > 0:
+                deltas: NDArray[np.float64] = candidate - existing
+                periodic_shifts: NDArray[np.float64] = np.zeros(len(existing), dtype=np.float64)
+                if periodic_z_length is not None:
+                    image_multipliers: NDArray[np.float64] = np.rint(
+                        (candidate[2] - existing[:, 2]) / periodic_z_length
+                    )
+                    periodic_shifts = image_multipliers * periodic_z_length
+                    deltas[:, 2] = candidate[2] - (existing[:, 2] + periodic_shifts)
+                distances: NDArray[np.float64] = np.linalg.norm(deltas, axis=1)
+                nearest_index = int(np.argmin(distances))
+                min_distance = float(distances[nearest_index])
+                nearest_periodic_shift = float(periodic_shifts[nearest_index])
+                finite_min_distances.append(min_distance)
+
+            already_present: bool = (
+                min_distance is not None and min_distance <= duplicate_tolerance
+            )
+            meets_min_distance: bool = (
+                min_distance is None or min_distance >= min_allowed_distance
+            )
+            rows.append({
+                "candidate_atom_id": candidate_id,
+                "coordinates": [
+                    round(float(value), cls.ROUND_DECIMALS) for value in candidate
+                ],
+                "min_distance_to_existing": cls._round_or_none(
+                    np.nan if min_distance is None else min_distance
+                ),
+                "nearest_existing_atom_id": (
+                    None if nearest_index is None else existing_ids[nearest_index]
+                ),
+                "nearest_existing_coordinates": (
+                    None if nearest_index is None else [
+                        round(float(value), cls.ROUND_DECIMALS)
+                        for value in existing[nearest_index]
+                    ]
+                ),
+                "nearest_existing_periodic_z_shift": (
+                    None if nearest_periodic_shift is None
+                    else round(nearest_periodic_shift, cls.ROUND_DECIMALS)
+                ),
+                "already_present": already_present,
+                "meets_min_distance": meets_min_distance,
+                "individually_addable": meets_min_distance and not already_present,
+            })
+
+        addable_ids: list[str] = [
+            row["candidate_atom_id"] for row in rows if row["individually_addable"]
+        ]
+        below_ids: list[str] = [
+            row["candidate_atom_id"]
+            for row in rows
+            if not row["meets_min_distance"] and not row["already_present"]
+        ]
+        duplicate_ids: list[str] = [
+            row["candidate_atom_id"] for row in rows if row["already_present"]
+        ]
+        return {
+            "rows": rows,
+            "summary": {
+                "total_candidates": len(rows),
+                "individually_addable_count": len(addable_ids),
+                "individually_addable_atom_ids": addable_ids,
+                "below_min_distance_count": len(below_ids),
+                "below_min_distance_atom_ids": below_ids,
+                "already_present_count": len(duplicate_ids),
+                "already_present_atom_ids": duplicate_ids,
+                "min_distance_to_existing": (
+                    None if not finite_min_distances else {
+                        "min": round(min(finite_min_distances), cls.ROUND_DECIMALS),
+                        "mean": round(
+                            float(np.mean(finite_min_distances)), cls.ROUND_DECIMALS
+                        ),
+                        "max": round(max(finite_min_distances), cls.ROUND_DECIMALS),
+                    }
+                ),
+                "min_allowed_distance": round(min_allowed_distance, cls.ROUND_DECIMALS),
+                "periodic_z_length": (
+                    None if periodic_z_length is None
+                    else round(periodic_z_length, cls.ROUND_DECIMALS)
+                ),
+                "duplicate_tolerance": round(duplicate_tolerance, cls.ROUND_DECIMALS),
+            },
+        }
+
     ### Z SELF-REPEATABILITY ###
 
     @classmethod
