@@ -763,7 +763,10 @@ class IntercalationAndSorption:
             logger.info(f"After filtering: {len(all_channels_atoms.points)} atoms")
 
         # 4. Save translated coordinates
-        result_file_name: str = f"{Path(file_name).stem}_all_channels.csv"
+        if "one_ch" in file_name:
+            result_file_name = f"{Path(file_name.replace("one_ch", "all_ch")).stem}.csv"
+        else:
+            result_file_name = f"{Path(file_name).stem}_all_channels.csv"
         coords_path: Path = PathBuilder.build_path_to_result_data_file(
             project_dir, subproject_dir, structure_dir, file_name=result_file_name
         )
