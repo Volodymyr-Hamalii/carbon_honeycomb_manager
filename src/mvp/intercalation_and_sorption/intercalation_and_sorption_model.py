@@ -3,9 +3,20 @@ from pathlib import Path
 from typing import Any
 import pandas as pd
 
-from src.interfaces import IIntercalationAndSorptionModel
+from src.interfaces import ICarbonHoneycombChannel, IIntercalationAndSorptionModel, IPoints
+from src.entities import IntercalatedChannelSchemeData
 from src.mvp.general import GeneralModel
-from src.services import Logger, FileReader, PathBuilder
+from src.projects.carbon_honeycomb_actions import CarbonHoneycombModeller
+from src.projects.intercalation_and_sorption.structure_operations import InterAtomsFileManager
+from src.projects.intercalation_and_sorption.visualization import IntercalatedChannelSchemeBuilder
+from src.services import (
+    ATOM_PARAMS_MAP,
+    Constants,
+    ConstantsAtomParams,
+    FileReader,
+    Logger,
+    PathBuilder,
+)
 
 logger = Logger("IntercalationAndSorptionModel")
 
@@ -91,3 +102,39 @@ class IntercalationAndSorptionModel(GeneralModel, IIntercalationAndSorptionModel
         except Exception as e:
             logger.error(f"Failed to get available files: {e}")
             return ["No files found"]
+
+    def get_intercalated_channel_scheme_data(
+        self,
+        project_dir: str,
+        subproject_dir: str,
+        structure_dir: str,
+        file_name: str,
+    ) -> IntercalatedChannelSchemeData:
+        """Build read-only data for the selected one-channel scheme."""
+        file_format: str = Path(file_name).suffix.lower().lstrip(".")
+        if file_format not in InterAtomsFileManager.SUPPORTED_COORDINATE_FORMATS:
+            raise ValueError("Only one-channel CSV, XLSX and DAT files are supported.")
+        element: str = subproject_dir.lower()
+        if element not in ATOM_PARAMS_MAP:
+            raise ValueError(
+                f"Unsupported element {subproject_dir!r}; available: {sorted(ATOM_PARAMS_MAP)}."
+            )
+        atom_params: ConstantsAtomParams = ATOM_PARAMS_MAP[element]
+        carbon_channel: ICarbonHoneycombChannel = CarbonHoneycombModeller.build_carbon_channel(
+            project_dir=project_dir,
+            subproject_dir=subproject_dir,
+            structure_dir=structure_dir,
+            file_name=Constants.file_names.INIT_DAT_FILE,
+        )
+        inter_atoms: IPoints = InterAtomsFileManager.read_inter_atoms(
+            project_dir=project_dir,
+            subproject_dir=subproject_dir,
+            structure_dir=structure_dir,
+            file_name=file_name,
+        )
+        return IntercalatedChannelSchemeBuilder().build(
+            carbon_channel=carbon_channel,
+            inter_atoms=inter_atoms,
+            atom_params=atom_params,
+            file_name=file_name,
+        )

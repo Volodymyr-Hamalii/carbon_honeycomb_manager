@@ -1,8 +1,13 @@
+from __future__ import annotations
+
 from abc import abstractmethod
-from typing import Any
+from typing import Any, TYPE_CHECKING
 import pandas as pd
 
 from src.interfaces.mvp.general import IGeneralModel
+
+if TYPE_CHECKING:
+    from src.entities import IntercalatedChannelSchemeData
 
 
 class IIntercalationAndSorptionModel(IGeneralModel):
@@ -56,4 +61,15 @@ class IIntercalationAndSorptionModel(IGeneralModel):
     @abstractmethod
     def get_available_files(self, project_dir: str, subproject_dir: str, structure_dir: str) -> list[str]:
         """Get available intercalated coordinate files from the result directory."""
+        ...
+
+    @abstractmethod
+    def get_intercalated_channel_scheme_data(
+        self,
+        project_dir: str,
+        subproject_dir: str,
+        structure_dir: str,
+        file_name: str,
+    ) -> IntercalatedChannelSchemeData:
+        """Build read-only data for the selected one-channel scheme."""
         ...

@@ -6,8 +6,16 @@ from pathlib import Path
 import pandas as pd
 
 from src.interfaces import IIntercalationAndSorptionView
+from src.entities import IntercalatedChannelSchemeData
 from src.mvp.general import GeneralView
-from src.ui.components import Button, CheckBox, InputField, DropdownList, Table
+from src.ui.components import (
+    Button,
+    CheckBox,
+    DropdownList,
+    InputField,
+    IntercalatedChannelSchemeWindow,
+    Table,
+)
 from src.ui.templates import ScrollableToplevel, CoordinateLimitsTemplate, WindowGeneralTemplate
 from src.services import Logger
 
@@ -45,6 +53,7 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
         # File refresh management
         self._refresh_job_id: str | None = None
         self._last_files_list: list[str] = []
+        self._scheme_window: IntercalatedChannelSchemeWindow | None = None
 
     def set_context(self, project_dir: str, subproject_dir: str, structure_dir: str) -> None:
         """Set the context for this view."""
@@ -110,6 +119,10 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
         self.operation_buttons["get_polygon_site_distances"] = self.template.pack_button(
             op_col2, "Get polygon-site distances",
             self._on_get_polygon_site_distances
+        )
+        self.operation_buttons["show_2d_intercalated_channel_scheme"] = self.template.pack_button(
+            op_col2, "Show 2D intercalated channel scheme",
+            self._on_show_2d_intercalated_channel_scheme,
         )
         self.operation_buttons["get_inter_chc_constants"] = self.template.pack_button(
             op_col2, "Get intercalation constants",
@@ -441,6 +454,18 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
         )
         table.pack(fill="both", expand=True, padx=2, pady=2)
 
+    def display_intercalated_channel_scheme(
+        self,
+        data: IntercalatedChannelSchemeData,
+        selected_file: str,
+    ) -> None:
+        """Display both read-only 2D schemes for the selected file."""
+        self._scheme_window = IntercalatedChannelSchemeWindow(
+            master=self,
+            data=data,
+            title=f"2D Intercalated Channel Scheme - {selected_file}",
+        )
+
     def display_channel_constants(self, constants: pd.DataFrame) -> None:
         """Display channel constants in the UI."""
         # Create a new window with touchpad scrolling support
@@ -543,6 +568,11 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
         """Handle the read-only polygon-site measurement action."""
         if "get_polygon_site_distances" in self.callbacks:
             self.callbacks["get_polygon_site_distances"]()
+
+    def _on_show_2d_intercalated_channel_scheme(self) -> None:
+        """Handle the read-only 2D intercalated-channel scheme action."""
+        if "show_2d_intercalated_channel_scheme" in self.callbacks:
+            self.callbacks["show_2d_intercalated_channel_scheme"]()
 
     def _on_get_inter_chc_constants(self) -> None:
         """Handle get intercalation constants button click."""

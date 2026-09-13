@@ -14,4 +14,5 @@ from .structure_operations import (
     PolygonReferenceAnalyzer,
 )
 from .validation import StructureValidator
+from .visualization import IntercalatedChannelSchemeBuilder
 from .intercalation_and_sorption import IntercalationAndSorption

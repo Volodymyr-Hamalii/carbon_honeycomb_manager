@@ -20,6 +20,16 @@ class IIntercalationAndSorptionPresenter(IGeneralPresenter):
         ...
 
     @abstractmethod
+    def show_2d_intercalated_channel_scheme(
+        self,
+        project_dir: str,
+        subproject_dir: str,
+        structure_dir: str,
+    ) -> None:
+        """Show both 2D schemes for the selected one-channel model."""
+        ...
+
+    @abstractmethod
     def generate_inter_plane_coordinates_file(
         self,
         project_dir: str,

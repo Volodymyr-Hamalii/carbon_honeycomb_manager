@@ -13,7 +13,7 @@ from src.interfaces import (
     IStructureVisualParams,
     PMvpParams,
 )
-from src.entities import Points
+from src.entities import IntercalatedChannelSchemeData, Points
 from src.services import Logger, Constants, VisualizationParams, PathBuilder, FileWriter
 from src.projects.carbon_honeycomb_actions import CarbonHoneycombModeller
 from src.projects.intercalation_and_sorption import IntercalationAndSorption
@@ -48,6 +48,7 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
             "save_distance_matrix": self._handle_save_distance_matrix,
             "get_distance_matrix": self._handle_get_distance_matrix,
             "get_polygon_site_distances": self._handle_get_polygon_site_distances,
+            "show_2d_intercalated_channel_scheme": self._handle_show_2d_intercalated_channel_scheme,
             "get_inter_chc_constants": self._handle_get_inter_chc_constants,
             "translate_inter_to_all_channels_plot": self._handle_translate_inter_to_all_channels_plot,
             "translate_inter_to_all_channels_generate": self._handle_translate_inter_to_all_channels_generate,
@@ -106,6 +107,33 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
         except Exception as e:
             logger.error(f"Failed to open plot window for intercalated structure: {e}")
             self.on_operation_failed("plot_inter_in_c_structure", e)
+
+    def show_2d_intercalated_channel_scheme(
+        self,
+        project_dir: str,
+        subproject_dir: str,
+        structure_dir: str,
+    ) -> None:
+        """Show both 2D schemes for the selected one-channel model."""
+        selected_file: str = self.view.get_selected_file()
+        if not selected_file or selected_file in {"No files found", "None"}:
+            raise ValueError("Select an intercalated structure file first.")
+        params: PMvpParams = self.model.get_mvp_params()
+        params.file_name = selected_file
+        self.model.set_mvp_params(params)
+        data: IntercalatedChannelSchemeData = (
+            self.model.get_intercalated_channel_scheme_data(
+                project_dir=project_dir,
+                subproject_dir=subproject_dir,
+                structure_dir=structure_dir,
+                file_name=selected_file,
+            )
+        )
+        self.view.display_intercalated_channel_scheme(data, selected_file)
+        self.on_operation_completed(
+            "show_2d_intercalated_channel_scheme",
+            "2D intercalated channel scheme displayed",
+        )
 
     def generate_inter_plane_coordinates_file(
         self,
@@ -712,6 +740,20 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
             )
         except Exception as e:
             self.on_operation_failed("get_polygon_site_distances", e)
+
+    def _handle_show_2d_intercalated_channel_scheme(self) -> None:
+        """Show the selected model's two read-only 2D schemes."""
+        try:
+            if not self._current_context:
+                self.view.show_operation_error("No context available. Please reload the window.")
+                return
+            self.show_2d_intercalated_channel_scheme(
+                project_dir=self._current_context["project_dir"],
+                subproject_dir=self._current_context["subproject_dir"],
+                structure_dir=self._current_context["structure_dir"],
+            )
+        except Exception as error:
+            self.on_operation_failed("show_2d_intercalated_channel_scheme", error)
 
     def _handle_get_inter_chc_constants(self) -> None:
         """Handle get intercalation constants callback."""

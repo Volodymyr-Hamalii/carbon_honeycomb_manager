@@ -1,2 +1,3 @@
 from .structure_visualizer import StructureVisualizer
 from .visualization_params import VisualizationParams, StructureVisualParams
+from .intercalated_channel_scheme_renderer import IntercalatedChannelSchemeRenderer

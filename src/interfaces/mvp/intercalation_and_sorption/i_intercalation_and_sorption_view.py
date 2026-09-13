@@ -1,9 +1,14 @@
+from __future__ import annotations
+
 from abc import abstractmethod
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any, Callable, TYPE_CHECKING
 import pandas as pd
 
 from src.interfaces.mvp.general import IGeneralView
+
+if TYPE_CHECKING:
+    from src.entities import IntercalatedChannelSchemeData
 
 
 class IIntercalationAndSorptionView(IGeneralView):
@@ -62,6 +67,15 @@ class IIntercalationAndSorptionView(IGeneralView):
     @abstractmethod
     def display_polygon_site_distances(self, measurements: pd.DataFrame, selected_file: str) -> None:
         """Display polygon-site measurements without offering a file write."""
+        ...
+
+    @abstractmethod
+    def display_intercalated_channel_scheme(
+        self,
+        data: IntercalatedChannelSchemeData,
+        selected_file: str,
+    ) -> None:
+        """Display both read-only 2D schemes for the selected file."""
         ...
 
     @abstractmethod

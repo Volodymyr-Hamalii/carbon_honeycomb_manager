@@ -3,6 +3,7 @@ from .i_inter_atoms_file_manager import IInterAtomsFileManager
 from .i_structure_validator import IStructureValidator
 from .i_candidate_comparator import ICandidateComparator
 from .i_polygon_reference_analyzer import IPolygonReferenceAnalyzer
+from .i_intercalated_channel_scheme_builder import IIntercalatedChannelSchemeBuilder
 
 __all__: list[str] = [
     "IInterAtomsEditor",
@@ -10,4 +11,5 @@ __all__: list[str] = [
     "IStructureValidator",
     "ICandidateComparator",
     "IPolygonReferenceAnalyzer",
+    "IIntercalatedChannelSchemeBuilder",
 ]

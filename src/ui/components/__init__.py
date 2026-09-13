@@ -7,6 +7,7 @@ from .status_label import StatusLabel, StatusType
 from .table import Table
 from .plot import PlotWindow
 from .plot_window_factory import PlotWindowFactory
+from .intercalated_channel_scheme_window import IntercalatedChannelSchemeWindow
 
 # PlotWindow is not imported here to avoid circular imports
 # Import directly from .plot when needed
@@ -22,4 +23,5 @@ __all__: list[str] = [
     "Table",
     "PlotWindow",
     "PlotWindowFactory",
+    "IntercalatedChannelSchemeWindow",
 ]
