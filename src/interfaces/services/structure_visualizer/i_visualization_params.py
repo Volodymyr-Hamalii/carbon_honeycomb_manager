@@ -42,6 +42,7 @@ class IStructureVisualParams(Protocol):
 
 
 class IVisualizationParams(Protocol):
+    scheme_label_background_color: str
     carbon: IStructureVisualParams
     intercalated_atoms_1_layer: IStructureVisualParams
     intercalated_atoms_2_layer: IStructureVisualParams

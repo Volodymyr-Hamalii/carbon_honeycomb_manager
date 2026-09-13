@@ -277,6 +277,12 @@ def test_scheme_data_is_frozen_and_renderer_builds_two_axes(
     assert "E_xy=" in all_text
     assert any("ΔX=" in text.get_text() for text in figure.axes[1].texts)
     assert any("ΔY=" in text.get_text() for text in figure.axes[1].texts)
+    assert all(
+        text.get_bbox_patch() is not None
+        for axis in figure.axes
+        for text in axis.texts
+        if text.get_text()
+    )
     figure.clear()
 
 

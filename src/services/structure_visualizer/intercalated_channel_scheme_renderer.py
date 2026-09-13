@@ -24,6 +24,12 @@ from .visualization_params import VisualizationParams
 class IntercalatedChannelSchemeRenderer(IIntercalatedChannelSchemeRenderer):
     """Render nearest-distance and xOy-geometry panels into one figure."""
 
+    _LABEL_BACKGROUND: dict[str, Any] = {
+        "boxstyle": "round,pad=0.18",
+        "facecolor": VisualizationParams.scheme_label_background_color,
+        "edgecolor": "none",
+        "alpha": 0.78,
+    }
     _PERIODIC_COLORS: tuple[str, ...] = (
         VisualizationParams.intercalated_atoms_1_layer.color_atoms,
         VisualizationParams.intercalated_atoms_2_layer.color_atoms,
@@ -140,6 +146,7 @@ class IntercalatedChannelSchemeRenderer(IIntercalatedChannelSchemeRenderer):
                 textcoords="offset points",
                 fontsize=7,
                 arrowprops={"arrowstyle": "-", "linewidth": 0.5},
+                bbox=self._LABEL_BACKGROUND,
                 zorder=6,
             )
 
@@ -184,6 +191,7 @@ class IntercalatedChannelSchemeRenderer(IIntercalatedChannelSchemeRenderer):
                     f"E_xy={atom.distance_to_edge_vertex_xy:.2f}",
                     xy=midpoint,
                     fontsize=6,
+                    bbox=self._LABEL_BACKGROUND,
                     zorder=5,
                 )
             axis.annotate(
@@ -193,6 +201,7 @@ class IntercalatedChannelSchemeRenderer(IIntercalatedChannelSchemeRenderer):
                 textcoords="offset points",
                 fontsize=7,
                 arrowprops={"arrowstyle": "-", "linewidth": 0.4},
+                bbox=self._LABEL_BACKGROUND,
                 zorder=6,
             )
 
@@ -291,6 +300,7 @@ class IntercalatedChannelSchemeRenderer(IIntercalatedChannelSchemeRenderer):
             va="bottom",
             color=color,
             rotation=rotation,
+            bbox=IntercalatedChannelSchemeRenderer._LABEL_BACKGROUND,
             zorder=5,
         )
 

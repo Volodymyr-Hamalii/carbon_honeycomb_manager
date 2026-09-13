@@ -65,6 +65,8 @@ class Colors(IColors):
 
 
 class VisualizationParams(IVisualizationParams):
+    scheme_label_background_color: str = UI_Colors.WHITE
+
     carbon = StructureVisualParams(
         color_atoms=Colors.carbon_colors.atoms_color,
         transparency=0.2,
