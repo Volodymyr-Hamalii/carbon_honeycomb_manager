@@ -168,6 +168,25 @@ class IntercalatedChannelSchemeRenderer(IIntercalatedChannelSchemeRenderer):
             label="Projected channel edges",
             zorder=3,
         )
+        boundary_center: Coordinate2D = (
+            sum(vertex[0] for vertex in data.channel_boundary) / len(data.channel_boundary),
+            sum(vertex[1] for vertex in data.channel_boundary) / len(data.channel_boundary),
+        )
+        for vertex_index, vertex in enumerate(data.channel_boundary):
+            x_offset: int = 10 if vertex[0] >= boundary_center[0] else -10
+            y_offset: int = 10 if vertex[1] >= boundary_center[1] else -10
+            axis.annotate(
+                f"V{vertex_index} {self._format_xy(vertex)}",
+                xy=vertex,
+                xytext=(x_offset, y_offset),
+                textcoords="offset points",
+                fontsize=6,
+                ha="left" if x_offset > 0 else "right",
+                va="bottom" if y_offset > 0 else "top",
+                arrowprops={"arrowstyle": "-", "linewidth": 0.4},
+                bbox=self._LABEL_BACKGROUND,
+                zorder=6,
+            )
         for atom in data.atoms:
             if not atom.is_representative:
                 continue
@@ -195,7 +214,7 @@ class IntercalatedChannelSchemeRenderer(IIntercalatedChannelSchemeRenderer):
                     zorder=5,
                 )
             axis.annotate(
-                f"#{atom.source_index}",
+                f"#{atom.source_index} {self._format_xy(point)}",
                 xy=point,
                 xytext=self._label_offset(atom.source_index, point, data.channel_boundary),
                 textcoords="offset points",
@@ -376,3 +395,10 @@ class IntercalatedChannelSchemeRenderer(IIntercalatedChannelSchemeRenderer):
         if coordinates is None:
             return None
         return coordinates[0], coordinates[1]
+
+    @staticmethod
+    def _format_xy(coordinates: Coordinate2D) -> str:
+        """Format one xOy coordinate pair to two decimal places."""
+        x_coord: float = 0.0 if abs(coordinates[0]) < 0.005 else coordinates[0]
+        y_coord: float = 0.0 if abs(coordinates[1]) < 0.005 else coordinates[1]
+        return f"({x_coord:.2f}, {y_coord:.2f})"

@@ -274,6 +274,10 @@ def test_scheme_data_is_frozen_and_renderer_builds_two_axes(
     assert len(figure.axes) == 2
     assert all(axis.get_aspect() == 1.0 for axis in figure.axes)
     assert "#0" in all_text
+    assert "#0 (0.00, 0.00)" in all_text
+    assert "V0" in all_text
+    assert all(f"V{index}" in all_text for index in range(len(data.channel_boundary)))
+    assert "-0.00" not in all_text
     assert "E_xy=" in all_text
     assert any("ΔX=" in text.get_text() for text in figure.axes[1].texts)
     assert any("ΔY=" in text.get_text() for text in figure.axes[1].texts)
