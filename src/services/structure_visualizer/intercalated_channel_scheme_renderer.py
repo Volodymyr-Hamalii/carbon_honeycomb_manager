@@ -116,7 +116,7 @@ class IntercalatedChannelSchemeRenderer(IIntercalatedChannelSchemeRenderer):
                     self._xy(atom.nearest_wall_projection),
                     VisualizationParams.carbon.color_bonds,
                     "-",
-                    "P: perpendicular 3D distance",
+                    "P: perpendicular distance to nearest channel wall plane",
                     legend_flags,
                 )
                 self._draw_measurement_line(
@@ -125,7 +125,7 @@ class IntercalatedChannelSchemeRenderer(IIntercalatedChannelSchemeRenderer):
                     self._xy(atom.nearest_carbon_coordinates),
                     VisualizationParams.carbon.color_atoms,
                     ":",
-                    "C: full 3D distance",
+                    "C: 3D distance to nearest carbon atom",
                     legend_flags,
                 )
             self._draw_measurement_line(
@@ -134,7 +134,7 @@ class IntercalatedChannelSchemeRenderer(IIntercalatedChannelSchemeRenderer):
                 self._xy(atom.nearest_inter_coordinates),
                 VisualizationParams.intercalated_atoms_1_layer.color_bonds,
                 "--",
-                "I: full 3D distance",
+                "I: 3D distance to nearest intercalated atom",
                 legend_flags,
             )
             annotation: str = self._distance_label(atom)

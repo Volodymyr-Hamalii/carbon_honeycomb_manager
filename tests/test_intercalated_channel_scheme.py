@@ -270,6 +270,11 @@ def test_scheme_data_is_frozen_and_renderer_builds_two_axes(
 
     figure: Figure = IntercalatedChannelSchemeRenderer().render(data)
     all_text: str = " ".join(text.get_text() for axis in figure.axes for text in axis.texts)
+    distance_legend = figure.axes[0].get_legend()
+    assert distance_legend is not None
+    legend_labels: set[str] = {
+        text.get_text() for text in distance_legend.get_texts()
+    }
 
     assert len(figure.axes) == 2
     assert all(axis.get_aspect() == 1.0 for axis in figure.axes)
@@ -279,6 +284,9 @@ def test_scheme_data_is_frozen_and_renderer_builds_two_axes(
     assert all(f"V{index}" in all_text for index in range(len(data.channel_boundary)))
     assert "-0.00" not in all_text
     assert "E_xy=" in all_text
+    assert "P: perpendicular distance to nearest channel wall plane" in legend_labels
+    assert "C: 3D distance to nearest carbon atom" in legend_labels
+    assert "I: 3D distance to nearest intercalated atom" in legend_labels
     assert any("ΔX=" in text.get_text() for text in figure.axes[1].texts)
     assert any("ΔY=" in text.get_text() for text in figure.axes[1].texts)
     assert all(
