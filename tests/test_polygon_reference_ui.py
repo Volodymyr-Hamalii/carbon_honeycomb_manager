@@ -69,17 +69,17 @@ def test_polygon_measurement_table_selects_and_formats_ui_columns() -> None:
 
     table: pd.DataFrame = IntercalationAndSorption._polygon_site_measurements_ui_df([row])
 
-    assert tuple(table.columns) == IntercalationAndSorption.POLYGON_SITE_UI_COLUMNS
-    assert table.loc[0, "coordinates"] == "[1.30, 3.27, 1.44]"
-    assert table.loc[0, "projection_coordinates"] == "[1.30, 0.00, 1.44]"
-    assert table.loc[0, "nearest_edge_midpoint_coordinates"] is None
-    assert table.loc[0, "Min distance to plane"] == "2.76"
-    assert table.loc[0, "Min distance to C"] == "2.88"
-    assert table.loc[0, "Min distance to inter"] == "4.32"
-    assert table.loc[0, "actual_normal_distance"] == "3.27"
-    assert table.loc[0, "d_center"] == "0.00"
-    assert table.loc[0, "d_vertex"] == "0.03"
-    assert table.loc[0, "d_edge_midpoint"] == "1.25"
+    assert tuple(table.columns) == IntercalationAndSorption.POLYGON_SITE_UI_COLUMN_LABELS
+    assert table.loc[0, ("", "Coordinates")] == "[1.30, 3.27, 1.44]"
+    assert table.loc[0, ("", "Projection coordinates")] == "[1.30, 0.00, 1.44]"
+    assert table.loc[0, ("Nearest coordinates", "Edge midpoint")] is None
+    assert table.loc[0, ("Min distance to", "Plane")] == "2.76"
+    assert table.loc[0, ("Min distance to", "C")] == "2.88"
+    assert table.loc[0, ("Min distance to", "Inter")] == "4.32"
+    assert table.loc[0, ("", "Actual normal distance")] == "3.27"
+    assert table.loc[0, ("Distance to nearest", "Center")] == "0.00"
+    assert table.loc[0, ("Distance to nearest", "Vertex")] == "0.03"
+    assert table.loc[0, ("Distance to nearest", "Edge midpoint")] == "1.25"
 
 
 def test_polygon_ui_recovers_reference_walls_from_candidate_atom_ids() -> None:

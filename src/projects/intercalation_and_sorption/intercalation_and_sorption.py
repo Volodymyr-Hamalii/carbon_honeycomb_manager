@@ -62,6 +62,25 @@ class IntercalationAndSorption:
         "d_edge_midpoint",
         "exemption_reason",
     )
+    # Readable, two-row display labels for POLYGON_SITE_UI_COLUMNS, in the same order.
+    # A blank first level renders as an empty spanning header, matching the single-row
+    # look; a shared first level groups columns under one header, as in the distance matrix.
+    POLYGON_SITE_UI_COLUMN_LABELS: tuple[tuple[str, str], ...] = (
+        ("", "Coordinates"),
+        ("", "Is near wall"),
+        ("Min distance to", "Plane"),
+        ("Min distance to", "C"),
+        ("Min distance to", "Inter"),
+        ("", "Actual normal distance"),
+        ("", "Projection coordinates"),
+        ("Nearest coordinates", "Center"),
+        ("Nearest coordinates", "Vertex"),
+        ("Nearest coordinates", "Edge midpoint"),
+        ("Distance to nearest", "Center"),
+        ("Distance to nearest", "Vertex"),
+        ("Distance to nearest", "Edge midpoint"),
+        ("", "Exemption reason"),
+    )
     POLYGON_SITE_UI_COORDINATE_COLUMNS: tuple[str, ...] = (
         "coordinates",
         "projection_coordinates",
@@ -502,6 +521,7 @@ class IntercalationAndSorption:
             table[column] = table[column].map(cls._format_coordinate_for_ui)
         for column in cls.POLYGON_SITE_UI_DISTANCE_COLUMNS:
             table[column] = table[column].map(cls._format_distance_for_ui)
+        table.columns = pd.MultiIndex.from_tuples(cls.POLYGON_SITE_UI_COLUMN_LABELS)
         return table
 
     @classmethod

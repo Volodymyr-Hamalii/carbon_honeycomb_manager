@@ -442,7 +442,7 @@ class IntercalationAndSorptionView(GeneralView, IIntercalationAndSorptionView):
         details_window = ScrollableToplevel(self)
         details_window.title("Polygon-site distances")
         width: int = min(len(measurements.columns) * 65 + 100, 1200)
-        height: int = min(len(measurements) * 27 + 120, 1000)
+        height: int = min(len(measurements) * 27 + 150, 1000)
         details_window.geometry(f"{width}x{height}")
         container: ctk.CTkFrame = ctk.CTkFrame(details_window)
         container.pack(fill="both", expand=True, padx=10, pady=10)
