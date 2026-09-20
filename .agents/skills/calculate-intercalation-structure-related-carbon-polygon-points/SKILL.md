@@ -282,11 +282,16 @@ detect atoms that were never proposed.
    output if serialization or nearest-wall reassignment makes any critical gate fail. Repeat the
    saturation measurement after rereading; if a newly addable orbit appears, the file is not the
    final dense variant and must be superseded by another validated version.
-9. Write only through `write_final_structure`, with `author="Codex"`,
-   `model_family="polygon"`, and required `stacking` equal to `AA`, `ABAB`, `ABCABC`, or
-   `ABCDABCD`. A one-layer pattern is `AA`. The result must be
-   `one_ch-polygon-{type}-v{i}-Codex.csv`, where `i` starts at 1 independently for each polygon
-   type; never create an intermediate coordinate file or an `all_ch-*` file.
+9. Before calling `write_final_structure`, reorder `atoms` (and the matching `atom_ids` in the
+   same permutation) by `(z, x, y)` ascending, at the same coordinate precision used for layer and
+   seam comparisons elsewhere in this skill. This groups atoms by layer, first layer first, then
+   by ascending `x`, then by ascending `y` within each layer; it changes row order only, never a
+   coordinate value or an `atom_id`.
+10. Write only through `write_final_structure`, with `author="Codex"`,
+    `model_family="polygon"`, and required `stacking` equal to `AA`, `ABAB`, `ABCABC`, or
+    `ABCDABCD`. A one-layer pattern is `AA`. The result must be
+    `one_ch-polygon-{type}-v{i}-Codex.csv`, where `i` starts at 1 independently for each polygon
+    type; never create an intermediate coordinate file or an `all_ch-*` file.
 
 ## Final report
 
