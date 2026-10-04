@@ -39,6 +39,14 @@ uv run pytest tests/ -q
 The suite runs against a synthetic carbon channel built in `tests/conftest.py`, not against the data
 files in `data/projects`, so it stays fast (under a second) and deterministic.
 
+### Ad-hoc Scripts (for AI agents)
+
+Create throwaway scripts with the Write tool in the scratchpad directory and run them as one plain
+command from the repo root: `PYTHONPATH=. uv run python <abs path> args`. Never use heredocs, `cd`,
+shell variables, subshells, functions or loops in a Bash command - they trigger permission prompts
+the allowlist cannot cover. Put loops and parameter sweeps inside the Python script. For long runs
+use `run_in_background` instead of `> file 2>&1`.
+
 ### MCP Server
 
 The project ships an MCP server that exposes the domain layer to AI agents. It is registered in
