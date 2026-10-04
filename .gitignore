@@ -4,6 +4,8 @@ RasMol
 .env
 .DS_Store
 .venv
+.uv
+uv.lock
 __pycache__
 
 old_gui_logic/*

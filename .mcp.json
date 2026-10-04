@@ -2,8 +2,8 @@
   "mcpServers": {
     "carbon-honeycomb-manager": {
       "type": "stdio",
-      "command": ".venv/bin/python",
-      "args": ["-m", "src.mcp_server"],
+      "command": "uv",
+      "args": ["run", "python", "-m", "src.mcp_server"],
       "env": {
         "MPLBACKEND": "Agg",
         "LEVEL": "30"

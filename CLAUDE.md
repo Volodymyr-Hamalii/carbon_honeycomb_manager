@@ -11,11 +11,13 @@ This is a Python application for building honeycomb carbon models from `.dat` or
 ### Running the Application
 
 ```bash
-# Install dependencies
-pip install -r requirements.txt
+# Install dependencies (first time setup)
+uv sync
 
 # Run the application
-python main.py
+uv run main.py
+# or
+./run.sh
 ```
 
 ### Building the Application
@@ -31,7 +33,7 @@ build_app_for_windows.bat
 ### Running the Tests
 
 ```bash
-.venv/bin/python -m pytest tests/ -q
+uv run pytest tests/ -q
 ```
 
 The suite runs against a synthetic carbon channel built in `tests/conftest.py`, not against the data
@@ -40,7 +42,7 @@ files in `data/projects`, so it stays fast (under a second) and deterministic.
 ### MCP Server
 
 The project ships an MCP server that exposes the domain layer to AI agents. It is registered in
-`.mcp.json` and started as `python -m src.mcp_server` over stdio.
+`.mcp.json` and started as `uv run --with mcp python -m src.mcp_server` over stdio.
 
 **Read [`docs/mcp_description.md`](docs/mcp_description.md) before changing anything under
 `src/mcp_server/`.** Two rules govern it: the server is _rule-agnostic_ (validation targets and
