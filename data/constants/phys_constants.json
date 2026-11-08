@@ -7,13 +7,13 @@
   },
   "intercalation_properties": {
     "place_opposite_centers": {
-      "al": 1.0,
+      "al": 999.99,
       "kr": 3.45,
       "ar": 3.27,
       "xe": 3.9
     },
     "place_opposite_faces": {
-      "al": 1.0,
+      "al": 999.99,
       "kr": 3.53,
       "ar": 3.37,
       "xe": 3.94
