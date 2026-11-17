@@ -127,8 +127,9 @@ def test_mcp_tool_list_and_documented_count_are_current() -> None:
     """Advertise the polygon workflow tools and keep the documented total synchronized."""
     tools = asyncio.run(server.list_tools())
     names = {tool.name for tool in tools}
-    assert len(tools) == 31
+    assert len(tools) == 32
     assert {
+        "cut_intercalated_cell",
         "get_polygon_reference_sites",
         "generate_atoms_at_polygon_sites",
         "measure_polygon_site_distances",
@@ -137,7 +138,7 @@ def test_mcp_tool_list_and_documented_count_are_current() -> None:
     docs = (Path(__file__).resolve().parent.parent / "docs/mcp_description.md").read_text(
         encoding="utf-8"
     )
-    assert "31 tools" in docs
+    assert "32 tools" in docs
 
 
 def test_codex_and_claude_polygon_skills_are_behaviorally_synchronized() -> None:

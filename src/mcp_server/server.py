@@ -15,7 +15,7 @@ from src.interfaces import (
     PMvpParams,
     PValidationTargets,
 )
-from src.entities import PolygonSiteMeasurementReport, PolygonSiteType
+from src.entities import Points, PolygonSiteMeasurementReport, PolygonSiteType
 from src.services import ATOM_PARAMS_MAP, Constants, FileReader, PathBuilder
 from src.projects.carbon_honeycomb_actions import CarbonHoneycombModeller
 from src.projects.intercalation_and_sorption import (
@@ -25,6 +25,13 @@ from src.projects.intercalation_and_sorption import (
     IntercalationAndSorption,
     StructureValidator,
     PolygonReferenceAnalyzer,
+)
+
+from src.projects.intercalation_and_sorption.cell_builder import CellBuilder, CellFiles
+from src.projects.intercalation_and_sorption.cell_building import CellParams, CellParamsBuilder, CellZCutter
+from src.projects.intercalation_and_sorption.intercalared_structure_cell_cutter import (
+    CellCutResult,
+    IntercalatedStructureCellCutter,
 )
 
 from .channel_provider import ChannelProvider
@@ -977,6 +984,96 @@ def validate_structure(
         near_wall_max_dist_to_plane=near_wall_max_dist_to_plane,
     )
     return {"element": element, "structure": structure, "source_file_name": file_name, **report}
+
+
+### ELEMENTARY CELL ###
+
+
+@server.tool()
+def cut_intercalated_cell(
+        element: str,
+        structure: str,
+        file_name: str,
+        write_files: bool = False,
+        include_coordinates: bool = False,
+        tolerance: float = CellZCutter.TOLERANCE,
+        min_overlap_atoms: int = CellZCutter.MIN_OVERLAP_ATOMS,
+        project_dir: str = ChannelProvider.DEFAULT_PROJECT_DIR,
+) -> dict[str, Any]:
+    """
+    Cut the minimal elementary cell (the GUI `Cut intercalated structure cell`) from a result file.
+
+    The cell is the xy prism over four channel centers and the minimal height `c` along Oz after which
+    carbon AND intercalated atoms together repeat. `c = n * carbon_z_period`, where `n` is the smallest
+    number of carbon periods after which the intercalated atoms map onto themselves; the match must be
+    confirmed by at least `min_overlap_atoms` atoms within `tolerance` (angstroms). When the file is too
+    short to confirm a repeat, `c` is taken from the file height and `z_repeat_verified` is false.
+    Carbon is rebuilt by translating one period, so the initial structure height does not limit `c`.
+
+    Use an `all_ch` file: a `one_ch` file gives an incomplete cell (a warning is returned). Returns the
+    cell height, the carbon period and `n`, the basis parameters of `cell_params.txt`, atom counts and
+    warnings. Coordinates are returned only with `include_coordinates`.
+
+    With `write_files` the tool creates a NEW folder `cell_{type}_v{i}` (or `cell_{type}_v{i}_{j}` when it
+    exists) in the result data of the structure with the carbon and intercalated `.dat` files and
+    `cell_params.txt`; existing folders and files are never overwritten. Without it, nothing is written.
+    The first call for a structure can take several seconds because channels are rebuilt.
+    """
+    carbon_coordinates: NDArray[np.float64] = IntercalationAndSorption.get_carbon_coords(
+        project_dir, element, structure
+    )
+    inter_atoms: IPoints = InterAtomsFileManager.read_inter_atoms(
+        project_dir, element, structure, file_name
+    )
+
+    result: CellCutResult = IntercalatedStructureCellCutter.cut_cell(
+        Points(carbon_coordinates),
+        inter_atoms,
+        tolerance=tolerance,
+        min_overlap_atoms=min_overlap_atoms,
+    )
+    params: CellParams = result.cell_params
+
+    payload: dict[str, Any] = {
+        "element": element,
+        "structure": structure,
+        "source_file_name": file_name,
+        "cell_height": round(params.c, 3),
+        "carbon_z_period": round(result.z_cell.carbon_z_period, 6),
+        "num_of_carbon_periods": result.z_cell.num_of_periods,
+        "z_start": round(result.z_cell.z_start, 3),
+        "z_repeat_verified": result.z_cell.verified,
+        "num_of_carbon_atoms": len(result.carbon.points),
+        "num_of_intercalated_atoms": len(result.intercalated.points),
+        "cell_params": {
+            "is_hexagonal": params.is_hexagonal,
+            "a": round(params.a_length, 3),
+            "gamma": None if params.is_hexagonal else round(params.gamma, 3),
+            "basis": {
+                "a": [round(-params.x, 3), round(params.y, 3), 0.0],
+                "b": [round(params.x, 3), round(params.y, 3), 0.0],
+                "c": [0.0, 0.0, round(params.c, 3)],
+            },
+            "text": CellParamsBuilder.format_params(params),
+        },
+        "warnings": CellBuilder.collect_warnings(file_name, result),
+        "files": None,
+    }
+
+    if include_coordinates:
+        payload["carbon_coordinates"] = points_to_list(result.carbon)
+        payload["intercalated_coordinates"] = points_to_list(result.intercalated)
+
+    if write_files:
+        cell_files: CellFiles = CellBuilder.write_cell(project_dir, element, structure, file_name, result)
+        payload["files"] = {
+            "cell_dir": str(cell_files.cell_dir),
+            "carbon": str(cell_files.carbon_path),
+            "intercalated": str(cell_files.intercalated_path),
+            "cell_params": str(cell_files.params_path),
+        }
+
+    return payload
 
 
 ### CANDIDATE COMPARISON AND RUN CHECKPOINTS ###

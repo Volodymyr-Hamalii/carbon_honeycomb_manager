@@ -171,7 +171,7 @@ before the server starts. If you add code to the server, log - do not print.
 
 ### The tools
 
-31 tools, grouped by what they do.
+32 tools, grouped by what they do.
 
 **Discovery**
 
@@ -236,6 +236,17 @@ Pass `required_z_period_multiplier` when the intended elementary cell deliberate
 number of carbon periods. The seam is then measured against that explicit cell instead of an
 incidental shorter repeat inferred from a finite coordinate sample. The value must not exceed
 `max_z_period_multiplier`.
+
+**Elementary cell**
+
+`cut_intercalated_cell` is the GUI `Cut intercalated structure cell`. It cuts the xy prism over four
+channel centers and the minimal height `c = n * carbon_z_period` after which carbon and intercalated
+atoms together repeat (`tolerance` and `min_overlap_atoms` are arguments), and returns `c`, `n`, the
+`cell_params.txt` basis parameters, atom counts and warnings. A repeat that no overlap can confirm
+(a file shorter than the period) is reported as `z_repeat_verified: false`. With `write_files` it
+creates a new `cell_{type}_v{i}[_{j}]` folder with the carbon and intercalated `.dat` files and
+`cell_params.txt`; existing folders are never overwritten. Without it nothing is written. Use `all_ch`
+files: a `one_ch` file gives an incomplete cell and a warning.
 
 **Long-running search**
 

@@ -62,6 +62,8 @@ class IntercalatedStructureCellCutter:
         cls,
         coordinates_carbon: IPoints,
         coordinates_intercalated: IPoints,
+        tolerance: float = CellZCutter.TOLERANCE,
+        min_overlap_atoms: int = CellZCutter.MIN_OVERLAP_ATOMS,
     ) -> CellCutResult:
         """
         Cut the minimal elementary cell: the xy prism over 4 channel centers and the minimal height along Oz.
@@ -125,6 +127,8 @@ class IntercalatedStructureCellCutter:
             carbon_all=coordinates_carbon.points,
             carbon_in_prism=carbon_in_prism.points,
             inter_in_prism=inter_in_prism.points,
+            tolerance=tolerance,
+            min_overlap_atoms=min_overlap_atoms,
         )
         logger.info(
             f"Cell height c={z_cell.cell_height:.6f} ({z_cell.num_of_periods} x {z_cell.carbon_z_period:.6f}), "

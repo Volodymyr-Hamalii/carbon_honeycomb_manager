@@ -15,10 +15,10 @@ from src.interfaces import (
     PMvpParams,
 )
 from src.entities import IntercalatedChannelSchemeData, Points
-from src.services import Logger, Constants, VisualizationParams, PathBuilder, FileWriter
+from src.services import Logger, Constants, VisualizationParams
 from src.projects.carbon_honeycomb_actions import CarbonHoneycombModeller
 from src.projects.intercalation_and_sorption import IntercalationAndSorption
-from src.projects.intercalation_and_sorption.cell_building import CellFolderNamer, CellParamsBuilder
+from src.projects.intercalation_and_sorption.cell_builder import CellBuilder, CellFiles
 from src.projects.intercalation_and_sorption.intercalared_structure_cell_cutter import (
     CellCutResult,
     IntercalatedStructureCellCutter,
@@ -341,11 +341,6 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
             coordinates_intercalated = Points(inter_coords)
             logger.info(f"Loaded {len(inter_coords)} intercalated atoms")
 
-            if "one_ch" in selected_file.lower():
-                self.view.show_warning_message(
-                    "The cell cut from a one_ch file will be incomplete, use an all_ch file."
-                )
-
             # Step 3-5: Cut unit cell (xy prism and the minimal height along Oz)
             cell_result: CellCutResult = IntercalatedStructureCellCutter.cut_cell(
                 coordinates_carbon=coordinates_carbon,
@@ -354,11 +349,8 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
             filtered_carbon: IPoints = cell_result.carbon
             filtered_intercalated: IPoints = cell_result.intercalated
 
-            if not cell_result.z_cell.verified:
-                self.view.show_warning_message(
-                    "The z repeat is not confirmed by an overlap: the cell height is taken from the file height "
-                    f"({cell_result.z_cell.num_of_periods} carbon periods, c={cell_result.cell_params.c:.3f})."
-                )
+            for warning in CellBuilder.collect_warnings(selected_file, cell_result):
+                self.view.show_warning_message(warning)
 
             # Step 6: Plot the results
             logger.info("Plotting filtered structure...")
@@ -381,31 +373,12 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
             plot_window.show_structures(coords_list, visual_params_list, labels_list)
 
             # Step 7: Save files to a new folder cell_{type}_v{i} (with a _{j} suffix if it already exists)
-            cell_dir: Path = CellFolderNamer.create_unique_dir(
-                PathBuilder.build_path_to_result_data_dir(project_dir, subproject_dir, structure_dir),
-                selected_file,
+            cell_files: CellFiles = CellBuilder.write_cell(
+                project_dir, subproject_dir, structure_dir, selected_file, cell_result
             )
-
-            carbon_output_path: Path = cell_dir / f"{structure_dir}_cell_carbon.dat"
-            inter_output_path: Path = cell_dir / f"{structure_dir}_cell_{subproject_dir}_intercalated.dat"
-
-            FileWriter.write_dat_file(
-                data_lines=filtered_carbon.points,
-                path_to_file=carbon_output_path,
-            )
-            FileWriter.write_dat_file(
-                data_lines=filtered_intercalated.points,
-                path_to_file=inter_output_path,
-            )
-
-            params_output_path: Path = cell_dir / "cell_params.txt"
-            params_output_path.write_text(
-                CellParamsBuilder.format_params(cell_result.cell_params), encoding="utf-8"
-            )
-
-            logger.info(f"Saved carbon cell to: {carbon_output_path}")
-            logger.info(f"Saved intercalated cell to: {inter_output_path}")
-            logger.info(f"Saved cell parameters to: {params_output_path}")
+            cell_dir: Path = cell_files.cell_dir
+            carbon_output_path: Path = cell_files.carbon_path
+            inter_output_path: Path = cell_files.intercalated_path
 
             self.view.show_operation_success(
                 f"Unit cell cut successfully!\nCarbon: {len(filtered_carbon.points)} atoms\n"
