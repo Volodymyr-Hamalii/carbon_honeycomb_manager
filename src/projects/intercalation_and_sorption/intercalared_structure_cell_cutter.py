@@ -1,5 +1,7 @@
 """Cut unit cell from intercalated structure."""
 
+from dataclasses import dataclass
+
 import numpy as np
 from numpy.typing import NDArray
 
@@ -9,13 +11,35 @@ from src.services import Logger
 from src.services.coordinate_operations import PointsFilter
 from src.projects.carbon_honeycomb_actions import CarbonHoneycombActions
 from src.projects.intercalation_and_sorption.build_intercalated_structure.semi_manual import InterAtomsTranslator
+from src.projects.intercalation_and_sorption.cell_building import (
+    CellParams,
+    CellParamsBuilder,
+    CellZCutter,
+    ZCellResult,
+)
 
 
 logger = Logger("IntercalatedStructureCellCutter")
 
 
+@dataclass(frozen=True)
+class CellCutResult:
+    """Elementary cell atoms, its parameters and the details of the Oz cut."""
+
+    carbon: IPoints
+    intercalated: IPoints
+    cell_params: CellParams
+    z_cell: ZCellResult
+
+
 class IntercalatedStructureCellCutter:
-    """Cut unit cell from intercalated structure using prism filtering."""
+    """Cut unit cell from intercalated structure using prism filtering and the minimal Oz height."""
+
+    # Z filter bound meaning "no limit" for the prism-only filtering.
+    _NO_Z_LIMIT: float = 1e9
+
+    # Clearance coefficients for splitting the carbon structure into channels, tried in this order.
+    _CLEARANCE_COEFFICIENTS: tuple[float, ...] = (2, 1.25)
 
     @classmethod
     def cut_unit_cell(
@@ -29,10 +53,27 @@ class IntercalatedStructureCellCutter:
         Returns:
             Tuple of (filtered_carbon, filtered_intercalated)
         """
+        result: CellCutResult = cls.cut_cell(coordinates_carbon, coordinates_intercalated)
+
+        return result.carbon, result.intercalated
+
+    @classmethod
+    def cut_cell(
+        cls,
+        coordinates_carbon: IPoints,
+        coordinates_intercalated: IPoints,
+    ) -> CellCutResult:
+        """
+        Cut the minimal elementary cell: the xy prism over 4 channel centers and the minimal height along Oz.
+
+        Returns:
+            Cell atoms together with the cell height and the parameters for `cell_params.txt`.
+        """
         logger.info("Starting unit cell cutting process")
 
         # Step 1: Find 4 channel centers
-        channel_centers = cls._find_four_channel_centers(coordinates_carbon)
+        carbon_channels: list[ICarbonHoneycombChannel] = cls._split_into_channels(coordinates_carbon)
+        channel_centers = cls._find_four_channel_centers(coordinates_carbon, carbon_channels)
         logger.info(f"Found 4 channel centers:")
         for i, center in enumerate(channel_centers):
             logger.info(f"  Center {i}: {center.tolist()}")
@@ -49,57 +90,88 @@ class IntercalatedStructureCellCutter:
         for i, (A, B, C, D) in enumerate(plane_params):
             logger.info(f"  Plane {i}: A={A:.6f}, B={B:.6f}, C={C:.6f}, D={D:.6f}")
 
-        # Step 3: Get Z limits
-        z_min, z_max = np.min(coordinates_carbon.points[:, 2]), np.max(coordinates_carbon.points[:, 2])
-        logger.info(f"Z limits: {z_min} to {z_max}")
+        # Step 3: Filter by the xy prism only; the Oz cut is done below
+        carbon_z_min = np.min(coordinates_carbon.points[:, 2])
+        carbon_z_max = np.max(coordinates_carbon.points[:, 2])
+        logger.info(f"Carbon Z limits: {carbon_z_min} to {carbon_z_max}")
 
         # Calculate centroid of the prism from the 4 centers
         prism_centroid = np.mean(ordered_centers, axis=0)
         logger.info(f"Prism centroid: {prism_centroid.tolist()}")
 
         # Step 4: Filter carbon atoms inside prism
-        filtered_carbon: IPoints = cls._filter_points_inside_prism(
-            coordinates_carbon, plane_params, z_min, z_max, prism_centroid
+        carbon_in_prism: IPoints = cls._filter_points_inside_prism(
+            coordinates_carbon, plane_params, carbon_z_min, carbon_z_max, prism_centroid
         )
-        logger.info(f"Filtered carbon atoms: {len(filtered_carbon.points)} atoms")
+        logger.info(f"Carbon atoms in prism: {len(carbon_in_prism.points)} atoms")
 
-        # Step 5: Filter intercalated atoms inside prism
-        filtered_intercalated = cls._filter_points_inside_prism(
-            coordinates_intercalated, plane_params, z_min, z_max, prism_centroid
+        # Step 5: Filter intercalated atoms inside prism (not clipped by the carbon height)
+        inter_in_prism: IPoints = cls._filter_points_inside_prism(
+            coordinates_intercalated, plane_params, -cls._NO_Z_LIMIT, cls._NO_Z_LIMIT, prism_centroid
         )
-        logger.info(f"Filtered intercalated atoms: {len(filtered_intercalated.points)} atoms")
+        logger.info(f"Intercalated atoms in prism: {len(inter_in_prism.points)} atoms")
 
         # Validate we have atoms
-        if len(filtered_carbon.points) == 0:
+        if len(carbon_in_prism.points) == 0:
             raise ValueError(
                 "No carbon atoms found in prism. Check if direction parameter is correct."
             )
 
-        if len(filtered_intercalated.points) == 0:
-            logger.warning("No intercalated atoms found in prism")
+        if len(inter_in_prism.points) == 0:
+            raise ValueError("No intercalated atoms found in prism.")
 
-        # Sort filtered_carbon and filtered_intercalated by Z coordinate
-        filtered_carbon = filtered_carbon.sort(axis=2)
-        filtered_intercalated = filtered_intercalated.sort(axis=2)
+        # Step 6: Cut along Oz to the minimal repeating height
+        z_cell: ZCellResult = CellZCutter.build_cell(
+            carbon_all=coordinates_carbon.points,
+            carbon_in_prism=carbon_in_prism.points,
+            inter_in_prism=inter_in_prism.points,
+        )
+        logger.info(
+            f"Cell height c={z_cell.cell_height:.6f} ({z_cell.num_of_periods} x {z_cell.carbon_z_period:.6f}), "
+            f"verified={z_cell.verified}"
+        )
 
-        return filtered_carbon, filtered_intercalated
+        # Step 7: Cell parameters from one full channel
+        cell_params: CellParams = CellParamsBuilder.build(carbon_channels[0], z_cell.cell_height)
+
+        return CellCutResult(
+            carbon=Points(z_cell.carbon),
+            intercalated=Points(z_cell.intercalated),
+            cell_params=cell_params,
+            z_cell=z_cell,
+        )
 
     @classmethod
-    def _find_four_channel_centers(cls, coordinates_carbon: IPoints) -> list[NDArray[np.float64]]:
+    def _split_into_channels(cls, coordinates_carbon: IPoints) -> list[ICarbonHoneycombChannel]:
+        """Split carbon into channels, trying the clearance coefficients until 2 full channels are found."""
+        carbon_channels: list[ICarbonHoneycombChannel] = []
+
+        for clearance_dist_coefficient in cls._CLEARANCE_COEFFICIENTS:
+            carbon_channels = CarbonHoneycombActions.split_init_structure_into_separate_channels(
+                coordinates_carbon,
+                clearance_dist_coefficient=clearance_dist_coefficient,
+            )
+            if len(carbon_channels) >= 2:
+                break
+
+            logger.warning(
+                f"Found {len(carbon_channels)} channels with clearance coefficient {clearance_dist_coefficient}"
+            )
+
+        return carbon_channels
+
+    @classmethod
+    def _find_four_channel_centers(
+        cls,
+        coordinates_carbon: IPoints,
+        carbon_channels: list[ICarbonHoneycombChannel],
+    ) -> list[NDArray[np.float64]]:
         """
         Find centers of 4 carbon channels (2 full + 2 edge).
 
         Returns:
             List of 4 center points as numpy arrays
         """
-        # Get 2 full channels
-        carbon_channels: list[ICarbonHoneycombChannel] = (
-            CarbonHoneycombActions.split_init_structure_into_separate_channels(
-                coordinates_carbon,
-                clearance_dist_coefficient=2,
-            )
-        )
-
         if len(carbon_channels) < 2:
             raise ValueError(f"Expected at least 2 full channels, found {len(carbon_channels)}")
 
@@ -210,8 +282,8 @@ class IntercalatedStructureCellCutter:
         cls,
         points: IPoints,
         plane_params: list[tuple[float, float, float, float]],
-        z_min: np.floating,
-        z_max: np.floating,
+        z_min: float | np.floating,
+        z_max: float | np.floating,
         prism_centroid: NDArray[np.float64],
     ) -> IPoints:
         """

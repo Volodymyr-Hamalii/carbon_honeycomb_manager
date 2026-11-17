@@ -10,6 +10,7 @@ from src.interfaces import (
     IIntercalationAndSorptionModel,
     IIntercalationAndSorptionView,
     ICarbonHoneycombChannel,
+    IPoints,
     IStructureVisualParams,
     PMvpParams,
 )
@@ -17,7 +18,11 @@ from src.entities import IntercalatedChannelSchemeData, Points
 from src.services import Logger, Constants, VisualizationParams, PathBuilder, FileWriter
 from src.projects.carbon_honeycomb_actions import CarbonHoneycombModeller
 from src.projects.intercalation_and_sorption import IntercalationAndSorption
-from src.projects.intercalation_and_sorption.intercalared_structure_cell_cutter import IntercalatedStructureCellCutter
+from src.projects.intercalation_and_sorption.cell_building import CellFolderNamer, CellParamsBuilder
+from src.projects.intercalation_and_sorption.intercalared_structure_cell_cutter import (
+    CellCutResult,
+    IntercalatedStructureCellCutter,
+)
 from src.ui.components import PlotWindow, PlotWindowFactory
 
 
@@ -336,11 +341,24 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
             coordinates_intercalated = Points(inter_coords)
             logger.info(f"Loaded {len(inter_coords)} intercalated atoms")
 
-            # Step 3-5: Cut unit cell
-            filtered_carbon, filtered_intercalated = IntercalatedStructureCellCutter.cut_unit_cell(
+            if "one_ch" in selected_file.lower():
+                self.view.show_warning_message(
+                    "The cell cut from a one_ch file will be incomplete, use an all_ch file."
+                )
+
+            # Step 3-5: Cut unit cell (xy prism and the minimal height along Oz)
+            cell_result: CellCutResult = IntercalatedStructureCellCutter.cut_cell(
                 coordinates_carbon=coordinates_carbon,
                 coordinates_intercalated=coordinates_intercalated,
             )
+            filtered_carbon: IPoints = cell_result.carbon
+            filtered_intercalated: IPoints = cell_result.intercalated
+
+            if not cell_result.z_cell.verified:
+                self.view.show_warning_message(
+                    "The z repeat is not confirmed by an overlap: the cell height is taken from the file height "
+                    f"({cell_result.z_cell.num_of_periods} carbon periods, c={cell_result.cell_params.c:.3f})."
+                )
 
             # Step 6: Plot the results
             logger.info("Plotting filtered structure...")
@@ -362,13 +380,11 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
             # Show structures
             plot_window.show_structures(coords_list, visual_params_list, labels_list)
 
-            # Get structure type from file name
-
-            # Step 7: Save files
-            cell_dir_name: str = self._get_structure_type_from_file_name(selected_file)
-            cell_dir = PathBuilder.build_path_to_result_data_dir(
-                project_dir, subproject_dir, structure_dir) / cell_dir_name
-            cell_dir.mkdir(exist_ok=True)
+            # Step 7: Save files to a new folder cell_{type}_v{i} (with a _{j} suffix if it already exists)
+            cell_dir: Path = CellFolderNamer.create_unique_dir(
+                PathBuilder.build_path_to_result_data_dir(project_dir, subproject_dir, structure_dir),
+                selected_file,
+            )
 
             carbon_output_path: Path = cell_dir / f"{structure_dir}_cell_carbon.dat"
             inter_output_path: Path = cell_dir / f"{structure_dir}_cell_{subproject_dir}_intercalated.dat"
@@ -382,12 +398,19 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
                 path_to_file=inter_output_path,
             )
 
+            params_output_path: Path = cell_dir / "cell_params.txt"
+            params_output_path.write_text(
+                CellParamsBuilder.format_params(cell_result.cell_params), encoding="utf-8"
+            )
+
             logger.info(f"Saved carbon cell to: {carbon_output_path}")
             logger.info(f"Saved intercalated cell to: {inter_output_path}")
+            logger.info(f"Saved cell parameters to: {params_output_path}")
 
             self.view.show_operation_success(
                 f"Unit cell cut successfully!\nCarbon: {len(filtered_carbon.points)} atoms\n"
                 f"Intercalated: {len(filtered_intercalated.points)} atoms\n"
+                f"Cell height c = {cell_result.cell_params.c:.3f}\n"
                 f"Saved to: {cell_dir}",
                 result_path=cell_dir
             )
@@ -398,22 +421,6 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
             logger.error(f"Failed to cut unit cell: {e}")
             self.on_operation_failed("cut_intercalated_structure_cell", e)
             raise
-
-    @staticmethod
-    def _get_structure_type_from_file_name(file_name: str) -> str:
-        """Get structure type from file name."""
-        # Get structure type from file name
-        cell_dir_name = "cell"
-        try:
-            structure_type: str = file_name.split('.')[0].replace(
-                '_all_channels', '').replace('(', '').replace(')', '')
-            structure_type = "_".join(structure_type.split(' ')[1:])
-            structure_type = structure_type[:-1] if structure_type.endswith('_') else structure_type
-            if structure_type:
-                cell_dir_name: str = "cell_" + structure_type
-        except Exception:
-            pass
-        return cell_dir_name
 
     def translate_inter_to_all_channels_generate_files(
         self,
