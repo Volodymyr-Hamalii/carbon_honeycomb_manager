@@ -120,6 +120,45 @@ class InterAtomsFileManager(IInterAtomsFileManager):
 
         return path_to_file_result
 
+    @classmethod
+    def convert_to_dat(
+            cls,
+            project_dir: str,
+            subproject_dir: str,
+            structure_dir: str,
+            file_name: str,
+            output_file_name: str | None = None,
+    ) -> tuple[Path, IPoints]:
+        """
+        Convert a coordinate file (CSV, XLSX, DAT) of the result data into a new `.dat` file.
+
+        The output name defaults to the source name with a `.dat` suffix. An existing file is never
+        overwritten. The `.dat` format keeps only `x y z`, so atom IDs are not stored.
+        """
+        inter_atoms: IPoints = cls.read_inter_atoms(project_dir, subproject_dir, structure_dir, file_name)
+        if len(inter_atoms.points) == 0:
+            raise ValueError(f"Refusing to convert an empty coordinate file: {file_name}.")
+
+        target_name: str = output_file_name or Path(file_name).with_suffix(".dat").name
+        if Path(target_name).suffix.lower() != ".dat":
+            raise ValueError(f"output_file_name must have the .dat extension, got {target_name!r}.")
+
+        path_to_file: Path = PathBuilder.build_path_to_result_data_file(
+            project_dir, subproject_dir, structure_dir, file_name=target_name
+        )
+        if path_to_file.exists():
+            raise FileExistsError(f"Refusing to overwrite an existing file: {path_to_file}")
+
+        path_to_file_result: Path | None = FileWriter.write_dat_file(
+            data_lines=inter_atoms.points,
+            path_to_file=path_to_file,
+            to_overwrite=False,
+        )
+        if path_to_file_result is None:
+            raise IOError(f"Failed to write {target_name} file.")
+
+        return path_to_file_result, inter_atoms
+
     @staticmethod
     def list_result_files(
             project_dir: str,

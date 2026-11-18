@@ -318,6 +318,36 @@ def write_inter_atoms(
 
 
 @server.tool()
+def convert_csv_to_dat(
+        element: str,
+        structure: str,
+        file_name: str,
+        output_file_name: str | None = None,
+        project_dir: str = ChannelProvider.DEFAULT_PROJECT_DIR,
+) -> dict[str, Any]:
+    """
+    Convert a coordinate file of the structure's result data (`.csv`, also legacy `.xlsx`/`.dat`) to `.dat`.
+
+    The `.dat` file holds one `x y z` line per atom in angstroms; `atom_id` values are not stored there
+    (the source file keeps them). `output_file_name` defaults to the source name with a `.dat` suffix and
+    must end with `.dat`. A new file is created next to the source; an existing file is never overwritten
+    (an error is raised instead). The source file is not changed.
+    """
+    path_to_file, inter_atoms = InterAtomsFileManager.convert_to_dat(
+        project_dir=project_dir,
+        subproject_dir=element,
+        structure_dir=structure,
+        file_name=file_name,
+        output_file_name=output_file_name,
+    )
+    return {
+        "source_file_name": file_name,
+        "path": str(path_to_file),
+        "num_of_atoms": len(inter_atoms.points),
+    }
+
+
+@server.tool()
 def write_final_structure(
         element: str,
         structure: str,

@@ -52,10 +52,15 @@ class TestCheckShift:
 
         assert CellZCutter.check_shift(inter, 1.0) is False
 
-    def test_single_atom_overlap_is_not_a_confirmation(self) -> None:
+    def test_single_atom_overlap_is_confirmed_when_the_file_spans_exactly_one_shift(self) -> None:
         inter: NDArray[np.float64] = _inter(spacing=1.0, num_of_layers=3, stacking=1)
 
-        assert CellZCutter.check_shift(inter, 2.0) is None
+        assert CellZCutter.check_shift(inter, 2.0) is True
+
+    def test_two_layers_one_carbon_period_apart_give_one_period(self) -> None:
+        inter: NDArray[np.float64] = np.array([[1.0, 1.0, 3.6], [1.0, 1.0, 7.92]])
+
+        assert CellZCutter.find_num_of_periods(inter, 4.32) == 1
 
     def test_no_overlap_cannot_be_checked(self) -> None:
         inter: NDArray[np.float64] = _inter(spacing=1.0, num_of_layers=3, stacking=1)

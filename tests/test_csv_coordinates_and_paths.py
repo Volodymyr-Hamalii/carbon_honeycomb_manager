@@ -30,6 +30,37 @@ def test_csv_coordinate_round_trip_preserves_atom_ids(
     assert restored.atom_ids == atoms.atom_ids
 
 
+def test_convert_to_dat_writes_xyz_lines_and_never_overwrites(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(Constants.path, "PROJECTS_DATA_PATH", tmp_path)
+    atoms: Points = Points(np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.5]]))
+    InterAtomsFileManager.write_inter_atoms(
+        "intercalation_and_sorption", "ar", "A1-7_h3", "candidate.csv", atoms
+    )
+
+    path, converted = InterAtomsFileManager.convert_to_dat(
+        "intercalation_and_sorption", "ar", "A1-7_h3", "candidate.csv"
+    )
+
+    assert path.name == "candidate.dat"
+    assert len(converted.points) == 2
+    restored = InterAtomsFileManager.read_inter_atoms(
+        "intercalation_and_sorption", "ar", "A1-7_h3", "candidate.dat"
+    )
+    assert np.allclose(restored.points, atoms.points)
+
+    with pytest.raises(FileExistsError):
+        InterAtomsFileManager.convert_to_dat(
+            "intercalation_and_sorption", "ar", "A1-7_h3", "candidate.csv"
+        )
+    with pytest.raises(ValueError):
+        InterAtomsFileManager.convert_to_dat(
+            "intercalation_and_sorption", "ar", "A1-7_h3", "candidate.csv", output_file_name="x.csv"
+        )
+
+
 def test_result_file_path_cannot_escape_project_data() -> None:
     with pytest.raises(ValueError):
         PathBuilder.build_path_to_result_data_file(

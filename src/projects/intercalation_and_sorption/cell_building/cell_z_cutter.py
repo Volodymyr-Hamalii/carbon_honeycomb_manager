@@ -144,8 +144,8 @@ class CellZCutter:
         """
         Check that shifting the points up by `shift` maps them onto themselves over the overlap region.
 
-        True means a match confirmed by at least `min_overlap_atoms` atoms, False a mismatch, None that
-        nothing could be confirmed (too few atoms in the overlap).
+        True means a match confirmed by at least `min_overlap_atoms` atoms (or by the whole lowest layer
+        when the z extent equals the shift), False a mismatch, None that nothing could be confirmed.
         """
         z_min: float = float(points[:, 2].min())
         z_max: float = float(points[:, 2].max())
@@ -163,7 +163,12 @@ class CellZCutter:
         if not (np.all(distances.min(axis=1) <= tolerance) and np.all(distances.min(axis=0) <= tolerance)):
             return False
 
-        return True if len(original) >= min_overlap_atoms else None
+        if len(original) >= min_overlap_atoms:
+            return True
+
+        # The file is the cell plus its own repeat: the whole lowest layer maps onto the whole top layer.
+        spans_exactly_one_shift: bool = abs((z_max - z_min) - shift) <= tolerance
+        return True if spans_exactly_one_shift else None
 
     @classmethod
     def find_num_of_periods(

@@ -171,7 +171,7 @@ before the server starts. If you add code to the server, log - do not print.
 
 ### The tools
 
-32 tools, grouped by what they do.
+33 tools, grouped by what they do.
 
 **Discovery**
 
@@ -197,6 +197,7 @@ before the server starts. If you add code to the server, log - do not print.
 | ----------------------- | ------------------------------------------------------------------------------------------------------ |
 | `read_inter_atoms`      | reads coordinate `.csv` plus legacy `.xlsx` / `.dat` files                                             |
 | `write_inter_atoms`     | writes `atom_id, x_inter, y_inter, z_inter`; new files should use CSV                                  |
+| `convert_csv_to_dat`    | converts a result file (`.csv`, legacy `.xlsx`/`.dat`) to a new `x y z` `.dat` file; never overwrites |
 | `write_final_structure` | revalidates required checks and writes `one_ch[-{family}]-{type}-v{i}-{author}.csv` without overwriting |
 | `get_distance_matrix`   | the GUI `Get distance matrix` for a saved file                                                         |
 

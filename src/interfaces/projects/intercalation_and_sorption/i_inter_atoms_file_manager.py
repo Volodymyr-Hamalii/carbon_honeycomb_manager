@@ -30,6 +30,18 @@ class IInterAtomsFileManager(ABC):
     ) -> Path:
         ...
 
+    @classmethod
+    @abstractmethod
+    def convert_to_dat(
+            cls,
+            project_dir: str,
+            subproject_dir: str,
+            structure_dir: str,
+            file_name: str,
+            output_file_name: str | None = None,
+    ) -> tuple[Path, IPoints]:
+        ...
+
     @staticmethod
     @abstractmethod
     def list_result_files(
