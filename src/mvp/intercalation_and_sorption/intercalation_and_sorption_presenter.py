@@ -103,6 +103,7 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
                 labels_list=labels_list,  # type: ignore
                 mvp_params=mvp_params,
                 title=f"Intercalated Structure - {structure_dir}",
+                structure_dir=structure_dir,
             )
 
             logger.info(f"Opened plot window for intercalated structure: {structure_dir}")
@@ -285,6 +286,7 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
                 labels_list=labels_list,
                 mvp_params=self.model.get_mvp_params(),
                 title=f"Translated Intercalated Structure - {structure_dir}",
+                structure_dir=structure_dir,
             )
 
             # self.view.show_operation_success("All channels plot generated successfully")
@@ -355,18 +357,26 @@ class IntercalationAndSorptionPresenter(IIntercalationAndSorptionPresenter):
             # Step 6: Plot the results
             logger.info("Plotting filtered structure...")
             coords_list = [filtered_carbon.points, filtered_intercalated.points]
-            labels_list = ["Carbon (Cell)", "Intercalated (Cell)"]
+            labels_list = ["Carbon", "Intercalated"]
 
-            # Get visual params
-            carbon_visual_params: IStructureVisualParams = VisualizationParams.carbon
-            inter_visual_params: IStructureVisualParams = VisualizationParams.intercalated_atoms_1_layer
-            visual_params_list: list[IStructureVisualParams] = [carbon_visual_params, inter_visual_params]
+            # One visual params item per possible intercalated layer (the plot splits atoms by layers)
+            visual_params_list: list[IStructureVisualParams] = [
+                VisualizationParams.carbon,
+                VisualizationParams.intercalated_atoms_1_layer,
+                VisualizationParams.intercalated_atoms_2_layer,
+                VisualizationParams.intercalated_atoms_3_layer,
+                VisualizationParams.intercalated_atoms_4_layer,
+                VisualizationParams.intercalated_atoms_5_layer,
+                VisualizationParams.intercalated_atoms_6_layer,
+                VisualizationParams.intercalated_atoms_7_layer,
+            ]
 
             # Create plot window
             plot_window: PlotWindow = PlotWindowFactory.create_plot_window_from_mvp_params(
                 master=self.view,
                 mvp_params=params,
                 title=f"Unit Cell - {structure_dir}",
+                structure_dir=structure_dir,
             )
 
             # Show structures

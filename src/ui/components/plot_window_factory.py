@@ -27,10 +27,11 @@ class PlotWindowFactory:
         master: ctk.CTk | ctk.CTkToplevel | IShowInitDataView | IIntercalationAndSorptionView,
         mvp_params: PMvpParams,
         title: str = "Structure Plot",
+        structure_dir: str = "",
         **kwargs
     ) -> PlotWindow:
         """Create a plot window with parameters converted from MVP params."""
-        plot_params: PlotParams = cls._convert_mvp_to_plot_params(mvp_params, title)
+        plot_params: PlotParams = cls._convert_mvp_to_plot_params(mvp_params, title, structure_dir)
 
         # Create callback to sync changes back to MVP params
         def on_plot_params_changed(updated_plot_params: PlotParams) -> None:
@@ -84,6 +85,7 @@ class PlotWindowFactory:
         labels_list: list[str | None],
         mvp_params: PMvpParams,
         title: str = "Multiple Structures",
+        structure_dir: str = "",
     ) -> PlotWindow:
         """Show multiple structures in a new plot window."""
 
@@ -91,6 +93,7 @@ class PlotWindowFactory:
             master=master,
             mvp_params=mvp_params,
             title=title,
+            structure_dir=structure_dir,
         )
 
         plot_window.show_structures(
@@ -129,13 +132,18 @@ class PlotWindowFactory:
         return fallback
 
     @classmethod
-    def _convert_mvp_to_plot_params(cls, mvp_params: PMvpParams, title: str) -> PlotParams:
+    def _convert_mvp_to_plot_params(
+        cls,
+        mvp_params: PMvpParams,
+        title: str,
+        structure_dir: str = "",
+    ) -> PlotParams:
         """Convert MVP parameters to plot parameters."""
         # Get filename from MVP params to use as subtitle
         file_name: str = getattr(mvp_params, 'file_name', '') or ''
 
         # Determine num_of_min_distances based on structure type
-        structure_dir: str = mvp_params.current_selection.get("structure_dir", "")
+        structure_dir = structure_dir or mvp_params.current_selection.get("structure_dir", "")
         default_num_of_min_distances: int = cls._get_default_num_of_min_distances(structure_dir)
 
         # Use structure-specific default if mvp_params has the general default (3)
